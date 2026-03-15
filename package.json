@@ -26,6 +26,9 @@
     "reactflow": "^11.11.4",
     "resend": "^6.9.3"
   },
+  "engines": {
+    "node": ">=18.x <=22.x"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.2.1",

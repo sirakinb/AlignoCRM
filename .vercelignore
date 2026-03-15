@@ -1,0 +1,17 @@
+# Tests
+src/__tests__/
+e2e/
+test-results/
+playwright-report/
+playwright.config.ts
+
+# Trigger.dev local
+.trigger/
+
+# Dev tools
+.claude/
+.insforge/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
