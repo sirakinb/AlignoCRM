@@ -6,7 +6,6 @@ export default InsforgeMiddleware({
   signInUrl: "/sign-in",
   signUpUrl: "/sign-up",
   afterSignInUrl: "/",
-  useBuiltInAuth: false,
 });
 
 export const config = {
