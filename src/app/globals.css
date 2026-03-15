@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* ReactFlow edge selection styling */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #6C2BD9 !important;
+  stroke-width: 3px !important;
+}
+
+.react-flow__edge-interaction {
+  stroke-width: 20px !important;
+}

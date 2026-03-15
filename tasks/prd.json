@@ -1,0 +1,580 @@
+{
+  "project": {
+    "name": "Aligno",
+    "description": "AI-native pipeline-first CRM and workflow command center for agencies, creators, coaches, and consultants.",
+    "version": "1.0.0"
+  },
+  "tech_stack": {
+    "frontend": "Next.js 14 (App Router) with React 18, TypeScript, Tailwind CSS",
+    "graph_library": "React Flow",
+    "backend": "Supabase (Postgres, Auth, Storage, Edge Functions)",
+    "workflow_runner": "Trigger.dev",
+    "email_provider": "Resend",
+    "sms_provider": "Twilio (deferred to V1.1)",
+    "ai_provider": "Anthropic Claude (via internal service layer)",
+    "testing": "Vitest + React Testing Library",
+    "linting": "ESLint + Prettier"
+  },
+  "features": [
+    {
+      "id": "F01",
+      "name": "Project Scaffolding",
+      "description": "Initialize Next.js project with TypeScript, Tailwind, Supabase client, testing setup, and folder structure.",
+      "user_stories": [],
+      "tasks": [
+        {
+          "id": "F01-T01",
+          "title": "Initialize Next.js app with TypeScript and Tailwind",
+          "description": "Create Next.js 14 app with App Router, TypeScript strict mode, Tailwind CSS, and base layout.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "next dev starts without errors",
+            "TypeScript strict mode enabled",
+            "Tailwind configured and working",
+            "Base app layout with sidebar navigation shell"
+          ]
+        },
+        {
+          "id": "F01-T02",
+          "title": "Configure testing infrastructure",
+          "description": "Set up Vitest with React Testing Library, jsdom environment, path aliases, and a sample test.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "vitest runs and passes a sample test",
+            "React Testing Library configured for component tests",
+            "Path aliases match tsconfig"
+          ]
+        },
+        {
+          "id": "F01-T03",
+          "title": "Set up Supabase client and type generation",
+          "description": "Install @supabase/supabase-js, configure client for browser and server, create env template.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Supabase client exports for browser and server",
+            ".env.local.example with required vars",
+            "Database types file (placeholder until schema exists)"
+          ]
+        },
+        {
+          "id": "F01-T04",
+          "title": "Create app shell with sidebar navigation",
+          "description": "Build the persistent sidebar layout with nav items: Home, Pipeline, Projects, Automations, Tasks, Reporting, Settings. Purple sidebar matching design screenshots.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Sidebar renders with all nav items",
+            "Active route highlighted",
+            "Layout wraps all pages",
+            "Responsive collapse on mobile",
+            "Unit tests for sidebar navigation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "Core CRM Data Model",
+      "description": "Database schema and CRUD operations for contacts, deals, pipelines, stages, tags, tasks, and activity logs.",
+      "user_stories": ["US-001"],
+      "tasks": [
+        {
+          "id": "F02-T01",
+          "title": "Create database migration for CRM entities",
+          "description": "SQL migration for: workspaces, contacts, deals, pipelines, stages, tags, contact_tags, tasks, activity_logs. Include RLS policies.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "All tables created with proper foreign keys",
+            "RLS policies scoped to workspace",
+            "Indexes on frequently queried columns",
+            "Timestamps (created_at, updated_at) on all tables"
+          ]
+        },
+        {
+          "id": "F02-T02",
+          "title": "Build TypeScript types and data access layer",
+          "description": "Create TypeScript types for all CRM entities and a data access module with create/read/update/archive functions.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Type definitions for Contact, Deal, Pipeline, Stage, Tag, Task, ActivityLog",
+            "Data access functions for CRUD on each entity",
+            "Unit tests for data access functions (mocked Supabase)",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F02-T03",
+          "title": "Seed data for development",
+          "description": "Create a seed script that populates sample workspace, contacts, deals, pipelines, stages, tags, and tasks.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Seed script creates realistic sample data",
+            "At least 2 pipelines, 5 stages each, 10 contacts, 8 deals, 5 tags"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "Pipeline View",
+      "description": "Stage-based Kanban pipeline view for managing deals visually.",
+      "user_stories": ["US-002"],
+      "tasks": [
+        {
+          "id": "F03-T01",
+          "title": "Build pipeline Kanban board component",
+          "description": "Create a drag-and-drop Kanban board showing deals grouped by stage columns. Use @dnd-kit for drag interactions.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Deals displayed as cards in stage columns",
+            "Drag and drop moves deals between stages",
+            "Stage columns show deal count and total value",
+            "Unit tests for pipeline board rendering",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F03-T02",
+          "title": "Build deal card and deal detail panel",
+          "description": "Deal cards show contact name, deal value, owner, and tags. Clicking opens a side panel with full details and edit capability.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Deal card renders key info compactly",
+            "Side panel shows full deal details",
+            "Edit deal fields inline in panel",
+            "Unit tests for deal card and panel",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F03-T03",
+          "title": "Wire pipeline view to data layer",
+          "description": "Connect pipeline page to Supabase data. Pipeline selector dropdown, real-time stage changes, activity log on stage move.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Pipeline selector loads available pipelines",
+            "Stage moves persist to database",
+            "Activity log entry created on stage change",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "Business Events System",
+      "description": "Event emission layer that fires when CRM actions occur, enabling workflow triggers.",
+      "user_stories": ["US-003"],
+      "tasks": [
+        {
+          "id": "F04-T01",
+          "title": "Create business events schema and service",
+          "description": "Database table for business_events. Service module that emits events for contact_created, tag_added, deal_stage_changed, task_created, form_submitted.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Events table with type, payload, workspace_id, record_id, timestamp",
+            "Event emitter service with typed payloads",
+            "Idempotency key to prevent duplicate processing",
+            "Unit tests for event emission",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F04-T02",
+          "title": "Integrate event emission into CRM operations",
+          "description": "Wire event emitter into data access layer so CRM CRUD operations automatically emit events.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Creating a contact emits contact_created",
+            "Adding a tag emits tag_added",
+            "Moving a deal stage emits deal_stage_changed",
+            "Creating a task emits task_created",
+            "Unit tests verify events are emitted on CRM actions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "name": "Workflow Builder - Canvas and Nodes",
+      "description": "Visual workflow builder with React Flow canvas, node types, edge connections, and node settings panel.",
+      "user_stories": ["US-004", "US-005", "US-006", "US-007"],
+      "tasks": [
+        {
+          "id": "F05-T01",
+          "title": "Create workflow data model and schema",
+          "description": "Database migration for workflows, workflow_versions, workflow_nodes, workflow_edges. TypeScript types for workflow definition.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Tables for workflows, versions, nodes, edges",
+            "Workflow status enum: draft, published, archived",
+            "Node type enum covering all V1 types",
+            "TypeScript types matching schema",
+            "Unit tests for workflow types/validation",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T02",
+          "title": "Build React Flow canvas with custom node components",
+          "description": "Set up React Flow canvas with dot grid background, zoom controls, and custom node components matching design: rounded squircle shapes with colored accents per type (green=trigger, blue=action, purple=AI, orange=condition, gray=wait).",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Canvas renders with dot grid background",
+            "Custom node components for trigger, action, AI, condition, wait types",
+            "Nodes have rounded squircle shape with type label, title, subtitle",
+            "Bezier edge connections between nodes",
+            "Zoom controls in bottom toolbar",
+            "Unit tests for custom node components",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T03",
+          "title": "Build node settings panel",
+          "description": "Right-side panel that opens when a node is selected, showing configuration fields specific to the node type. Cancel/Save buttons at bottom.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Panel opens on node click, closes on X or deselect",
+            "Panel renders different forms per node type",
+            "Form validation on required fields",
+            "Save persists node config to workflow definition",
+            "Unit tests for settings panel forms",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T04",
+          "title": "Build trigger node configuration",
+          "description": "Trigger node form supporting contact_created, tag_added, deal_stage_changed, form_submitted. Filter conditions for tag, pipeline, stage, form ID.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Trigger type selector with 4 trigger types",
+            "Filter conditions UI per trigger type",
+            "Validation prevents empty trigger config",
+            "Unit tests for trigger node form",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T05",
+          "title": "Build action node configurations",
+          "description": "Action node forms for: send_email, send_sms, add_tag, remove_tag, move_deal_stage, create_task, webhook, stop_workflow.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Each action type has its own form with required fields",
+            "send_email: to, subject, body (with variable insertion)",
+            "add_tag/remove_tag: tag selector",
+            "move_deal_stage: pipeline and stage selectors",
+            "create_task: title, description, assignee",
+            "webhook: URL, method, headers, body",
+            "Unit tests for each action node form",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T06",
+          "title": "Build wait, if/else, and approval node configurations",
+          "description": "Wait node with duration input (minutes/hours/days). If/else node with condition rules and two outgoing paths. Approval node that pauses execution.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Wait: duration input with unit selector",
+            "If/else: condition builder with field, operator, value rows",
+            "If/else: two distinct output handles (Yes/No)",
+            "Approval: description field and assignee selector",
+            "Unit tests for each control node form",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T07",
+          "title": "Build add-node menu and edge creation",
+          "description": "Node palette menu triggered from + button or connection endpoint. Categorized by type. Creating edges between nodes.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Add-node menu shows available node types by category",
+            "Clicking a node type adds it to canvas",
+            "Dragging from output handle creates edge to target node",
+            "Unit tests for add-node menu",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F05-T08",
+          "title": "Implement workflow save and validation",
+          "description": "Save workflow draft to database. Validate workflow definition: must have trigger, no orphan nodes, required fields filled. Show validation errors.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Save draft persists nodes and edges to database",
+            "Validation catches: no trigger, orphan nodes, missing required fields",
+            "Validation errors displayed clearly in UI",
+            "Unit tests for workflow validation logic",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "name": "Workflow Publishing and Versioning",
+      "description": "Publish workflow versions as immutable snapshots. Draft edits don't affect published versions.",
+      "user_stories": ["US-008"],
+      "tasks": [
+        {
+          "id": "F06-T01",
+          "title": "Implement workflow publishing",
+          "description": "Publish action creates an immutable workflow_version record. UI shows draft vs published state. Undo/redo in builder.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Publish creates immutable version snapshot",
+            "UI shows draft/published badge clearly",
+            "Draft edits after publish don't change published version",
+            "Publish button disabled when validation fails",
+            "Unit tests for publish logic",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "name": "Workflow Enrollment and Execution",
+      "description": "Enroll records into workflows when triggers fire. Execute workflow steps reliably via Trigger.dev.",
+      "user_stories": ["US-009", "US-010"],
+      "tasks": [
+        {
+          "id": "F07-T01",
+          "title": "Create enrollment data model",
+          "description": "Database table for workflow_enrollments storing record_id, workflow_version_id, current_node, status, timestamps. Re-enrollment settings.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Enrollment table with proper schema",
+            "Status enum: active, completed, failed, canceled",
+            "Re-enrollment flag on workflow definition",
+            "Idempotent enrollment creation",
+            "Unit tests for enrollment logic",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F07-T02",
+          "title": "Build trigger-to-enrollment bridge",
+          "description": "Service that matches business events to active workflow triggers and creates enrollments for matching records.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Events matched against published workflow triggers",
+            "Enrollment created for matching records",
+            "Filter conditions applied correctly",
+            "Duplicate enrollments prevented per idempotency rules",
+            "Unit tests for trigger matching",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F07-T03",
+          "title": "Build workflow execution engine (Trigger.dev integration)",
+          "description": "Workflow step executor using Trigger.dev for durable execution, waits, retries, and step logging. Each node type has an executor function.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Trigger.dev task definition for workflow execution",
+            "Wait nodes use Trigger.dev wait/sleep",
+            "Retry policy on failed steps",
+            "Step outcomes logged: completed, failed, skipped, canceled",
+            "Unit tests for executor functions (mocked Trigger.dev)",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "name": "Email Campaigns",
+      "description": "Send emails from workflows via Resend. Message templates with variable interpolation.",
+      "user_stories": ["US-011"],
+      "tasks": [
+        {
+          "id": "F08-T01",
+          "title": "Create message templates system",
+          "description": "Database table for message_templates. Template editor with variable interpolation ({{contact.first_name}} etc). Template CRUD.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Templates table with name, subject, body, variables",
+            "Variable interpolation engine",
+            "Template CRUD operations",
+            "Unit tests for interpolation logic",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F08-T02",
+          "title": "Integrate Resend for email delivery",
+          "description": "Email service that sends via Resend API. Logs delivery status per contact and enrollment. Used by send_email workflow action.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Resend client configured",
+            "Send email function with template interpolation",
+            "Delivery status logged to database",
+            "Error handling for failed sends",
+            "Unit tests for email service (mocked Resend)",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "name": "AI Workflow Nodes",
+      "description": "AI-native workflow steps: ai_draft_message for generating email/SMS content from CRM context.",
+      "user_stories": ["US-012"],
+      "tasks": [
+        {
+          "id": "F09-T01",
+          "title": "Build AI service layer",
+          "description": "Internal AI service that wraps model provider calls. Supports prompt templates, context injection, and structured outputs. Provider-agnostic interface.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "AI service interface with generate() method",
+            "Prompt template rendering with CRM context",
+            "Structured output parsing",
+            "AI outputs logged per invocation",
+            "Unit tests for AI service (mocked provider)",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F09-T02",
+          "title": "Build AI draft message node",
+          "description": "Workflow node that drafts email/SMS content using AI. Config: prompt template, context fields, output format. Integrates with approval flow.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "AI draft node config form in builder",
+            "Prompt template textarea with variable insertion",
+            "Output format selector (email, SMS, structured)",
+            "Require Human Approval toggle",
+            "Node executor calls AI service and stores output",
+            "Unit tests for AI draft node",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "name": "AI Review and Approval",
+      "description": "Review page for AI-generated outputs. Approve, reject, or edit before workflow continues.",
+      "user_stories": ["US-013"],
+      "tasks": [
+        {
+          "id": "F10-T01",
+          "title": "Create approval data model",
+          "description": "Database tables for approval_requests and approval_actions. Link to enrollment, workflow step, and AI output.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Approval request table with status, content, context",
+            "Approval action table with actor, outcome, timestamp",
+            "Status enum: pending, approved, rejected, edited",
+            "Unit tests for approval model",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F10-T02",
+          "title": "Build AI review page",
+          "description": "Minimal review page matching design: draft as hero card, Edit/Reject/Approve & Send buttons, collapsible context section, regenerate action.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Draft displayed as centered card with email fields",
+            "Edit, Reject, Approve & Send buttons above draft",
+            "Collapsible context section (trigger, source data, prompt)",
+            "Regenerate draft action",
+            "Copy to clipboard action",
+            "Approval persists to database and resumes workflow",
+            "Unit tests for review page components",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F10-T03",
+          "title": "Build approvals list page",
+          "description": "List view under Automations > Approvals showing pending, approved, and rejected items with filters.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "List of approval requests with status badges",
+            "Filter by status, workflow, date",
+            "Click through to review page",
+            "Unit tests for approvals list",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F11",
+      "name": "Connected Apps and Webhooks",
+      "description": "Outbound webhook actions and simple integration connection management.",
+      "user_stories": ["US-014"],
+      "tasks": [
+        {
+          "id": "F11-T01",
+          "title": "Build webhook action executor",
+          "description": "Webhook node executor that sends HTTP requests with configurable URL, method, headers, body. Logs response.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "HTTP request sent with configured params",
+            "Response status and body logged",
+            "Timeout and error handling",
+            "Unit tests for webhook executor (mocked HTTP)",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F11-T02",
+          "title": "Build integration connections settings page",
+          "description": "Settings page for managing integration connections. Store connection metadata securely. Initial support for webhook and email provider connections.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Connections table with name, type, config (encrypted secrets)",
+            "Settings UI to add/edit/remove connections",
+            "Secrets not exposed in UI after save",
+            "Unit tests for connection management",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F12",
+      "name": "Execution Logs",
+      "description": "Enrollment history and step-level execution logs for debugging workflows.",
+      "user_stories": ["US-015"],
+      "tasks": [
+        {
+          "id": "F12-T01",
+          "title": "Create execution log data model",
+          "description": "Database tables for execution_steps linked to enrollments. Step outcome, timestamp, error messages, provider responses.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Execution steps table with enrollment_id, node_id, outcome, timestamp",
+            "Error message field for failed steps",
+            "Provider response field for external actions",
+            "Unit tests for log model",
+            "Typecheck passes"
+          ]
+        },
+        {
+          "id": "F12-T02",
+          "title": "Build enrollment history page",
+          "description": "Page showing enrollments filtered by status (active, completed, failed, canceled), workflow, and contact. Click-through to step log.",
+          "status": "pending",
+          "acceptance_criteria": [
+            "Enrollment list with status badges",
+            "Filters for status, workflow, contact",
+            "Chronological step log per enrollment",
+            "Failed steps show error details",
+            "Unit tests for enrollment history components",
+            "Typecheck passes"
+          ]
+        }
+      ]
+    }
+  ]
+}
