@@ -19,6 +19,7 @@ import { WorkflowNode, type WorkflowNodeData } from "./workflow-node";
 import { AddNodeMenu } from "./add-node-menu";
 import { NodeType } from "@/types/workflow";
 import { getDefaultNodeConfig } from "./node-defaults";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 
 const nodeTypes: NodeTypes = {
   workflowNode: WorkflowNode,
@@ -28,7 +29,7 @@ const defaultEdgeOptions = {
   type: "smoothstep",
   animated: true,
   selectable: true,
-  style: { stroke: "#94a3b8", strokeWidth: 2 },
+  style: { stroke: withAlpha(getPurpleScaleColor(2), 0.75), strokeWidth: 2 },
 };
 
 interface WorkflowCanvasProps {
@@ -157,16 +158,17 @@ export function WorkflowCanvas({
         defaultEdgeOptions={defaultEdgeOptions}
         deleteKeyCode={["Backspace", "Delete"]}
         fitView
-        className="bg-gray-50"
+        className="bg-[#FCFAFF]"
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d1d5db" />
-        <Controls className="!rounded-lg !border !border-gray-200 !shadow-sm" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={withAlpha(getPurpleScaleColor(1), 0.28)} />
+        <Controls className="!rounded-lg !border !shadow-sm" style={{ borderColor: withAlpha(getPurpleScaleColor(1), 0.2) }} />
         <MiniMap
-          className="!rounded-lg !border !border-gray-200 !shadow-sm"
+          className="!rounded-lg !border !shadow-sm"
+          style={{ borderColor: withAlpha(getPurpleScaleColor(1), 0.2) }}
           nodeColor={(node) => {
             const data = node.data as WorkflowNodeData;
             const { nodeTypeConfigs } = require("./node-types");
-            return nodeTypeConfigs[data.nodeType]?.color ?? "#6b7280";
+            return nodeTypeConfigs[data.nodeType]?.color ?? getPurpleScaleColor(1);
           }}
         />
       </ReactFlow>

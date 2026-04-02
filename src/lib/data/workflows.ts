@@ -57,11 +57,40 @@ export async function updateWorkflow(id: string, input: UpdateWorkflowInput) {
 }
 
 export async function deleteWorkflow(id: string) {
-  // Delete nodes, edges, and versions first, then the workflow
-  await insforge.database.from("workflow_nodes").delete().eq("workflow_id", id);
+  // Delete dependent rows explicitly to avoid RLS/cascade conflicts.
+  // Order: deepest dependents first, then the workflow itself.
+
+  // 1. Find enrollments for this workflow
+  const { data: enrollments } = await insforge.database
+    .from("workflow_enrollments")
+    .select("id")
+    .eq("workflow_id", id);
+
+  const enrollmentIds = (enrollments ?? []).map((e: { id: string }) => e.id);
+
+  if (enrollmentIds.length > 0) {
+    // Delete enrollment-dependent rows
+    await insforge.database.from("approval_actions").delete().in(
+      "request_id",
+      (await insforge.database
+        .from("approval_requests")
+        .select("id")
+        .in("enrollment_id", enrollmentIds)
+      ).data?.map((a: { id: string }) => a.id) ?? []
+    );
+    await insforge.database.from("approval_requests").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("execution_steps").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("ai_outputs").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("message_logs").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("workflow_enrollments").delete().eq("workflow_id", id);
+  }
+
+  // 2. Delete workflow structure
   await insforge.database.from("workflow_edges").delete().eq("workflow_id", id);
+  await insforge.database.from("workflow_nodes").delete().eq("workflow_id", id);
   await insforge.database.from("workflow_versions").delete().eq("workflow_id", id);
 
+  // 3. Delete the workflow
   const { error } = await insforge.database
     .from("workflows")
     .delete()

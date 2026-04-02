@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, useUser } from "@insforge/nextjs";
+import { useServerUser } from "@/components/auth/server-auth-context";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { Home, GitBranch, Users, Zap, Settings, LogOut } from "lucide-react";
+
+/* eslint-disable @next/next/no-img-element */
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
@@ -22,9 +26,21 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const { user } = useUser();
+  const { user: serverUser } = useServerUser();
+
+  const effectiveProfile = {
+    ...(((user?.profile as Record<string, unknown> | null) ?? {})),
+    ...(((serverUser?.profile as Record<string, unknown> | null) ?? {})),
+  };
+  const effectiveUser = serverUser || user;
 
   const displayName =
-    (user?.profile?.name as string) ?? user?.email ?? "User";
+    (effectiveProfile.name as string) ||
+    (effectiveUser?.email ? effectiveUser.email.split("@")[0] : "User");
+  const avatarUrl = (effectiveProfile.avatar_url as string) || null;
+  const avatarSrc = avatarUrl
+    ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}ui=sidebar`
+    : null;
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -102,9 +118,23 @@ export function Sidebar({ width = 224 }: SidebarProps) {
       {/* User + Logout */}
       <div className="border-t border-gray-200 px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700">
-            {initials}
-          </div>
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: withAlpha(getPurpleScaleColor(1), 0.16),
+                color: getPurpleScaleColor(5),
+              }}
+            >
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-gray-900">
               {displayName}

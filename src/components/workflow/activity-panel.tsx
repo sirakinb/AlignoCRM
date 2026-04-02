@@ -19,6 +19,7 @@ import type {
 import { EnrollmentStatus } from "@/types/enrollment";
 import { getContact } from "@/lib/data/contacts";
 import type { Contact } from "@/types/crm";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 
 export interface EnrichedEnrollment extends WorkflowEnrollment {
   steps: ExecutionStep[];
@@ -34,31 +35,36 @@ interface ActivityPanelProps {
 
 const statusColors: Record<
   EnrollmentStatus,
-  { bg: string; text: string; label: string }
+  { bg: string; text: string; dot: string; label: string }
 > = {
   [EnrollmentStatus.Active]: {
-    bg: "bg-blue-100",
-    text: "text-blue-700",
+    bg: withAlpha(getPurpleScaleColor(2), 0.12),
+    text: getPurpleScaleColor(4),
+    dot: getPurpleScaleColor(2),
     label: "Active",
   },
   [EnrollmentStatus.Completed]: {
-    bg: "bg-green-100",
-    text: "text-green-700",
+    bg: withAlpha(getPurpleScaleColor(5), 0.12),
+    text: getPurpleScaleColor(5),
+    dot: getPurpleScaleColor(5),
     label: "Completed",
   },
   [EnrollmentStatus.Failed]: {
-    bg: "bg-red-100",
-    text: "text-red-700",
+    bg: "rgba(239, 68, 68, 0.12)",
+    text: "#b91c1c",
+    dot: "#ef4444",
     label: "Failed",
   },
   [EnrollmentStatus.Paused]: {
-    bg: "bg-yellow-100",
-    text: "text-yellow-700",
+    bg: withAlpha(getPurpleScaleColor(1), 0.12),
+    text: getPurpleScaleColor(2),
+    dot: getPurpleScaleColor(1),
     label: "Paused",
   },
   [EnrollmentStatus.Canceled]: {
-    bg: "bg-gray-100",
-    text: "text-gray-600",
+    bg: withAlpha(getPurpleScaleColor(0), 0.1),
+    text: "#685b83",
+    dot: "#8c7ea8",
     label: "Canceled",
   },
 };
@@ -135,47 +141,69 @@ export function ActivityPanel({
 
   return (
     <div
-      className="flex h-full w-[340px] flex-col border-l border-gray-200 bg-white"
+      className="aligno-panel-soft flex h-full w-[340px] flex-col border-l"
+      style={{
+        borderColor: withAlpha(getPurpleScaleColor(4), 0.18),
+      }}
       data-testid="activity-panel"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+      <div
+        className="flex items-center justify-between border-b px-5 py-4"
+        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.12) }}
+      >
         <div className="flex items-center gap-2">
-          <Activity size={16} className="text-purple-600" />
+          <Activity size={16} style={{ color: getPurpleScaleColor(4) }} />
           <span className="text-sm font-semibold text-gray-900">Activity</span>
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="rounded-md p-1"
+          style={{ color: getPurpleScaleColor(1) }}
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Summary bar */}
-      <div className="flex gap-3 border-b border-gray-100 px-5 py-3">
+      <div
+        className="flex gap-3 border-b px-5 py-3"
+        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.12) }}
+      >
         <div className="flex items-center gap-1.5">
-          <div className="h-2 w-2 rounded-full bg-blue-500" />
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: statusColors[EnrollmentStatus.Active].dot }}
+          />
           <span className="text-xs text-gray-600">
             {counts.active} Active
           </span>
         </div>
         {counts.paused > 0 && (
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-yellow-500" />
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: statusColors[EnrollmentStatus.Paused].dot }}
+            />
             <span className="text-xs text-gray-600">
               {counts.paused} Paused
             </span>
           </div>
         )}
         <div className="flex items-center gap-1.5">
-          <div className="h-2 w-2 rounded-full bg-green-500" />
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: statusColors[EnrollmentStatus.Completed].dot }}
+          />
           <span className="text-xs text-gray-600">
             {counts.completed} Completed
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-2 w-2 rounded-full bg-red-500" />
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: statusColors[EnrollmentStatus.Failed].dot }}
+          />
           <span className="text-xs text-gray-600">
             {counts.failed} Failed
           </span>
@@ -202,17 +230,27 @@ export function ActivityPanel({
                 {/* Back button + contact header */}
                 <button
                   onClick={() => onSelectEnrollment(null)}
-                  className="flex w-full items-center gap-1.5 border-b border-gray-100 px-4 py-2.5 text-xs text-gray-500 hover:bg-gray-50"
+                  className="flex w-full items-center gap-1.5 border-b px-4 py-2.5 text-xs"
+                  style={{
+                    borderColor: withAlpha(getPurpleScaleColor(4), 0.12),
+                    color: "#6f6488",
+                  }}
                 >
                   <ChevronLeft size={14} />
                   Back to list
                 </button>
 
-                <div className="border-b border-gray-100 px-5 py-3">
+                <div
+                  className="border-b px-5 py-3"
+                  style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.12) }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                        <User size={14} className="text-gray-500" />
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full"
+                        style={{ backgroundColor: withAlpha(getPurpleScaleColor(1), 0.12) }}
+                      >
+                        <User size={14} style={{ color: getPurpleScaleColor(3) }} />
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-gray-900">
@@ -231,7 +269,8 @@ export function ActivityPanel({
                       </div>
                     </div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${sc.bg} ${sc.text}`}
+                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{ backgroundColor: sc.bg, color: sc.text }}
                     >
                       {sc.label}
                     </span>
@@ -240,7 +279,10 @@ export function ActivityPanel({
 
                 {/* Execution steps */}
                 <div className="px-5 py-3">
-                  <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">
+                  <div
+                    className="mb-2 text-[11px] font-medium uppercase tracking-wider"
+                    style={{ color: withAlpha(getPurpleScaleColor(5), 0.56) }}
+                  >
                     Execution Steps
                   </div>
                   {enrollment.steps.length === 0 ? (
@@ -258,33 +300,36 @@ export function ActivityPanel({
                         return (
                           <div key={step.id ?? idx}>
                             <div
-                              className={`flex items-start gap-2 rounded-lg px-3 py-2 ${
-                                isFailed ? "bg-red-50" : "bg-gray-50"
-                              }`}
+                              className="flex items-start gap-2 rounded-lg px-3 py-2"
+                              style={{
+                                backgroundColor: isFailed
+                                  ? "rgba(239, 68, 68, 0.08)"
+                                  : withAlpha(getPurpleScaleColor(0), 0.08),
+                              }}
                             >
                               <div className="mt-0.5">
                                 {isCompleted && (
                                   <CheckCircle2
                                     size={14}
-                                    className="text-green-500"
+                                    style={{ color: getPurpleScaleColor(5) }}
                                   />
                                 )}
                                 {isFailed && (
                                   <XCircle
                                     size={14}
-                                    className="text-red-500"
+                                    style={{ color: "#ef4444" }}
                                   />
                                 )}
                                 {isWaiting && (
                                   <Clock
                                     size={14}
-                                    className="text-yellow-500"
+                                    style={{ color: getPurpleScaleColor(2) }}
                                   />
                                 )}
                                 {isCanceled && (
                                   <MinusCircle
                                     size={14}
-                                    className="text-gray-400"
+                                    style={{ color: "#9b8fb5" }}
                                   />
                                 )}
                                 {!isCompleted &&
@@ -293,7 +338,7 @@ export function ActivityPanel({
                                   !isCanceled && (
                                     <MinusCircle
                                       size={14}
-                                      className="text-gray-300"
+                                      style={{ color: withAlpha(getPurpleScaleColor(1), 0.4) }}
                                     />
                                   )}
                               </div>
@@ -303,13 +348,14 @@ export function ActivityPanel({
                                     {stepNodeName}
                                   </span>
                                   <span
-                                    className={`text-[10px] font-medium ${
-                                      isFailed
-                                        ? "text-red-600"
+                                    className="text-[10px] font-medium"
+                                    style={{
+                                      color: isFailed
+                                        ? "#b91c1c"
                                         : isCompleted
-                                          ? "text-green-600"
-                                          : "text-gray-500"
-                                    }`}
+                                          ? getPurpleScaleColor(5)
+                                          : "#6f6488",
+                                    }}
                                   >
                                     {step.outcome}
                                   </span>
@@ -330,7 +376,13 @@ export function ActivityPanel({
 
                             {/* Step details from provider_response */}
                             {!isFailed && step.provider_response && (
-                              <div className="ml-5 mt-1 rounded-lg bg-gray-50 border border-gray-100 px-3 py-1.5">
+                              <div
+                                className="ml-5 mt-1 rounded-lg border px-3 py-1.5"
+                                style={{
+                                  backgroundColor: withAlpha(getPurpleScaleColor(0), 0.08),
+                                  borderColor: withAlpha(getPurpleScaleColor(4), 0.08),
+                                }}
+                              >
                                 <p className="text-[11px] text-gray-600">
                                   {formatStepDetails(step.provider_response)}
                                 </p>
@@ -375,8 +427,11 @@ export function ActivityPanel({
           })()
         ) : enrollments.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-5 py-12 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-              <Activity size={20} className="text-gray-400" />
+            <div
+              className="mb-3 flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ backgroundColor: withAlpha(getPurpleScaleColor(0), 0.1) }}
+            >
+              <Activity size={20} style={{ color: getPurpleScaleColor(2) }} />
             </div>
             <p className="text-sm font-medium text-gray-700">
               No activity yet
@@ -386,7 +441,10 @@ export function ActivityPanel({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div
+            className="divide-y"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.08) }}
+          >
             {enrollments.map((enrollment) => {
               const contact = contactMap[enrollment.record_id];
               const contactName = contact
@@ -406,14 +464,20 @@ export function ActivityPanel({
                       isSelected ? null : enrollment.id
                     )
                   }
-                  className={`w-full px-5 py-3 text-left transition-colors hover:bg-gray-50 ${
-                    isSelected ? "bg-purple-50 hover:bg-purple-50" : ""
-                  }`}
+                  className="w-full px-5 py-3 text-left transition-colors"
+                  style={{
+                    backgroundColor: isSelected
+                      ? withAlpha(getPurpleScaleColor(1), 0.1)
+                      : "transparent",
+                  }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100">
-                        <User size={14} className="text-gray-500" />
+                      <div
+                        className="flex h-7 w-7 items-center justify-center rounded-full"
+                        style={{ backgroundColor: withAlpha(getPurpleScaleColor(0), 0.1) }}
+                      >
+                        <User size={14} style={{ color: getPurpleScaleColor(3) }} />
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -430,7 +494,10 @@ export function ActivityPanel({
                           )}
                         {enrollment.status === EnrollmentStatus.Paused &&
                           currentNodeName && (
-                            <div className="text-[11px] text-yellow-600">
+                            <div
+                              className="text-[11px]"
+                              style={{ color: getPurpleScaleColor(2) }}
+                            >
                               Waiting at:{" "}
                               <span className="font-medium">
                                 {currentNodeName}
@@ -440,7 +507,8 @@ export function ActivityPanel({
                       </div>
                     </div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${sc.bg} ${sc.text}`}
+                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{ backgroundColor: sc.bg, color: sc.text }}
                     >
                       {sc.label}
                     </span>

@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  ALIGNO_PURPLE_SCALE,
+  getPurpleScaleColor,
+  withAlpha,
+} from "@/lib/design/aligno-theme";
 import { KanbanBoard } from "@/components/pipeline/kanban-board";
 import { PipelineSelector } from "@/components/pipeline/pipeline-selector";
 import {
@@ -18,14 +23,7 @@ import type { Pipeline, Stage, Deal, Contact } from "@/types/crm";
 
 const WORKSPACE_ID = "default";
 
-const DEFAULT_STAGE_COLORS = [
-  "#6B7280",
-  "#3B82F6",
-  "#F59E0B",
-  "#8B5CF6",
-  "#10B981",
-  "#EF4444",
-];
+const DEFAULT_STAGE_COLORS = [...ALIGNO_PURPLE_SCALE];
 
 // ---------------------------------------------------------------------------
 // Data fetching helpers
@@ -861,7 +859,7 @@ export default function PipelinePage() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="aligno-page-surface flex h-full flex-col">
       {/* Move error toasts */}
       {moveErrors.length > 0 && (
         <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
@@ -878,10 +876,10 @@ export default function PipelinePage() {
       )}
 
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
+      <div className="border-b border-[#E6DCF9] bg-white/85 px-6 py-4 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-gray-900">Pipeline</h1>
+            <h1 className="text-xl font-bold text-[#21173A]">Pipeline</h1>
             {pipelines.length > 0 && selectedPipelineId && (
               <PipelineSelector
                 pipelines={pipelines}
@@ -891,7 +889,11 @@ export default function PipelinePage() {
             )}
             <button
               onClick={() => setShowCreatePipelineModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-500 hover:border-[#6C2BD9] hover:text-[#6C2BD9] transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-sm font-medium transition-colors"
+              style={{
+                borderColor: withAlpha(getPurpleScaleColor(2), 0.34),
+                color: "#6B6481",
+              }}
             >
               <Plus size={14} />
               New Pipeline
@@ -901,15 +903,18 @@ export default function PipelinePage() {
           <div className="flex items-center gap-3">
             {/* Pipeline stats */}
             <div className="hidden sm:flex items-center gap-4 mr-2">
-              <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <TrendingUp size={14} className="text-green-500" />
-                <span className="font-medium text-gray-700">
+              <div className="flex items-center gap-1.5 text-sm text-[#6B6481]">
+                <TrendingUp
+                  size={14}
+                  style={{ color: getPurpleScaleColor(4) }}
+                />
+                <span className="font-medium text-[#33254F]">
                   {formatCurrency(totalPipelineValue)}
                 </span>
-                <span className="text-gray-400">in pipeline</span>
+                <span className="text-[#8D88A0]">in pipeline</span>
               </div>
-              <div className="h-4 w-px bg-gray-200" />
-              <span className="text-sm text-gray-500">
+              <div className="h-4 w-px bg-[#E6DCF9]" />
+              <span className="text-sm text-[#6B6481]">
                 {openDeals.length} open{" "}
                 {openDeals.length === 1 ? "deal" : "deals"}
               </span>
@@ -918,7 +923,7 @@ export default function PipelinePage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 transition-colors"
+              className="rounded-lg p-2 text-[#8D88A0] hover:bg-[#F5EEFF] hover:text-[#6F43BF] disabled:opacity-50 transition-colors"
               title="Refresh"
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
@@ -926,7 +931,10 @@ export default function PipelinePage() {
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#5b24b8] transition-colors"
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+              style={{
+                background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(5)})`,
+              }}
             >
               <Plus size={16} />
               Add Deal
@@ -936,16 +944,16 @@ export default function PipelinePage() {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto bg-gray-50/50 p-6">
+      <div className="flex-1 overflow-x-auto p-6">
         {stages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <div className="rounded-full bg-gray-100 p-3">
-              <LayoutGrid size={24} className="text-gray-400" />
+            <div className="rounded-full bg-[#F1E8FF] p-3">
+              <LayoutGrid size={24} className="text-[#8A5DDE]" />
             </div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-[#33254F]">
               No stages configured
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[#6B6481]">
               This pipeline doesn&apos;t have any stages yet.
             </p>
           </div>

@@ -31,6 +31,7 @@ import {
   createWorkflow,
 } from "@/lib/data/workflows";
 import { getEnrollmentsForWorkflow } from "@/lib/data/enrollments";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { Undo2, Redo2, Loader2, Check, Activity, Play } from "lucide-react";
 
 // --- Format conversions ---
@@ -82,10 +83,10 @@ function toRfEdge(dbEdge: DbWorkflowEdge): Edge {
     style: {
       stroke:
         dbEdge.source_handle === "yes"
-          ? "#16a34a"
+          ? getPurpleScaleColor(4)
           : dbEdge.source_handle === "no"
-            ? "#ef4444"
-            : "#94a3b8",
+            ? getPurpleScaleColor(1)
+            : withAlpha(getPurpleScaleColor(2), 0.72),
       strokeWidth: 2,
     },
   };
@@ -626,40 +627,62 @@ export default function WorkflowBuilderPage({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="aligno-page-surface flex h-screen items-center justify-center">
+        <Loader2
+          className="h-8 w-8 animate-spin"
+          style={{ color: getPurpleScaleColor(3) }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="aligno-page-surface flex h-screen flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
+      <div
+        className="flex items-center justify-between border-b px-6 py-3"
+        style={{
+          borderColor: withAlpha(getPurpleScaleColor(4), 0.16),
+          backgroundColor: "rgba(255, 255, 255, 0.82)",
+          boxShadow: `0 10px 28px ${withAlpha(getPurpleScaleColor(5), 0.08)}`,
+        }}
+      >
         <div>
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={workflow?.name ?? ""}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="text-lg font-bold text-gray-900 bg-transparent border-none outline-none focus:ring-1 focus:ring-purple-500 rounded px-1 -ml-1"
+              className="-ml-2 rounded-lg border border-transparent bg-transparent px-2 py-1 text-lg font-bold text-gray-900 outline-none"
             />
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                workflow?.status === "published"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
+              className="rounded-full px-2.5 py-1 text-xs font-semibold"
+              style={{
+                backgroundColor:
+                  workflow?.status === "published"
+                    ? withAlpha(getPurpleScaleColor(4), 0.14)
+                    : withAlpha(getPurpleScaleColor(1), 0.1),
+                color:
+                  workflow?.status === "published"
+                    ? getPurpleScaleColor(5)
+                    : getPurpleScaleColor(2),
+              }}
             >
               {workflow?.status === "published" ? "Published" : "Draft"}
             </span>
             {saveStatus === "saving" && (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span
+                className="flex items-center gap-1 text-xs"
+                style={{ color: getPurpleScaleColor(1) }}
+              >
                 <Loader2 size={12} className="animate-spin" /> Saving...
               </span>
             )}
             {saveStatus === "saved" && (
-              <span className="flex items-center gap-1 text-xs text-green-600">
+              <span
+                className="flex items-center gap-1 text-xs"
+                style={{ color: getPurpleScaleColor(4) }}
+              >
                 <Check size={12} /> Saved
               </span>
             )}
@@ -669,7 +692,8 @@ export default function WorkflowBuilderPage({
           <button
             onClick={handleUndo}
             disabled={undoStack.current.length === 0}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+            style={{ color: getPurpleScaleColor(1) }}
             title="Undo (Cmd+Z)"
           >
             <Undo2 size={18} />
@@ -677,7 +701,8 @@ export default function WorkflowBuilderPage({
           <button
             onClick={handleRedo}
             disabled={redoStack.current.length === 0}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+            style={{ color: getPurpleScaleColor(1) }}
             title="Redo (Cmd+Shift+Z)"
           >
             <Redo2 size={18} />
@@ -686,18 +711,23 @@ export default function WorkflowBuilderPage({
             <>
               <button
                 onClick={() => setShowTestModal(true)}
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-2 transition-colors"
+                style={{ color: getPurpleScaleColor(1) }}
                 title="Test Workflow"
               >
                 <Play size={18} />
               </button>
               <button
                 onClick={handleToggleActivity}
-                className={`rounded-lg p-2 transition-colors ${
-                  showActivity
-                    ? "bg-purple-100 text-purple-700"
-                    : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                }`}
+                className="rounded-lg p-2 transition-colors"
+                style={{
+                  backgroundColor: showActivity
+                    ? withAlpha(getPurpleScaleColor(2), 0.14)
+                    : "transparent",
+                  color: showActivity
+                    ? getPurpleScaleColor(4)
+                    : getPurpleScaleColor(1),
+                }}
                 title="View Activity"
               >
                 <Activity size={18} />
@@ -708,13 +738,22 @@ export default function WorkflowBuilderPage({
             <>
               <button
                 onClick={handleUnpublish}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  borderColor: withAlpha(getPurpleScaleColor(4), 0.22),
+                  backgroundColor: withAlpha(getPurpleScaleColor(0), 0.04),
+                  color: getPurpleScaleColor(5),
+                }}
               >
                 Unpublish
               </button>
               <button
                 onClick={handlePublish}
-                className="rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white hover:bg-[#5b24b8]"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-transform hover:-translate-y-0.5"
+                style={{
+                  background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
+                  boxShadow: `0 12px 28px ${withAlpha(getPurpleScaleColor(4), 0.24)}`,
+                }}
               >
                 Republish
               </button>
@@ -722,7 +761,11 @@ export default function WorkflowBuilderPage({
           ) : (
             <button
               onClick={handlePublish}
-              className="rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white hover:bg-[#5b24b8]"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-transform hover:-translate-y-0.5"
+              style={{
+                background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
+                boxShadow: `0 12px 28px ${withAlpha(getPurpleScaleColor(4), 0.24)}`,
+              }}
             >
               Publish
             </button>

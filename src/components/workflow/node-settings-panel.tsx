@@ -18,6 +18,7 @@ import type {
 import { nodeTypeConfigs } from "./node-types";
 import type { WorkflowNodeData } from "./workflow-node";
 import { getDefaultNodeConfig } from "./node-defaults";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { X } from "lucide-react";
 import {
   TriggerForm,
@@ -58,11 +59,17 @@ export function NodeSettingsPanel({
 
   return (
     <div
-      className="flex h-full w-[340px] flex-col border-l border-gray-200 bg-white"
+      className="aligno-panel-soft flex h-full w-[340px] flex-col border-l"
+      style={{
+        borderColor: withAlpha(getPurpleScaleColor(4), 0.18),
+      }}
       data-testid="node-settings-panel"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+      <div
+        className="flex items-center justify-between border-b px-5 py-4"
+        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.12) }}
+      >
         <div className="flex items-center gap-2">
           <div
             className="flex h-6 w-6 items-center justify-center rounded-md"
@@ -79,7 +86,8 @@ export function NodeSettingsPanel({
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="rounded-md p-1"
+          style={{ color: getPurpleScaleColor(1) }}
         >
           <X size={16} />
         </button>
@@ -96,7 +104,12 @@ export function NodeSettingsPanel({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{
+              borderColor: withAlpha(getPurpleScaleColor(4), 0.18),
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              boxShadow: `0 1px 0 ${withAlpha(getPurpleScaleColor(0), 0.08)} inset`,
+            }}
           />
         </div>
 
@@ -105,16 +118,28 @@ export function NodeSettingsPanel({
       </div>
 
       {/* Footer */}
-      <div className="flex gap-3 border-t border-gray-100 px-5 py-4">
+      <div
+        className="flex gap-3 border-t px-5 py-4"
+        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.12) }}
+      >
         <button
           onClick={onClose}
-          className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="flex-1 rounded-lg border py-2 text-sm font-medium"
+          style={{
+            borderColor: withAlpha(getPurpleScaleColor(4), 0.18),
+            color: getPurpleScaleColor(5),
+            backgroundColor: withAlpha(getPurpleScaleColor(0), 0.04),
+          }}
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 rounded-lg bg-[#6C2BD9] py-2 text-sm font-medium text-white hover:bg-[#5b24b8]"
+          className="flex-1 rounded-lg py-2 text-sm font-medium text-white shadow-sm"
+          style={{
+            background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
+            boxShadow: `0 12px 24px ${withAlpha(getPurpleScaleColor(4), 0.2)}`,
+          }}
         >
           Save Node
         </button>

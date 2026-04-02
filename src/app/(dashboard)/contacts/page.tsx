@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useDeferredValue,
+} from "react";
 import {
   Search,
   Plus,
@@ -14,10 +20,14 @@ import {
   Trash2,
   ChevronDown,
 } from "lucide-react";
-import { getContacts, createContact, deleteContact } from "@/lib/data/contacts";
 import {
-  getTags,
-  getContactTagsMap,
+  ALIGNO_PURPLE_SCALE,
+  getPurpleScaleColor,
+  getStringPurpleColor,
+  withAlpha,
+} from "@/lib/design/aligno-theme";
+import { createContact, deleteContact, deleteContacts } from "@/lib/data/contacts";
+import {
   addTagToContact,
   createTag,
   deleteTag,
@@ -47,6 +57,22 @@ const emptyForm: ContactFormData = {
   phone: "",
 };
 
+function getContactDisplayName(contact: Pick<Contact, "first_name" | "last_name">) {
+  const firstName = contact.first_name?.trim() ?? "";
+  const lastName = contact.last_name?.trim() ?? "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  return fullName || "Unnamed Contact";
+}
+
+function getContactInitials(contact: Pick<Contact, "first_name" | "last_name">) {
+  const firstInitial = contact.first_name?.trim().charAt(0) ?? "";
+  const lastInitial = contact.last_name?.trim().charAt(0) ?? "";
+  const initials = `${firstInitial}${lastInitial}`.toUpperCase();
+
+  return initials || "UC";
+}
+
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +87,10 @@ export default function ContactsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const deferredSearch = useDeferredValue(search);
 
   // Tags state
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -74,16 +103,20 @@ export default function ContactsPage() {
   const fetchContacts = useCallback(async () => {
     try {
       setError(null);
-      const [data, tags] = await Promise.all([
-        getContacts("default"),
-        getTags("default"),
-      ]);
-      setContacts(data);
-      setAllTags(tags);
-      if (data.length > 0) {
-        const tagsMap = await getContactTagsMap(data.map((c) => c.id));
-        setContactTagsMap(tagsMap);
+      const response = await fetch("/api/contacts/summary?workspaceId=default", {
+        cache: "no-store",
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load contacts");
       }
+
+      setContacts((payload.contacts as Contact[]) ?? []);
+      setAllTags((payload.tags as Tag[]) ?? []);
+      setContactTagsMap(
+        (payload.contactTagsMap as Record<string, Tag[]>) ?? {}
+      );
     } catch (err) {
       console.error("Failed to fetch contacts:", err);
       setError("Failed to load contacts. Please try again.");
@@ -111,11 +144,12 @@ export default function ContactsPage() {
   }, []);
 
   const filtered = contacts.filter((c) => {
+    const normalizedSearch = deferredSearch.toLowerCase().trim();
     const matchesSearch =
-      search === "" ||
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-      c.email?.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone?.includes(search);
+      normalizedSearch === "" ||
+      getContactDisplayName(c).toLowerCase().includes(normalizedSearch) ||
+      c.email?.toLowerCase().includes(normalizedSearch) ||
+      c.phone?.includes(deferredSearch);
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -172,8 +206,11 @@ export default function ContactsPage() {
       setModalSelectedTags([]);
       setShowModal(false);
 
-      // Refresh the contact list
-      await fetchContacts();
+      setContacts((prev) => [newContact, ...prev]);
+      setContactTagsMap((prev) => ({
+        ...prev,
+        [newContact.id]: modalSelectedTags,
+      }));
     } catch (err) {
       console.error("Failed to create contact:", err);
       setSubmitError("Failed to create contact. Please try again.");
@@ -202,10 +239,14 @@ export default function ContactsPage() {
     }
   }
 
-  const TAG_COLORS = [
-    "#6C2BD9", "#2563EB", "#059669", "#D97706",
-    "#DC2626", "#DB2777", "#7C3AED", "#0891B2",
-  ];
+  const TAG_COLORS = [...ALIGNO_PURPLE_SCALE];
+  const primaryPurple = getPurpleScaleColor(3);
+  const deepPurple = getPurpleScaleColor(5);
+  const mutedPurple = getPurpleScaleColor(1);
+
+  function getTagColor(tag: Tag) {
+    return getStringPurpleColor(tag.id || tag.name);
+  }
 
   async function handleCreateModalTag() {
     const name = newModalTagName.trim();
@@ -255,13 +296,54 @@ export default function ContactsPage() {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((c) => c.id)));
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    if (
+      !confirm(
+        `Delete ${selectedIds.size} contact${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`
+      )
+    )
+      return;
+
+    setBulkDeleting(true);
+    try {
+      await deleteContacts(Array.from(selectedIds));
+      setContacts((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Failed to bulk delete contacts:", err);
+      alert("Some contacts could not be deleted. Please try again.");
+      // Refresh to get current state
+      fetchContacts();
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div className="aligno-page-surface flex h-full items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 size={32} className="animate-spin text-[#6C2BD9]" />
-          <p className="text-sm text-gray-500">Loading contacts...</p>
+          <Loader2 size={32} className="animate-spin" style={{ color: primaryPurple }} />
+          <p className="text-sm text-[#6B6481]">Loading contacts...</p>
         </div>
       </div>
     );
@@ -270,18 +352,21 @@ export default function ContactsPage() {
   // Error state
   if (error && contacts.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div className="aligno-page-surface flex h-full items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
             <AlertCircle size={24} className="text-red-500" />
           </div>
-          <p className="text-sm text-gray-700">{error}</p>
+          <p className="text-sm text-[#33254F]">{error}</p>
           <button
             onClick={() => {
               setLoading(true);
               fetchContacts();
             }}
-            className="mt-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white hover:bg-[#5b24b8] transition-colors"
+            className="mt-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors"
+            style={{
+              background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
+            }}
           >
             Try Again
           </button>
@@ -291,20 +376,20 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="aligno-page-surface min-h-full p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-[#21173A]">Contacts</h1>
+          <p className="mt-1 text-sm text-[#6B6481]">
             {contacts.length} contact{contacts.length !== 1 ? "s" : ""} total
             {activeCount > 0 && (
-              <span className="ml-1 text-gray-400">
+              <span className="ml-1 text-[#8D88A0]">
                 &middot; {activeCount} active
               </span>
             )}
             {archivedCount > 0 && (
-              <span className="ml-1 text-gray-400">
+              <span className="ml-1 text-[#8D88A0]">
                 &middot; {archivedCount} archived
               </span>
             )}
@@ -312,7 +397,10 @@ export default function ContactsPage() {
         </div>
         <button
           onClick={openModal}
-          className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#5b24b8] transition-colors"
+          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+          style={{
+            background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
+          }}
         >
           <Plus size={16} />
           Add Contact
@@ -324,14 +412,18 @@ export default function ContactsPage() {
         <div className="relative flex-1">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8D88A0]"
           />
           <input
             type="text"
             placeholder="Search by name, email, or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9]"
+            className="aligno-panel-soft w-full rounded-lg py-2 pl-9 pr-3 text-sm text-[#21173A] placeholder-[#8D88A0] focus:outline-none focus:ring-1"
+            style={{
+              border: `1px solid ${withAlpha(mutedPurple, 0.18)}`,
+              boxShadow: `0 8px 20px ${withAlpha(mutedPurple, 0.06)}`,
+            }}
           />
         </div>
         <div className="flex gap-1">
@@ -339,11 +431,12 @@ export default function ContactsPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                statusFilter === s
-                  ? "bg-[#6C2BD9] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className="rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors"
+              style={{
+                backgroundColor:
+                  statusFilter === s ? primaryPurple : withAlpha(mutedPurple, 0.14),
+                color: statusFilter === s ? "#FFFFFF" : "#5A4B78",
+              }}
             >
               {s}
             </button>
@@ -368,70 +461,123 @@ export default function ContactsPage() {
         </div>
       )}
 
+      {/* Bulk actions bar */}
+      {selectedIds.size > 0 && (
+        <div
+          className="mb-3 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm"
+          style={{ backgroundColor: withAlpha(primaryPurple, 0.08), border: `1px solid ${withAlpha(primaryPurple, 0.18)}` }}
+        >
+          <span className="font-medium" style={{ color: deepPurple }}>
+            {selectedIds.size} selected
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkDeleting}
+            className="ml-auto flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+          >
+            {bulkDeleting ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Trash2 size={12} />
+            )}
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#6B6481] transition-colors hover:bg-white/60"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="aligno-panel overflow-hidden rounded-xl">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <tr className="border-b border-[#EEE6FF] bg-white/70">
+              <th className="w-10 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-gray-300 accent-[#6C2BD9] cursor-pointer"
+                />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Name
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Email
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Phone
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Tags
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Added
               </th>
               <th className="w-12 px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[#EEE6FF]">
             {filtered.map((contact) => {
-              const initials = `${contact.first_name[0] ?? ""}${contact.last_name[0] ?? ""}`.toUpperCase();
+              const initials = getContactInitials(contact);
+              const displayName = getContactDisplayName(contact);
 
               return (
                 <tr
                   key={contact.id}
                   onClick={() => setSelectedContactId(contact.id)}
-                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                  className="cursor-pointer transition-colors hover:bg-[#FBF7FF]"
+                  style={selectedIds.has(contact.id) ? { backgroundColor: withAlpha(primaryPurple, 0.06) } : undefined}
                 >
                   <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(contact.id)}
+                      onChange={() => toggleSelect(contact.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 rounded border-gray-300 accent-[#6C2BD9] cursor-pointer"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F3EAFD] text-xs font-medium text-[#6C2BD9]">
+                      <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: withAlpha(primaryPurple, 0.12),
+                          color: deepPurple,
+                        }}
+                      >
                         {initials}
                       </div>
-                      <span className="font-medium text-gray-900">
-                        {contact.first_name} {contact.last_name}
-                      </span>
+                      <span className="font-medium text-[#21173A]">{displayName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     {contact.email ? (
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <Mail size={13} className="shrink-0 text-gray-400" />
+                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
+                        <Mail size={13} className="shrink-0 text-[#8D88A0]" />
                         {contact.email}
                       </div>
                     ) : (
-                      <span className="text-gray-400">&mdash;</span>
+                      <span className="text-[#AAA3BC]">&mdash;</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {contact.phone ? (
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <Phone size={13} className="shrink-0 text-gray-400" />
+                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
+                        <Phone size={13} className="shrink-0 text-[#8D88A0]" />
                         {contact.phone}
                       </div>
                     ) : (
-                      <span className="text-gray-400">&mdash;</span>
+                      <span className="text-[#AAA3BC]">&mdash;</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -440,28 +586,31 @@ export default function ContactsPage() {
                         <span
                           key={tag.id}
                           className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                          style={{ backgroundColor: tag.color ?? "#6C2BD9" }}
+                          style={{ backgroundColor: getTagColor(tag) }}
                         >
                           {tag.name}
                         </span>
                       ))}
                       {(!contactTagsMap[contact.id] || contactTagsMap[contact.id].length === 0) && (
-                        <span className="text-gray-400">&mdash;</span>
+                        <span className="text-[#AAA3BC]">&mdash;</span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        contact.status === "active"
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
+                      className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                      style={{
+                        backgroundColor:
+                          contact.status === "active"
+                            ? withAlpha(primaryPurple, 0.14)
+                            : withAlpha(mutedPurple, 0.16),
+                        color: contact.status === "active" ? deepPurple : "#6B6481",
+                      }}
                     >
                       {contact.status === "active" ? "Active" : "Archived"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-[#6B6481]">
                     {formatDate(contact.created_at)}
                   </td>
                   <td className="px-4 py-3">
@@ -470,7 +619,7 @@ export default function ContactsPage() {
                         e.stopPropagation();
                         handleDelete(
                           contact.id,
-                          `${contact.first_name} ${contact.last_name}`
+                          displayName
                         );
                       }}
                       disabled={deletingId === contact.id}
@@ -492,9 +641,9 @@ export default function ContactsPage() {
 
         {filtered.length === 0 && contacts.length > 0 && (
           <div className="px-4 py-12 text-center">
-            <Search size={32} className="mx-auto mb-3 text-gray-300" />
-            <p className="text-sm font-medium text-gray-500">No contacts found</p>
-            <p className="mt-1 text-xs text-gray-400">
+            <Search size={32} className="mx-auto mb-3 text-[#C4BDD6]" />
+            <p className="text-sm font-medium text-[#6B6481]">No contacts found</p>
+            <p className="mt-1 text-xs text-[#8D88A0]">
               Try adjusting your search or filter criteria.
             </p>
           </div>
@@ -502,14 +651,17 @@ export default function ContactsPage() {
 
         {contacts.length === 0 && !error && (
           <div className="px-4 py-16 text-center">
-            <Users size={40} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-sm font-medium text-gray-700">No contacts yet</p>
-            <p className="mt-1 text-sm text-gray-400">
+            <Users size={40} className="mx-auto mb-4 text-[#C4BDD6]" />
+            <p className="text-sm font-medium text-[#33254F]">No contacts yet</p>
+            <p className="mt-1 text-sm text-[#8D88A0]">
               Get started by adding your first contact.
             </p>
             <button
               onClick={openModal}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#5b24b8] transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+              style={{
+                background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
+              }}
             >
               <UserPlus size={16} />
               Add Your First Contact
@@ -542,14 +694,17 @@ export default function ContactsPage() {
           />
 
           {/* Modal content */}
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl mx-4">
+          <div className="aligno-panel relative z-10 mx-4 w-full max-w-md rounded-2xl p-6 shadow-2xl">
             {/* Header */}
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F3EAFD]">
-                  <UserPlus size={20} className="text-[#6C2BD9]" />
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: withAlpha(primaryPurple, 0.14) }}
+                >
+                  <UserPlus size={20} style={{ color: deepPurple }} />
                 </div>
-                <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+                <h2 id="modal-title" className="text-lg font-semibold text-[#21173A]">
                   Add Contact
                 </h2>
               </div>
@@ -705,7 +860,7 @@ export default function ContactsPage() {
                       <span
                         key={tag.id}
                         className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-                        style={{ backgroundColor: tag.color ?? "#6C2BD9" }}
+                        style={{ backgroundColor: getTagColor(tag) }}
                       >
                         {tag.name}
                         <button
@@ -732,7 +887,8 @@ export default function ContactsPage() {
                       setShowModalTagDropdown(!showModalTagDropdown)
                     }
                     disabled={submitting}
-                    className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-[#6C2BD9] hover:text-[#6C2BD9] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium text-[#6B6481] transition-colors disabled:opacity-50"
+                    style={{ borderColor: withAlpha(primaryPurple, 0.24) }}
                   >
                     <Plus size={12} />
                     Add tag
@@ -740,7 +896,7 @@ export default function ContactsPage() {
                   </button>
 
                   {showModalTagDropdown && (
-                    <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    <div className="aligno-panel absolute left-0 top-full z-10 mt-1 w-56 rounded-lg py-1 shadow-lg">
                       {allTags.filter(
                         (t) => !modalSelectedTags.some((s) => s.id === t.id)
                       ).length > 0 && (
@@ -753,7 +909,7 @@ export default function ContactsPage() {
                             .map((tag) => (
                               <div
                                 key={tag.id}
-                                className="flex items-center justify-between px-3 py-2 hover:bg-gray-50"
+                                className="flex items-center justify-between px-3 py-2 hover:bg-[#FBF7FF]"
                               >
                                 <button
                                   type="button"
@@ -769,7 +925,7 @@ export default function ContactsPage() {
                                   <span
                                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                                     style={{
-                                      backgroundColor: tag.color ?? "#6C2BD9",
+                                      backgroundColor: getTagColor(tag),
                                     }}
                                   />
                                   {tag.name}
@@ -810,13 +966,17 @@ export default function ContactsPage() {
                               }
                             }}
                             placeholder="Create new tag..."
-                            className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none"
+                            className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none"
+                            style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
                           />
                           <button
                             type="button"
                             onClick={handleCreateModalTag}
                             disabled={!newModalTagName.trim()}
-                            className="rounded bg-[#6C2BD9] px-2 py-1 text-xs font-medium text-white hover:bg-[#5b24b8] disabled:opacity-50 transition-colors"
+                            className="rounded px-2 py-1 text-xs font-medium text-white disabled:opacity-50 transition-colors"
+                            style={{
+                              background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
+                            }}
                           >
                             Add
                           </button>
@@ -841,14 +1001,17 @@ export default function ContactsPage() {
                   type="button"
                   onClick={closeModal}
                   disabled={submitting}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#5A4B78] hover:bg-[#FBF7FF] transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#5b24b8] transition-colors disabled:opacity-70"
+                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-70"
+                  style={{
+                    background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
+                  }}
                 >
                   {submitting ? (
                     <>

@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  getPurpleScaleColor,
+  getStatusPurple,
+  withAlpha,
+} from "@/lib/design/aligno-theme";
 import type { Deal, Pipeline, Stage, Contact } from "@/types/crm";
 import { Loader2, BarChart3, TrendingUp, Users, DollarSign } from "lucide-react";
 
@@ -113,10 +118,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
+      <div className="aligno-page-surface flex h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <p className="text-sm text-gray-500">Loading dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#8A5DDE]" />
+          <p className="text-sm text-[#6B6481]">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -149,10 +154,12 @@ export default function DashboardPage() {
   // Stage breakdown for bar chart
   const stageData = pipelineStages.map((stage) => {
     const stageDeals = pipelineDeals.filter((d) => d.stage_id === stage.id);
+    const color = getPurpleScaleColor(stage.position);
+
     return {
       id: stage.id,
       name: stage.name,
-      color: stage.color ?? "#6B7280",
+      color,
       count: stageDeals.length,
       value: stageDeals.reduce((sum, d) => sum + d.value, 0),
     };
@@ -170,9 +177,9 @@ export default function DashboardPage() {
 
   // Status split for pie
   const statusData = [
-    { label: "Open", count: openDeals.length, color: "#3B82F6" },
-    { label: "Won", count: wonDeals.length, color: "#10B981" },
-    { label: "Lost", count: lostDeals.length, color: "#EF4444" },
+    { label: "Open", count: openDeals.length, color: getStatusPurple("open") },
+    { label: "Won", count: wonDeals.length, color: getStatusPurple("won") },
+    { label: "Lost", count: lostDeals.length, color: getStatusPurple("lost") },
   ].filter((s) => s.count > 0);
 
   const statusTotal = statusData.reduce((sum, s) => sum + s.count, 0);
@@ -194,7 +201,8 @@ export default function DashboardPage() {
 
   // Helper to get stage info for a deal
   function getStageColor(stageId: string): string {
-    return stages.find((s) => s.id === stageId)?.color ?? "#6B7280";
+    const stage = stages.find((s) => s.id === stageId);
+    return stage ? getPurpleScaleColor(stage.position) : getPurpleScaleColor(0);
   }
 
   function getStageName(stageId: string): string {
@@ -203,12 +211,42 @@ export default function DashboardPage() {
 
   // Recent deals (already sorted by created_at desc from the DB query)
   const recentDeals = pipelineDeals.slice(0, 5);
+  const kpiCards = [
+    {
+      label: "Total Pipeline",
+      value: `$${totalValue.toLocaleString()}`,
+      detail: `${pipelineDeals.length} deal${pipelineDeals.length === 1 ? "" : "s"} across ${pipelineStages.length} stage${pipelineStages.length === 1 ? "" : "s"}`,
+      icon: DollarSign,
+      accent: getPurpleScaleColor(5),
+    },
+    {
+      label: "Won Revenue",
+      value: `$${wonValue.toLocaleString()}`,
+      detail: `${wonDeals.length} deal${wonDeals.length === 1 ? "" : "s"} closed`,
+      icon: TrendingUp,
+      accent: getPurpleScaleColor(4),
+    },
+    {
+      label: "Open Deals",
+      value: openDeals.length.toString(),
+      detail: `$${openDeals.reduce((s, d) => s + d.value, 0).toLocaleString()} in pipeline`,
+      icon: BarChart3,
+      accent: getPurpleScaleColor(3),
+    },
+    {
+      label: "Avg Deal Size",
+      value: `$${avgDealSize.toLocaleString()}`,
+      detail: `${contacts.length} contact${contacts.length === 1 ? "" : "s"} total`,
+      icon: Users,
+      accent: getPurpleScaleColor(1),
+    },
+  ];
 
   return (
-    <div className="p-6">
+    <div className="aligno-page-surface min-h-full p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-[#21173A]">Dashboard</h1>
+        <p className="mt-1 text-sm text-[#6B6481]">
           {pipeline
             ? `Pipeline overview for ${pipeline.name}`
             : "Pipeline overview"}
@@ -217,78 +255,48 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-4 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-gray-400" />
-            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-              Total Pipeline
-            </p>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">
-            ${totalValue.toLocaleString()}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            {pipelineDeals.length} deal{pipelineDeals.length !== 1 && "s"}{" "}
-            across {pipelineStages.length} stage
-            {pipelineStages.length !== 1 && "s"}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-green-500" />
-            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-              Won Revenue
-            </p>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-green-600">
-            ${wonValue.toLocaleString()}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            {wonDeals.length} deal{wonDeals.length !== 1 && "s"} closed
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-blue-500" />
-            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-              Open Deals
-            </p>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-blue-600">
-            {openDeals.length}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            ${openDeals.reduce((s, d) => s + d.value, 0).toLocaleString()} in
-            pipeline
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-gray-400" />
-            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-              Avg Deal Size
-            </p>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">
-            ${avgDealSize.toLocaleString()}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            {contacts.length} contact{contacts.length !== 1 && "s"} total
-          </p>
-        </div>
+        {kpiCards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <div
+              key={card.label}
+              className="aligno-panel rounded-xl p-5"
+              style={{
+                borderColor: withAlpha(card.accent, 0.24),
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: withAlpha(card.accent, 0.14) }}
+                >
+                  <Icon className="h-4 w-4" style={{ color: card.accent }} />
+                </div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#7B7590]">
+                  {card.label}
+                </p>
+              </div>
+              <p className="mt-3 text-2xl font-bold" style={{ color: card.accent }}>
+                {card.value}
+              </p>
+              <p className="mt-1 text-xs text-[#6B6481]">{card.detail}</p>
+            </div>
+          );
+        })}
       </div>
 
       {!hasData ? (
         /* Empty state */
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12">
+        <div className="aligno-panel rounded-xl border-dashed p-12">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4 rounded-full bg-gray-100 p-4">
-              <BarChart3 className="h-8 w-8 text-gray-400" />
+            <div className="mb-4 rounded-full bg-[#F1E8FF] p-4">
+              <BarChart3 className="h-8 w-8 text-[#8A5DDE]" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-[#21173A]">
               No data yet
             </h2>
-            <p className="mt-2 max-w-sm text-sm text-gray-500">
+            <p className="mt-2 max-w-sm text-sm text-[#6B6481]">
               Your dashboard will come to life once you start adding deals to
               your pipeline. Head over to the Pipeline page to create your first
               deal.
@@ -299,8 +307,8 @@ export default function DashboardPage() {
         <>
           <div className="grid grid-cols-3 gap-6">
             {/* Bar Chart - Value by Stage */}
-            <div className="col-span-2 rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+            <div className="aligno-panel col-span-2 rounded-xl p-5">
+              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
                 Pipeline Value by Stage
               </h2>
               {stageData.length > 0 ? (
@@ -308,16 +316,19 @@ export default function DashboardPage() {
                   {stageData.map((stage) => (
                     <div key={stage.id}>
                       <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="font-medium text-gray-700">
+                        <span className="font-medium text-[#3B2E56]">
                           {stage.name}
                         </span>
-                        <span className="text-gray-500">
+                        <span className="text-[#6B6481]">
                           {formatCurrency(stage.value)} &middot; {stage.count}{" "}
                           deal
                           {stage.count !== 1 && "s"}
                         </span>
                       </div>
-                      <div className="h-6 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="aligno-panel-soft h-6 w-full overflow-hidden rounded-full"
+                        style={{ border: `1px solid ${withAlpha(stage.color, 0.18)}` }}
+                      >
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -325,7 +336,8 @@ export default function DashboardPage() {
                               (stage.value / maxStageValue) * 100,
                               stage.value > 0 ? 2 : 0
                             )}%`,
-                            backgroundColor: stage.color,
+                            background: `linear-gradient(90deg, ${withAlpha(stage.color, 0.78)}, ${stage.color})`,
+                            boxShadow: `0 0 18px ${withAlpha(stage.color, 0.28)}`,
                           }}
                         />
                       </div>
@@ -333,15 +345,15 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-gray-400">
+                <p className="py-8 text-center text-sm text-[#8D88A0]">
                   No stages configured yet
                 </p>
               )}
             </div>
 
             {/* Donut Chart - Stage Distribution */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+            <div className="aligno-panel rounded-xl p-5">
+              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
                 Value Distribution
               </h2>
               {donutSegments.length > 0 ? (
@@ -356,13 +368,13 @@ export default function DashboardPage() {
                           opacity={0.85}
                         />
                       ))}
-                      <circle cx="90" cy="90" r="45" fill="white" />
+                      <circle cx="90" cy="90" r="45" fill="#FCFAFF" />
                       <text
                         x="90"
                         y="85"
                         textAnchor="middle"
                         className="text-xs font-medium"
-                        fill="#374151"
+                        fill="#7B7590"
                       >
                         Total
                       </text>
@@ -371,7 +383,7 @@ export default function DashboardPage() {
                         y="102"
                         textAnchor="middle"
                         className="text-sm font-bold"
-                        fill="#111827"
+                        fill="#21173A"
                       >
                         {formatCurrency(donutTotal)}
                       </text>
@@ -387,8 +399,8 @@ export default function DashboardPage() {
                           className="h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: seg.color }}
                         />
-                        <span className="flex-1 text-gray-600">{seg.name}</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="flex-1 text-[#6B6481]">{seg.name}</span>
+                        <span className="font-medium text-[#21173A]">
                           {formatCurrency(seg.value)}
                         </span>
                       </div>
@@ -397,7 +409,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div className="flex h-[220px] items-center justify-center">
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-[#8D88A0]">
                     No deal values to display
                   </p>
                 </div>
@@ -408,8 +420,8 @@ export default function DashboardPage() {
           {/* Second row */}
           <div className="mt-6 grid grid-cols-3 gap-6">
             {/* Deal Status Pie */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+            <div className="aligno-panel rounded-xl p-5">
+              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
                 Deal Status
               </h2>
               {statusData.length > 0 ? (
@@ -424,13 +436,13 @@ export default function DashboardPage() {
                           opacity={0.85}
                         />
                       ))}
-                      <circle cx="70" cy="70" r="35" fill="white" />
+                      <circle cx="70" cy="70" r="35" fill="#FCFAFF" />
                       <text
                         x="70"
                         y="73"
                         textAnchor="middle"
                         className="text-sm font-bold"
-                        fill="#111827"
+                        fill="#21173A"
                       >
                         {statusTotal}
                       </text>
@@ -446,8 +458,8 @@ export default function DashboardPage() {
                           className="h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: s.color }}
                         />
-                        <span className="flex-1 text-gray-600">{s.label}</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="flex-1 text-[#6B6481]">{s.label}</span>
+                        <span className="font-medium text-[#21173A]">
                           {s.count}
                         </span>
                       </div>
@@ -456,14 +468,14 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div className="flex h-[180px] items-center justify-center">
-                  <p className="text-sm text-gray-400">No deals yet</p>
+                  <p className="text-sm text-[#8D88A0]">No deals yet</p>
                 </div>
               )}
             </div>
 
             {/* Recent Deals */}
-            <div className="col-span-2 rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+            <div className="aligno-panel col-span-2 rounded-xl p-5">
+              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
                 Recent Deals
               </h2>
               {recentDeals.length > 0 ? (
@@ -471,7 +483,10 @@ export default function DashboardPage() {
                   {recentDeals.map((deal) => (
                     <div
                       key={deal.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2.5"
+                      className="aligno-panel-soft flex items-center justify-between rounded-lg px-3 py-2.5"
+                      style={{
+                        border: `1px solid ${withAlpha(getStageColor(deal.stage_id), 0.14)}`,
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -481,18 +496,21 @@ export default function DashboardPage() {
                           }}
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-[#21173A]">
                             {deal.title}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-[#6B6481]">
                             {getStageName(deal.stage_id)}
                             {deal.status !== "open" && (
                               <span
-                                className={`ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                                  deal.status === "won"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
+                                className="ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium"
+                                style={{
+                                  backgroundColor: withAlpha(
+                                    getStatusPurple(deal.status),
+                                    0.14
+                                  ),
+                                  color: getStatusPurple(deal.status),
+                                }}
                               >
                                 {deal.status.toUpperCase()}
                               </span>
@@ -500,7 +518,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-semibold text-[#21173A]">
                         ${deal.value.toLocaleString()}
                       </span>
                     </div>
@@ -508,7 +526,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="flex h-[180px] items-center justify-center">
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-[#8D88A0]">
                     No deals to display yet
                   </p>
                 </div>

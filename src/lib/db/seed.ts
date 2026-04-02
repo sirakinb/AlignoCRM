@@ -1,4 +1,5 @@
 import { insforge } from "@/lib/insforge/client";
+import { ALIGNO_PURPLE_SCALE } from "@/lib/design/aligno-theme";
 
 export async function seed() {
   // 1. Create workspace
@@ -22,7 +23,7 @@ export async function seed() {
     .select();
 
   // 3. Create stages for each pipeline
-  const stageColors = ["#6366f1", "#8b5cf6", "#a855f7", "#f59e0b", "#10b981"];
+  const stageColors = [...ALIGNO_PURPLE_SCALE];
   const salesStages = [
     "Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won",
   ];

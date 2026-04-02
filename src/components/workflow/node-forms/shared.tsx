@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 
 const AVAILABLE_VARIABLES = [
   "{{contact.email}}",
@@ -14,7 +15,7 @@ const AVAILABLE_VARIABLES = [
 ];
 
 export const inputClass =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500";
+  "w-full rounded-lg border border-[#CFAFF5] bg-white/90 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#6E2ABD] focus:ring-2 focus:ring-[#B97AF6]/20";
 
 export const labelClass = "mb-1 block text-xs font-medium text-gray-700";
 
@@ -29,21 +30,35 @@ export function InsertVariableDropdown({ onInsert }: InsertVariableDropdownProps
     <div className="relative">
       <button
         type="button"
-        className="text-xs font-medium text-purple-600 hover:text-purple-700"
+        className="text-xs font-medium transition-colors"
+        style={{ color: getPurpleScaleColor(4) }}
         onClick={() => setOpen(!open)}
       >
         Insert Variable
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+        <div
+          className="aligno-panel absolute right-0 z-10 mt-1 w-48 rounded-lg py-1 shadow-lg"
+          style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+        >
           {AVAILABLE_VARIABLES.map((v) => (
             <button
               key={v}
               type="button"
-              className="block w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-purple-50"
+              className="block w-full px-3 py-1.5 text-left text-xs transition-colors"
+              style={{ color: "#43385e" }}
               onClick={() => {
                 onInsert(v);
                 setOpen(false);
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.backgroundColor = withAlpha(
+                  getPurpleScaleColor(0),
+                  0.1
+                );
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor = "transparent";
               }}
             >
               {v}

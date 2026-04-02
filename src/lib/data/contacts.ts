@@ -79,13 +79,51 @@ export async function archiveContact(id: string) {
 }
 
 export async function deleteContact(id: string) {
-  // Delete related records first
+  // Delete related records that may block deletion
   await insforge.database.from("contact_tags").delete().eq("contact_id", id);
+  await insforge.database.from("message_logs").delete().eq("contact_id", id);
+  await insforge.database.from("business_events").delete().eq("record_id", id).eq("record_type", "contact");
+
+  // Clean up workflow enrollments and their cascading records
+  const { data: enrollments } = await insforge.database
+    .from("workflow_enrollments")
+    .select("id")
+    .eq("record_id", id)
+    .eq("record_type", "contact");
+
+  if (enrollments && enrollments.length > 0) {
+    const enrollmentIds = enrollments.map((e: { id: string }) => e.id);
+    // Clean up approval records for these enrollments
+    const { data: approvalRequests } = await insforge.database
+      .from("approval_requests")
+      .select("id")
+      .in("enrollment_id", enrollmentIds);
+    if (approvalRequests && approvalRequests.length > 0) {
+      const requestIds = approvalRequests.map((r: { id: string }) => r.id);
+      await insforge.database.from("approval_actions").delete().in("request_id", requestIds);
+      await insforge.database.from("approval_requests").delete().in("id", requestIds);
+    }
+    await insforge.database.from("execution_steps").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("ai_outputs").delete().in("enrollment_id", enrollmentIds);
+    await insforge.database.from("workflow_enrollments").delete().eq("record_id", id).eq("record_type", "contact");
+  }
+
+  // Set null on deals referencing this contact (in case ON DELETE SET NULL isn't working)
+  await insforge.database.from("deals").update({ contact_id: null }).eq("contact_id", id);
 
   const { error } = await insforge.database
     .from("contacts")
     .delete()
     .eq("id", id);
 
-  if (error) throw error;
+  if (error) {
+    console.error(`[deleteContact] Failed to delete contact ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function deleteContacts(ids: string[]) {
+  for (const id of ids) {
+    await deleteContact(id);
+  }
 }

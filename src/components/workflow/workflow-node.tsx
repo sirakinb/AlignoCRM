@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
+import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { NodeType, type NodeConfig } from "@/types/workflow";
 import { nodeTypeConfigs } from "./node-types";
 import { Check, X, Clock } from "lucide-react";
@@ -23,7 +24,8 @@ function StatusIndicator({
   switch (status) {
     case "completed":
       return (
-        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 shadow-sm">
+        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
+          style={{ backgroundColor: getPurpleScaleColor(5) }}>
           <Check size={12} className="text-white" strokeWidth={3} />
         </div>
       );
@@ -35,13 +37,15 @@ function StatusIndicator({
       );
     case "waiting":
       return (
-        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 shadow-sm">
+        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
+          style={{ backgroundColor: getPurpleScaleColor(1) }}>
           <Clock size={10} className="text-white" strokeWidth={3} />
         </div>
       );
     case "active":
       return (
-        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 shadow-sm">
+        <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
+          style={{ backgroundColor: getPurpleScaleColor(4) }}>
           <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
         </div>
       );
@@ -61,18 +65,40 @@ function WorkflowNodeComponent({
       className={`
         relative min-w-[160px] max-w-[200px] rounded-2xl border-2 px-4 py-3
         shadow-sm transition-all
-        ${selected ? "shadow-md ring-2 ring-offset-2" : "shadow-sm hover:shadow-md"}
-        ${isActive ? "ring-2 ring-green-400 ring-offset-2 shadow-[0_0_12px_rgba(34,197,94,0.3)]" : ""}
+        ${selected ? "shadow-md" : "shadow-sm hover:shadow-md"}
+        ${isActive ? "shadow-md" : ""}
       `}
       style={{
         backgroundColor: config.bgTint,
-        borderColor: selected
+        borderLeftColor: selected
           ? config.color
           : isActive
-            ? "#22c55e"
+            ? getPurpleScaleColor(4)
+            : config.borderColor + "40",
+        borderRightColor: selected
+          ? config.color
+          : isActive
+            ? getPurpleScaleColor(4)
+            : config.borderColor + "40",
+        borderBottomColor: selected
+          ? config.color
+          : isActive
+            ? getPurpleScaleColor(4)
             : config.borderColor + "40",
         borderTopColor: config.borderColor,
         borderTopWidth: "3px",
+        boxShadow: [
+          selected
+            ? `0 0 0 2px ${withAlpha(config.color, 0.2)}`
+            : isActive
+              ? `0 0 0 2px ${withAlpha(getPurpleScaleColor(4), 0.22)}`
+              : null,
+          isActive
+            ? `0 0 12px ${withAlpha(getPurpleScaleColor(4), 0.26)}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(", ") || undefined,
       }}
       data-testid={`workflow-node-${data.nodeType}`}
     >
@@ -83,7 +109,10 @@ function WorkflowNodeComponent({
 
       {/* Active contact count badge */}
       {data.activeContactCount != null && data.activeContactCount > 0 && (
-        <div className="absolute -bottom-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1.5 text-[10px] font-bold text-white shadow-sm">
+        <div
+          className="absolute -bottom-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white shadow-sm"
+          style={{ backgroundColor: getPurpleScaleColor(5) }}
+        >
           {data.activeContactCount}
         </div>
       )}
@@ -93,7 +122,8 @@ function WorkflowNodeComponent({
         <Handle
           type="target"
           position={Position.Left}
-          className="!h-3 !w-3 !rounded-full !border-2 !border-white !bg-gray-300"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-white"
+          style={{ backgroundColor: getPurpleScaleColor(1) }}
         />
       )}
 
@@ -126,15 +156,15 @@ function WorkflowNodeComponent({
             type="source"
             position={Position.Right}
             id="yes"
-            className="!h-3 !w-3 !rounded-full !border-2 !border-white !bg-green-400"
-            style={{ top: "35%" }}
+            className="!h-3 !w-3 !rounded-full !border-2 !border-white"
+            style={{ top: "35%", backgroundColor: getPurpleScaleColor(4) }}
           />
           <Handle
             type="source"
             position={Position.Right}
             id="no"
-            className="!h-3 !w-3 !rounded-full !border-2 !border-white !bg-red-400"
-            style={{ top: "65%" }}
+            className="!h-3 !w-3 !rounded-full !border-2 !border-white"
+            style={{ top: "65%", backgroundColor: getPurpleScaleColor(2) }}
           />
         </>
       ) : (
@@ -142,7 +172,8 @@ function WorkflowNodeComponent({
           <Handle
             type="source"
             position={Position.Right}
-            className="!h-3 !w-3 !rounded-full !border-2 !border-white !bg-gray-300"
+            className="!h-3 !w-3 !rounded-full !border-2 !border-white"
+            style={{ backgroundColor: getPurpleScaleColor(1) }}
           />
         )
       )}

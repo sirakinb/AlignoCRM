@@ -15,3 +15,8 @@ playwright.config.ts
 *.test.tsx
 *.spec.ts
 *.spec.tsx
+
+# Build cache (too large for upload)
+.next/cache/webpack
+node_modules
+.git
