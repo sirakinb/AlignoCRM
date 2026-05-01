@@ -63,6 +63,8 @@ export function Sidebar({ width = 224 }: SidebarProps) {
     .toUpperCase();
 
   const handleLogout = async () => {
+    if (!window.confirm("Log out of AlignoCRM?")) return;
+
     await signOut();
     router.push("/sign-in");
   };
