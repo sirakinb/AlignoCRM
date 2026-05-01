@@ -127,8 +127,19 @@ export function Sidebar({ width = 224 }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Settings */}
-      <div className="px-3 pb-2">
+      {/* Utility Navigation */}
+      <div className="space-y-1 px-3 pb-2">
+        <Link
+          href="/docs"
+          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            pathname.startsWith("/docs")
+              ? "bg-[#F3EAFD] text-[#6C2BD9]"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          }`}
+        >
+          <BookOpen size={18} className="shrink-0" />
+          <span className="truncate">Docs</span>
+        </Link>
         <Link
           href="/settings"
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
