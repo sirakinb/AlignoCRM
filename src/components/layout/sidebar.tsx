@@ -19,8 +19,6 @@ const navItems = [
   { label: "Docs", href: "/docs", icon: BookOpen },
 ] as const;
 
-const SIDEBAR_BUILD_LABEL = "docs-v2";
-
 interface SidebarProps {
   width?: number;
 }
@@ -96,14 +94,9 @@ export function Sidebar({ width = 224 }: SidebarProps) {
           height={40}
           className="h-10 w-10 shrink-0 object-contain"
         />
-        <div className="min-w-0">
-          <span className="block truncate text-lg font-bold tracking-tight text-gray-900">
-            AlignoCRM
-          </span>
-          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A5DDE]">
-            {SIDEBAR_BUILD_LABEL}
-          </span>
-        </div>
+        <span className="min-w-0 truncate text-lg font-bold tracking-tight text-gray-900">
+          AlignoCRM
+        </span>
       </div>
 
       {/* Navigation */}
