@@ -7,7 +7,20 @@ type CookieUser = {
   id: string;
   email: string;
   profile?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
 };
+
+function mergeUserProfile(user: {
+  profile?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  const profile = {
+    ...(user.metadata ?? {}),
+    ...(user.profile ?? {}),
+  };
+
+  return Object.keys(profile).length > 0 ? profile : null;
+}
 
 async function fetchCurrentUser(token: string, fallbackUser: CookieUser | null) {
   let user = fallbackUser;
@@ -25,7 +38,8 @@ async function fetchCurrentUser(token: string, fallbackUser: CookieUser | null) 
       user = {
         id: session.user.id,
         email: session.user.email,
-        profile: session.user.profile ?? fallbackUser?.profile ?? null,
+        metadata: session.user.metadata ?? fallbackUser?.metadata ?? null,
+        profile: mergeUserProfile(session.user) ?? fallbackUser?.profile ?? null,
       };
     }
   }
@@ -62,6 +76,7 @@ function setUserCookie(response: NextResponse, user: CookieUser) {
       id: user.id,
       email: user.email,
       profile: user.profile ?? null,
+      metadata: user.metadata ?? null,
     }),
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

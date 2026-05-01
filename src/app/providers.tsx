@@ -12,11 +12,18 @@ export function Providers({
   children: React.ReactNode;
   initialState?: InitialAuthState;
 }) {
+  const metadata =
+    ((initialState?.user as { metadata?: Record<string, unknown> } | null)?.metadata ??
+      {}) as Record<string, unknown>;
+  const profile = {
+    ...metadata,
+    ...(((initialState?.user?.profile as Record<string, unknown> | null) ?? {})),
+  };
   const serverUser = initialState?.user
     ? {
-        id: initialState.userId as string,
+        id: (initialState.userId ?? initialState.user.id) as string,
         email: initialState.user.email as string,
-        profile: (initialState.user.profile as Record<string, unknown>) || null,
+        profile: Object.keys(profile).length > 0 ? profile : null,
       }
     : null;
 

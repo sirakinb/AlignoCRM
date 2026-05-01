@@ -29,9 +29,15 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   const { user } = useUser();
   const { user: serverUser, refreshUser } = useServerUser();
   const [avatarFailed, setAvatarFailed] = useState(false);
-  const hasRefreshedProfile = useRef(false);
+  const refreshedUserId = useRef<string | null>(null);
+  const userMetadata =
+    ((user as { metadata?: Record<string, unknown> } | null)?.metadata ?? {}) as Record<
+      string,
+      unknown
+    >;
 
   const effectiveProfile = {
+    ...userMetadata,
     ...(((user?.profile as Record<string, unknown> | null) ?? {})),
     ...(((serverUser?.profile as Record<string, unknown> | null) ?? {})),
   };
@@ -39,8 +45,13 @@ export function Sidebar({ width = 224 }: SidebarProps) {
 
   const displayName =
     (effectiveProfile.name as string) ||
+    (effectiveProfile.full_name as string) ||
     (effectiveUser?.email ? effectiveUser.email.split("@")[0] : "User");
-  const avatarUrl = (effectiveProfile.avatar_url as string) || null;
+  const avatarUrl =
+    (effectiveProfile.avatar_url as string) ||
+    (effectiveProfile.picture as string) ||
+    (effectiveProfile.avatar as string) ||
+    null;
   const avatarSrc = avatarUrl
     ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}ui=sidebar`
     : null;
@@ -57,10 +68,10 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   };
 
   useEffect(() => {
-    if (hasRefreshedProfile.current) return;
-    hasRefreshedProfile.current = true;
+    if (!effectiveUser?.id || refreshedUserId.current === effectiveUser.id) return;
+    refreshedUserId.current = effectiveUser.id;
     void refreshUser();
-  }, [refreshUser]);
+  }, [effectiveUser?.id, refreshUser]);
 
   useEffect(() => {
     setAvatarFailed(false);
@@ -110,22 +121,24 @@ export function Sidebar({ width = 224 }: SidebarProps) {
               </li>
             );
           })}
+          <li>
+            <Link
+              href="/docs"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                pathname.startsWith("/docs")
+                  ? "bg-[#F3EAFD] text-[#6C2BD9]"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <BookOpen size={18} className="shrink-0" />
+              <span className="truncate">Docs</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
-      {/* Docs + Settings */}
-      <div className="space-y-1 px-3 pb-2">
-        <Link
-          href="/docs"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-            pathname.startsWith("/docs")
-              ? "bg-[#F3EAFD] text-[#6C2BD9]"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          }`}
-        >
-          <BookOpen size={18} className="shrink-0" />
-          <span className="truncate">Docs</span>
-        </Link>
+      {/* Settings */}
+      <div className="px-3 pb-2">
         <Link
           href="/settings"
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
