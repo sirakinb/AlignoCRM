@@ -9,7 +9,8 @@ import { useUser } from "@insforge/nextjs";
 export default function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
-  const { user, isLoading: userLoading } = useUser();
+  const { user, isLoaded } = useUser();
+  const userLoading = !isLoaded;
 
   const [status, setStatus] = useState<"loading" | "accepting" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
