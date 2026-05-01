@@ -1,17 +1,55 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Check, Copy, KeyRound, Loader2, RefreshCw, Trash2 } from "lucide-react";
+
+interface UserApiKey {
+  id: string;
+  name: string;
+  maskedKey: string;
+  key?: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+async function copyTextToClipboard(value: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (error) {
+      console.warn("[Settings] Clipboard API copy failed:", error);
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } catch (error) {
+    console.warn("[Settings] Fallback copy failed:", error);
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { user: serverUser } = useServerUser();
+  const { user: serverUser, refreshUser } = useServerUser();
 
   const mergedProfile = {
     ...(((user?.profile as Record<string, unknown> | null) ?? {})),
@@ -28,8 +66,39 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarInitialized, setAvatarInitialized] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [apiKey, setApiKey] = useState<UserApiKey | null>(null);
+  const [apiKeyLoading, setApiKeyLoading] = useState(true);
+  const [apiKeyWorking, setApiKeyWorking] = useState(false);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadApiKey() {
+      try {
+        const response = await fetch("/api/settings/api-key", {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!ignore && response.ok) {
+          setApiKey(data.apiKey ?? null);
+        }
+      } catch (err) {
+        console.error("[Settings] Failed to load API key:", err);
+      } finally {
+        if (!ignore) setApiKeyLoading(false);
+      }
+    }
+
+    loadApiKey();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   if (!isLoaded && !serverUser) {
     return (
@@ -95,6 +164,7 @@ export default function SettingsPage() {
       }
 
       setMessage({ type: "success", text: "Profile updated" });
+      await refreshUser();
       router.refresh();
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to update profile" });
@@ -137,6 +207,7 @@ export default function SettingsPage() {
       setAvatarUrl(data.avatarUrl as string);
       setAvatarError(false);
       setMessage({ type: "success", text: "Avatar updated" });
+      await refreshUser();
       router.refresh();
     } catch (err) {
       console.error("[Settings] Avatar upload error:", err);
@@ -145,6 +216,77 @@ export default function SettingsPage() {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  }
+
+  async function handleCreateApiKey() {
+    setApiKeyWorking(true);
+    setApiKeyCopied(false);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/settings/api-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Default API key" }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create API key");
+      }
+
+      setApiKey(data.apiKey);
+      setMessage({ type: "success", text: "API key created" });
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to create API key" });
+    } finally {
+      setApiKeyWorking(false);
+    }
+  }
+
+  async function handleRevokeApiKey() {
+    if (!confirm("Revoke this API key? Connected apps using it will stop working.")) return;
+
+    setApiKeyWorking(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/settings/api-key", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to revoke API key");
+      }
+
+      setApiKey(null);
+      setApiKeyCopied(false);
+      setMessage({ type: "success", text: "API key revoked" });
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to revoke API key" });
+    } finally {
+      setApiKeyWorking(false);
+    }
+  }
+
+  async function handleCopyApiKey() {
+    const value = apiKey?.key;
+    if (!value) return;
+
+    const copied = await copyTextToClipboard(value);
+
+    if (!copied) {
+      setMessage({
+        type: "error",
+        text: "Clipboard access was denied. Select the visible API key and copy it manually.",
+      });
+      return;
+    }
+
+    setApiKeyCopied(true);
+    setMessage({ type: "success", text: "API key copied" });
+    window.setTimeout(() => setApiKeyCopied(false), 1800);
   }
 
   return (
@@ -248,6 +390,93 @@ export default function SettingsPage() {
             disabled
             className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
           />
+        </div>
+
+        {/* API Key */}
+        <div>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                API Key
+              </label>
+              <p className="mt-1 text-sm text-gray-500">
+                Use this key to connect external tools to AlignoCRM.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {apiKey && (
+                <button
+                  type="button"
+                  onClick={handleRevokeApiKey}
+                  disabled={apiKeyWorking}
+                  className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 shadow-sm disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Revoke
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleCreateApiKey}
+                disabled={apiKeyLoading || apiKeyWorking}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
+                style={{
+                  background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
+                }}
+              >
+                {apiKeyWorking ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : apiKey ? (
+                  <RefreshCw size={14} />
+                ) : (
+                  <KeyRound size={14} />
+                )}
+                {apiKey ? "Regenerate" : "Create Key"}
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="rounded-lg border bg-white p-3"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+          >
+            {apiKeyLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 size={14} className="animate-spin" />
+                Loading key...
+              </div>
+            ) : apiKey ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 truncate rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                    {apiKey.key ?? apiKey.maskedKey}
+                  </code>
+                  {apiKey.key && (
+                    <button
+                      type="button"
+                      onClick={handleCopyApiKey}
+                      className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                    >
+                      {apiKeyCopied ? <Check size={14} /> : <Copy size={14} />}
+                      {apiKeyCopied ? "Copied" : "Copy"}
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {apiKey.key
+                    ? "This is the only time the full key will be shown."
+                    : `Created ${new Date(apiKey.createdAt).toLocaleDateString()}`}
+                  {apiKey.lastUsedAt
+                    ? ` · Last used ${new Date(apiKey.lastUsedAt).toLocaleDateString()}`
+                    : ""}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                No API key has been created for this user.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Status Message */}

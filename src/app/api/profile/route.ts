@@ -3,6 +3,74 @@ import { NextRequest, NextResponse } from "next/server";
 
 const INSFORGE_URL = process.env.NEXT_PUBLIC_INSFORGE_URL!;
 
+type CookieUser = {
+  id: string;
+  email: string;
+  profile?: Record<string, unknown> | null;
+};
+
+async function fetchCurrentUser(token: string, fallbackUser: CookieUser | null) {
+  let user = fallbackUser;
+
+  const sessionResponse = await fetch(`${INSFORGE_URL}/api/auth/sessions/current`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (sessionResponse.ok) {
+    const session = await sessionResponse.json();
+    if (session.user?.id && session.user?.email) {
+      user = {
+        id: session.user.id,
+        email: session.user.email,
+        profile: session.user.profile ?? fallbackUser?.profile ?? null,
+      };
+    }
+  }
+
+  if (!user?.id) {
+    return user;
+  }
+
+  const profileResponse = await fetch(`${INSFORGE_URL}/api/auth/profiles/${user.id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (profileResponse.ok) {
+    const profileData = await profileResponse.json();
+    user = {
+      ...user,
+      profile: {
+        ...(user.profile ?? {}),
+        ...(profileData.profile ?? {}),
+      },
+    };
+  }
+
+  return user;
+}
+
+function setUserCookie(response: NextResponse, user: CookieUser) {
+  response.cookies.set({
+    name: "insforge-user",
+    value: JSON.stringify({
+      id: user.id,
+      email: user.email,
+      profile: user.profile ?? null,
+    }),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/",
+  });
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -90,16 +158,23 @@ export async function GET() {
     }
 
     const userCookieValue = cookieStore.get("insforge-user")?.value;
+    let cookieUser: CookieUser | null = null;
     if (userCookieValue) {
       try {
-        const user = JSON.parse(userCookieValue);
-        return NextResponse.json({ user });
+        cookieUser = JSON.parse(userCookieValue) as CookieUser;
       } catch {
-        // Fall through
+        cookieUser = null;
       }
     }
 
-    return NextResponse.json({ user: null });
+    const user = await fetchCurrentUser(token, cookieUser);
+    const response = NextResponse.json({ user });
+
+    if (user?.id && user.email) {
+      setUserCookie(response, user);
+    }
+
+    return response;
   } catch (err) {
     console.error("[/api/profile GET] Error:", err);
     return NextResponse.json(

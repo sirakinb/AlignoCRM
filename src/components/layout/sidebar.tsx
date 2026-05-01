@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Home, GitBranch, Users, Zap, Settings, LogOut } from "lucide-react";
+import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -26,7 +27,9 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const { user } = useUser();
-  const { user: serverUser } = useServerUser();
+  const { user: serverUser, refreshUser } = useServerUser();
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const hasRefreshedProfile = useRef(false);
 
   const effectiveProfile = {
     ...(((user?.profile as Record<string, unknown> | null) ?? {})),
@@ -52,6 +55,16 @@ export function Sidebar({ width = 224 }: SidebarProps) {
     await signOut();
     router.push("/sign-in");
   };
+
+  useEffect(() => {
+    if (hasRefreshedProfile.current) return;
+    hasRefreshedProfile.current = true;
+    void refreshUser();
+  }, [refreshUser]);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [avatarSrc]);
 
   return (
     <aside
@@ -100,8 +113,19 @@ export function Sidebar({ width = 224 }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Settings */}
-      <div className="px-3 pb-2">
+      {/* Docs + Settings */}
+      <div className="space-y-1 px-3 pb-2">
+        <Link
+          href="/docs"
+          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            pathname.startsWith("/docs")
+              ? "bg-[#F3EAFD] text-[#6C2BD9]"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          }`}
+        >
+          <BookOpen size={18} className="shrink-0" />
+          <span className="truncate">Docs</span>
+        </Link>
         <Link
           href="/settings"
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -118,11 +142,12 @@ export function Sidebar({ width = 224 }: SidebarProps) {
       {/* User + Logout */}
       <div className="border-t border-gray-200 px-5 py-4">
         <div className="flex items-center gap-3">
-          {avatarSrc ? (
+          {avatarSrc && !avatarFailed ? (
             <img
               src={avatarSrc}
               alt=""
               className="h-8 w-8 shrink-0 rounded-full object-cover"
+              onError={() => setAvatarFailed(true)}
             />
           ) : (
             <div
