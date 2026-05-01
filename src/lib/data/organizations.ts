@@ -99,35 +99,52 @@ export async function getTenantContextForUser(
   user: AuthenticatedUser
 ): Promise<TenantContext> {
   try {
-    const { data: member, error: memberError } = await insforge.database
+    // Use .limit(1) instead of .single() to avoid errors when multiple memberships exist
+    const { data: members, error: memberError } = await insforge.database
       .from("organization_members")
       .select()
       .eq("user_id", user.id)
       .eq("status", "active")
-      .single();
+      .order("created_at", { ascending: true })
+      .limit(1);
 
-    if (memberError) {
-      const code = (memberError as { code?: string }).code;
-      if (code !== "PGRST116") throw memberError;
-    }
+    if (memberError) throw memberError;
+
+    const member = members?.[0] as OrganizationMember | undefined;
 
     if (member) {
-      if ((member as OrganizationMember).email !== user.email) {
+      if (member.email !== user.email) {
         await insforge.database
           .from("organization_members")
           .update({ email: user.email })
-          .eq("id", (member as OrganizationMember).id);
+          .eq("id", member.id);
       }
 
-      const organization = await getOrganization(
-        (member as OrganizationMember).organization_id
-      );
+      const organization = await getOrganization(member.organization_id);
 
       return {
         organizationId: organization.id,
         workspaceId: organization.default_workspace_id,
-        role: (member as OrganizationMember).role,
+        role: member.role,
         organization,
+      };
+    }
+
+    // Before auto-creating, check if there's a pending invite for this user.
+    // If so, return a fallback context — the invite flow will handle org assignment.
+    const { data: pendingInvites } = await insforge.database
+      .from("organization_invites")
+      .select("id")
+      .eq("email", user.email.toLowerCase())
+      .eq("status", "pending")
+      .limit(1);
+
+    if (pendingInvites && pendingInvites.length > 0) {
+      return {
+        organizationId: null,
+        workspaceId: FALLBACK_WORKSPACE_ID,
+        role: null,
+        organization: null,
       };
     }
 
@@ -278,6 +295,41 @@ export async function acceptOrganizationInvite({
       accepted_at: new Date().toISOString(),
     })
     .eq("id", invite.id);
+
+  // Clean up auto-created org: when a new user signs in before accepting an
+  // invite, getTenantContextForUser() auto-creates an org with them as owner.
+  // Remove that empty org so the user lands in the invited org instead.
+  const { data: allMemberships } = await insforge.database
+    .from("organization_members")
+    .select()
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  if (allMemberships && allMemberships.length > 1) {
+    for (const m of allMemberships as OrganizationMember[]) {
+      if (m.organization_id === invite.organization_id) continue;
+      if (m.role !== "owner") continue;
+
+      // Check if this org has only one member (the auto-created one)
+      const { data: orgMembers } = await insforge.database
+        .from("organization_members")
+        .select("id")
+        .eq("organization_id", m.organization_id)
+        .eq("status", "active");
+
+      if (orgMembers && orgMembers.length === 1) {
+        // Solo owner of an empty org — safe to remove
+        await insforge.database
+          .from("organization_members")
+          .delete()
+          .eq("id", m.id);
+        await insforge.database
+          .from("organizations")
+          .delete()
+          .eq("id", m.organization_id);
+      }
+    }
+  }
 
   return member as OrganizationMember;
 }
