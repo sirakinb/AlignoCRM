@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getPostAuthRedirectUrl } from "@/lib/auth/redirect-url";
+import { getSafeRedirectPath } from "@/lib/auth/sync-server-session";
 import { insforge } from "@/lib/insforge/client";
 
 export default function SignUpPage() {
@@ -21,6 +22,9 @@ export default function SignUpPage() {
     setError("");
 
     try {
+      const redirectPath = getSafeRedirectPath(
+        new URLSearchParams(window.location.search).get("redirect")
+      );
       const result = await insforge.auth.signUp({ email, password });
 
       if (result.error) {
@@ -41,7 +45,7 @@ export default function SignUpPage() {
             user: result.data.user,
           }),
         });
-        window.location.href = "/";
+        window.location.href = redirectPath;
       } else {
         throw new Error("Sign up failed");
       }
@@ -58,6 +62,9 @@ export default function SignUpPage() {
     setError("");
 
     try {
+      const redirectPath = getSafeRedirectPath(
+        new URLSearchParams(window.location.search).get("redirect")
+      );
       const result = await insforge.auth.verifyEmail({ otp: verifyCode, email });
       if (result.error) throw new Error(result.error.message);
 
@@ -73,7 +80,7 @@ export default function SignUpPage() {
             user: result.data.user,
           }),
         });
-        window.location.href = "/";
+        window.location.href = redirectPath;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -83,10 +90,13 @@ export default function SignUpPage() {
   }
 
   function handleGoogle() {
+    const redirectPath = getSafeRedirectPath(
+      new URLSearchParams(window.location.search).get("redirect")
+    );
     setOauthLoading(true);
     insforge.auth.signInWithOAuth({
       provider: "google",
-      redirectTo: getPostAuthRedirectUrl("/"),
+      redirectTo: getPostAuthRedirectUrl(redirectPath),
     });
   }
 

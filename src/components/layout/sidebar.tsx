@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
+import { syncServerSession } from "@/lib/auth/sync-server-session";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen } from "lucide-react";
 
@@ -70,6 +71,28 @@ export function Sidebar({ width = 224 }: SidebarProps) {
     router.push("/sign-in");
   };
 
+  const handleNavigation =
+    (href: string) => async (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        event.button !== 0
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      try {
+        await syncServerSession();
+      } finally {
+        router.push(href);
+        router.refresh();
+      }
+    };
+
   useEffect(() => {
     if (!effectiveUser?.id || refreshedUserId.current === effectiveUser.id) return;
     refreshedUserId.current = effectiveUser.id;
@@ -112,6 +135,8 @@ export function Sidebar({ width = 224 }: SidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  prefetch={false}
+                  onClick={handleNavigation(item.href)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-[#F3EAFD] text-[#6C2BD9]"
@@ -131,6 +156,8 @@ export function Sidebar({ width = 224 }: SidebarProps) {
       <div className="space-y-1 px-3 pb-2">
         <Link
           href="/docs"
+          prefetch={false}
+          onClick={handleNavigation("/docs")}
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             pathname.startsWith("/docs")
               ? "bg-[#F3EAFD] text-[#6C2BD9]"
@@ -142,6 +169,8 @@ export function Sidebar({ width = 224 }: SidebarProps) {
         </Link>
         <Link
           href="/settings"
+          prefetch={false}
+          onClick={handleNavigation("/settings")}
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             pathname.startsWith("/settings")
               ? "bg-[#F3EAFD] text-[#6C2BD9]"
