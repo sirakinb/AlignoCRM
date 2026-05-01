@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { getContacts } from "@/lib/data/contacts";
 import { getContactTagsMap, getTags } from "@/lib/data/tags";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get("workspaceId") ?? "default";
+    const tenant = await requireTenantContext();
 
     const [contacts, tags] = await Promise.all([
-      getContacts(workspaceId),
-      getTags(workspaceId),
+      getContacts(tenant.workspaceId),
+      getTags(tenant.workspaceId),
     ]);
     const contactTagsMap =
       contacts.length > 0
@@ -18,6 +18,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ contacts, tags, contactTagsMap });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("GET /api/contacts/summary error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },

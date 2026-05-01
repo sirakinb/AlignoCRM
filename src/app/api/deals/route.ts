@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { getDeals, createDeal, deleteDeal } from "@/lib/data/deals";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get("workspaceId") ?? "default";
+    const tenant = await requireTenantContext();
 
-    const deals = await getDeals(workspaceId);
+    const deals = await getDeals(tenant.workspaceId);
     return NextResponse.json({ deals });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("GET /api/deals error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
@@ -19,17 +22,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const tenant = await requireTenantContext();
     const body = await request.json();
 
-    if (!body.workspace_id || !body.pipeline_id || !body.stage_id || !body.title) {
+    if (!body.pipeline_id || !body.stage_id || !body.title) {
       return NextResponse.json(
-        { error: "Missing required fields: workspace_id, pipeline_id, stage_id, title" },
+        { error: "Missing required fields: pipeline_id, stage_id, title" },
         { status: 400 }
       );
     }
 
     const deal = await createDeal({
-      workspace_id: body.workspace_id,
+      workspace_id: tenant.workspaceId,
+      ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
       pipeline_id: body.pipeline_id,
       stage_id: body.stage_id,
       title: body.title,
@@ -41,6 +46,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ deal }, { status: 201 });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("POST /api/deals error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
@@ -51,6 +59,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const tenant = await requireTenantContext();
     const { searchParams } = new URL(request.url);
     const dealId = searchParams.get("id");
 
@@ -61,9 +70,19 @@ export async function DELETE(request: Request) {
       );
     }
 
+    const [deal] = await getDeals(tenant.workspaceId).then((deals) =>
+      deals.filter((candidate) => candidate.id === dealId)
+    );
+    if (!deal) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     await deleteDeal(dealId);
     return NextResponse.json({ success: true });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("DELETE /api/deals error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },

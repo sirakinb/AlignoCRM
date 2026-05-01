@@ -25,7 +25,7 @@ export function TriggerForm({ config, onChange }: TriggerFormProps) {
   // Load pipelines when deal_stage_changed is selected
   useEffect(() => {
     if (triggerType !== "deal_stage_changed") return;
-    fetch("/api/pipelines?workspaceId=default")
+    fetch("/api/pipelines")
       .then((res) => res.json())
       .then((json) => setPipelines(json.pipelines ?? []))
       .catch(() => {});

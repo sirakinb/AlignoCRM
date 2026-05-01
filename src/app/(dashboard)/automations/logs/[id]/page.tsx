@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { StepLog } from "@/components/logs/step-log";
-import { getEnrollment, getExecutionSteps } from "@/lib/data/enrollments";
 import { EnrollmentStatus } from "@/types/enrollment";
 import type { WorkflowEnrollment, ExecutionStep } from "@/types/enrollment";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -52,10 +51,15 @@ export default function EnrollmentDetailPage() {
         setLoading(true);
         setError(null);
 
-        const [enrollmentData, stepsData] = await Promise.all([
-          getEnrollment(enrollmentId),
-          getExecutionSteps(enrollmentId),
-        ]);
+        const response = await fetch(`/api/enrollments/${enrollmentId}`, {
+          cache: "no-store",
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load enrollment");
+        }
+        const enrollmentData = payload.enrollment as WorkflowEnrollment;
+        const stepsData = (payload.steps ?? []) as ExecutionStep[];
 
         if (!cancelled) {
           setEnrollment(enrollmentData);

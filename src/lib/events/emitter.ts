@@ -23,6 +23,7 @@ export async function emitEvent(
     .from("business_events")
     .insert({
       workspace_id: input.workspace_id,
+      ...(input.organization_id ? { organization_id: input.organization_id } : {}),
       event_type: input.event_type,
       record_id: input.record_id,
       record_type: input.record_type,
@@ -48,9 +49,14 @@ export async function emitEvent(
     const baseUrl = typeof window === "undefined"
       ? process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
       : "";
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (process.env.ALIGNO_API_KEY) {
+      headers.Authorization = `Bearer ${process.env.ALIGNO_API_KEY}`;
+    }
+
     await fetch(`${baseUrl}/api/events/process`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(event),
     });
   } catch (processError) {

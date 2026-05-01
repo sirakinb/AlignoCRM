@@ -140,6 +140,7 @@ export type NodeConfig =
 export interface Workflow {
   id: string;
   workspace_id: string;
+  organization_id?: string | null;
   name: string;
   description: string | null;
   status: WorkflowStatus;
@@ -153,6 +154,7 @@ export interface Workflow {
 
 export interface WorkflowVersion {
   id: string;
+  organization_id?: string | null;
   workflow_id: string;
   version_number: number;
   definition: WorkflowDefinition;
@@ -162,6 +164,7 @@ export interface WorkflowVersion {
 
 export interface WorkflowNode<T extends NodeConfig = NodeConfig> {
   id: string;
+  organization_id?: string | null;
   workflow_id: string;
   type: NodeType;
   position_x: number;
@@ -173,6 +176,7 @@ export interface WorkflowNode<T extends NodeConfig = NodeConfig> {
 
 export interface WorkflowEdge {
   id: string;
+  organization_id?: string | null;
   workflow_id: string;
   source_node_id: string;
   target_node_id: string;
@@ -189,6 +193,7 @@ export interface WorkflowDefinition {
 
 export interface CreateWorkflowInput {
   workspace_id: string;
+  organization_id?: string | null;
   name: string;
   description?: string;
   trigger_type?: string;

@@ -5,6 +5,7 @@ export interface ApiKeyRecord {
   id: string;
   user_id: string;
   workspace_id: string | null;
+  organization_id: string | null;
   name: string;
   key_hash: string;
   key_prefix: string;
@@ -28,13 +29,21 @@ export function maskApiKey(record: Pick<ApiKeyRecord, "key_prefix" | "last_four"
   return `${record.key_prefix}_••••••••••••${record.last_four}`;
 }
 
-export async function getActiveApiKeyForUser(userId: string) {
-  const { data, error } = await insforge.database
+export async function getActiveApiKeyForUser(
+  userId: string,
+  organizationId?: string | null
+) {
+  let query = insforge.database
     .from("api_keys")
     .select()
     .eq("user_id", userId)
-    .is("revoked_at", null)
-    .single();
+    .is("revoked_at", null);
+
+  if (organizationId) {
+    query = query.eq("organization_id", organizationId);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     const code = (error as { code?: string }).code;
@@ -47,29 +56,43 @@ export async function getActiveApiKeyForUser(userId: string) {
 
 export async function createApiKeyForUser({
   userId,
+  organizationId,
   name,
 }: {
   userId: string;
+  organizationId?: string | null;
   name: string;
 }) {
   const apiKey = generateApiKey();
   const now = new Date().toISOString();
 
-  await insforge.database
+  let revokeQuery = insforge.database
     .from("api_keys")
     .update({ revoked_at: now })
     .eq("user_id", userId)
     .is("revoked_at", null);
 
+  if (organizationId) {
+    revokeQuery = revokeQuery.eq("organization_id", organizationId);
+  }
+
+  await revokeQuery;
+
+  const insertPayload: Record<string, string> = {
+    user_id: userId,
+    name,
+    key_hash: hashApiKey(apiKey),
+    key_prefix: API_KEY_PREFIX,
+    last_four: apiKey.slice(-4),
+  };
+
+  if (organizationId) {
+    insertPayload.organization_id = organizationId;
+  }
+
   const { data, error } = await insforge.database
     .from("api_keys")
-    .insert({
-      user_id: userId,
-      name,
-      key_hash: hashApiKey(apiKey),
-      key_prefix: API_KEY_PREFIX,
-      last_four: apiKey.slice(-4),
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -81,12 +104,21 @@ export async function createApiKeyForUser({
   };
 }
 
-export async function revokeActiveApiKeyForUser(userId: string) {
-  const { error } = await insforge.database
+export async function revokeActiveApiKeyForUser(
+  userId: string,
+  organizationId?: string | null
+) {
+  let query = insforge.database
     .from("api_keys")
     .update({ revoked_at: new Date().toISOString() })
     .eq("user_id", userId)
     .is("revoked_at", null);
+
+  if (organizationId) {
+    query = query.eq("organization_id", organizationId);
+  }
+
+  const { error } = await query;
 
   if (error) throw error;
 }

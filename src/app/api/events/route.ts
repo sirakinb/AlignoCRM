@@ -1,19 +1,34 @@
 import { NextResponse } from "next/server";
+import {
+  getInternalApiAuthContext,
+  unauthorizedInternalApiResponse,
+} from "@/lib/api/internal-auth";
 import { emitEvent } from "@/lib/events/emitter";
 import type { CreateBusinessEventInput } from "@/types/events";
 
 export async function POST(request: Request) {
   try {
+    const authContext = await getInternalApiAuthContext(request);
+    if (!authContext.authorized) {
+      return unauthorizedInternalApiResponse();
+    }
+
     const body = (await request.json()) as CreateBusinessEventInput;
 
-    if (!body.workspace_id || !body.event_type || !body.record_id || !body.record_type) {
+    if (!body.event_type || !body.record_id || !body.record_type) {
       return NextResponse.json(
-        { error: "Missing required fields: workspace_id, event_type, record_id, record_type" },
+        { error: "Missing required fields: event_type, record_id, record_type" },
         { status: 400 }
       );
     }
 
-    const event = await emitEvent(body);
+    const event = await emitEvent({
+      ...body,
+      workspace_id: authContext.tenant.workspaceId,
+      ...(authContext.tenant.organizationId
+        ? { organization_id: authContext.tenant.organizationId }
+        : {}),
+    });
 
     if (!event) {
       return NextResponse.json(

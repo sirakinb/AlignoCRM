@@ -1,26 +1,31 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import {
   getApprovalRequest,
   approveRequest,
   rejectRequest,
+  editAndApproveRequest,
 } from "@/lib/data/approvals";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const user = await getAuthenticatedUser();
+    const tenant = await requireTenantContext();
+    const { id } = await params;
     const body = await request.json();
-    const { approved, actorId, notes } = body as {
+    const { approved, notes, editedContent } = body as {
       approved: boolean;
-      actorId: string;
       notes?: string;
+      editedContent?: Record<string, unknown>;
     };
 
-    if (typeof approved !== "boolean" || !actorId) {
+    if (typeof approved !== "boolean") {
       return NextResponse.json(
-        { error: "Missing required fields: approved (boolean), actorId" },
+        { error: "Missing required field: approved (boolean)" },
         { status: 400 }
       );
     }
@@ -34,11 +39,17 @@ export async function POST(
       );
     }
 
+    if (approvalRequest.workspace_id !== tenant.workspaceId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     // Update approval status
-    if (approved) {
-      await approveRequest(id, actorId, notes);
+    if (editedContent) {
+      await editAndApproveRequest(id, user?.id ?? "system", editedContent, notes);
+    } else if (approved) {
+      await approveRequest(id, user?.id ?? "system", notes);
     } else {
-      await rejectRequest(id, actorId, notes);
+      await rejectRequest(id, user?.id ?? "system", notes);
     }
 
     // Complete the Trigger.dev wait token to resume the workflow
@@ -74,6 +85,9 @@ export async function POST(
       approvalId: id,
     });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Approval response error:", error);
     return NextResponse.json(
       {

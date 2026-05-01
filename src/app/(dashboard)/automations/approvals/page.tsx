@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { ApprovalStatus, ApprovalContentType } from "@/types/approval";
 import type { ApprovalRequest } from "@/types/approval";
-import { getApprovalRequests } from "@/lib/data/approvals";
 
 const contentTypeIcons: Record<ApprovalContentType, typeof Mail> = {
   [ApprovalContentType.EmailDraft]: Mail,
@@ -107,7 +106,12 @@ export default function ApprovalsListPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getApprovalRequests("default");
+        const response = await fetch("/api/approvals", { cache: "no-store" });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load approvals");
+        }
+        const data = (payload.approvals ?? []) as ApprovalRequest[];
         if (!cancelled) {
           setApprovals(data);
         }

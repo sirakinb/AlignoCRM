@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { getPipelines, createPipeline, createStage } from "@/lib/data/pipelines";
 
 const DEFAULT_STAGES = [
@@ -10,13 +11,12 @@ const DEFAULT_STAGES = [
   { name: "Closed Lost", position: 5, color: "#EF4444" },
 ];
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const workspaceId = body.workspaceId ?? "default";
+    const tenant = await requireTenantContext();
 
     // Check if pipelines already exist
-    const existing = await getPipelines(workspaceId);
+    const existing = await getPipelines(tenant.workspaceId);
     if (existing.length > 0) {
       return NextResponse.json(
         { message: "Pipelines already exist", pipelines: existing },
@@ -26,7 +26,8 @@ export async function POST(request: Request) {
 
     // Create default pipeline
     const pipeline = await createPipeline({
-      workspace_id: workspaceId,
+      workspace_id: tenant.workspaceId,
+      ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
       name: "Sales Pipeline",
       description: "Default sales pipeline",
       position: 0,
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
     for (const stageInput of DEFAULT_STAGES) {
       const stage = await createStage({
         pipeline_id: pipeline.id,
+        ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
         name: stageInput.name,
         position: stageInput.position,
         color: stageInput.color,
@@ -49,6 +51,9 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("POST /api/pipelines/seed error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },

@@ -17,6 +17,7 @@ export enum StepOutcome {
 export interface WorkflowEnrollment {
   id: string;
   workspace_id: string;
+  organization_id?: string | null;
   workflow_id: string;
   workflow_version_id: string;
   record_id: string;
@@ -32,6 +33,7 @@ export interface WorkflowEnrollment {
 
 export interface ExecutionStep {
   id: string;
+  organization_id?: string | null;
   enrollment_id: string;
   node_id: string;
   node_type: string;
@@ -46,6 +48,7 @@ export interface ExecutionStep {
 
 export interface CreateEnrollmentInput {
   workspace_id: string;
+  organization_id?: string | null;
   workflow_id: string;
   workflow_version_id: string;
   record_id: string;

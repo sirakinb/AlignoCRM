@@ -17,7 +17,6 @@ import type {
   ExecutionStep,
 } from "@/types/enrollment";
 import { EnrollmentStatus } from "@/types/enrollment";
-import { getContact } from "@/lib/data/contacts";
 import type { Contact } from "@/types/crm";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 
@@ -108,8 +107,11 @@ export function ActivityPanel({
     Promise.all(
       missing.map(async (id) => {
         try {
-          const contact = await getContact(id);
-          return [id, contact] as const;
+          const response = await fetch(`/api/contacts/${id}`, {
+            cache: "no-store",
+          });
+          const payload = await response.json();
+          return [id, response.ok ? (payload.contact as Contact) : null] as const;
         } catch {
           return [id, null] as const;
         }

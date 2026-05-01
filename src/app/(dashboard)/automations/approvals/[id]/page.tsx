@@ -18,12 +18,6 @@ import {
 } from "lucide-react";
 import { ApprovalStatus, ApprovalContentType } from "@/types/approval";
 import type { ApprovalRequest } from "@/types/approval";
-import {
-  getApprovalRequest,
-  approveRequest,
-  rejectRequest,
-  editAndApproveRequest,
-} from "@/lib/data/approvals";
 
 const statusConfig: Record<
   ApprovalStatus,
@@ -105,7 +99,14 @@ export default function ApprovalReviewPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getApprovalRequest(approvalId);
+        const response = await fetch(`/api/approvals/${approvalId}`, {
+          cache: "no-store",
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load approval");
+        }
+        const data = payload.approval as ApprovalRequest;
         if (!cancelled) {
           setRequest(data);
           setEditedBody((data.content.body as string) ?? "");
@@ -142,7 +143,15 @@ export default function ApprovalReviewPage() {
     if (!request) return;
     try {
       setActionLoading("approve");
-      await approveRequest(request.id, "user");
+      const response = await fetch(`/api/approvals/${request.id}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved: true }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to approve");
+      }
       router.push("/automations/approvals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to approve");
@@ -154,7 +163,18 @@ export default function ApprovalReviewPage() {
     if (!request) return;
     try {
       setActionLoading("reject");
-      await rejectRequest(request.id, "user", rejectComment || undefined);
+      const response = await fetch(`/api/approvals/${request.id}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          approved: false,
+          notes: rejectComment || undefined,
+        }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to reject");
+      }
       router.push("/automations/approvals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reject");
@@ -171,7 +191,19 @@ export default function ApprovalReviewPage() {
         body: editedBody,
         subject: editedSubject,
       };
-      await editAndApproveRequest(request.id, "user", editedContent);
+      const response = await fetch(`/api/approvals/${request.id}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          approved: true,
+          notes: "Edited before approval",
+          editedContent,
+        }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to save edits");
+      }
       router.push("/automations/approvals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save edits");

@@ -17,7 +17,6 @@ const navItems = [
   { label: "Pipeline", href: "/pipeline", icon: GitBranch },
   { label: "Contacts", href: "/contacts", icon: Users },
   { label: "Automations", href: "/automations", icon: Zap },
-  { label: "Docs", href: "/docs", icon: BookOpen },
 ] as const;
 
 interface SidebarProps {

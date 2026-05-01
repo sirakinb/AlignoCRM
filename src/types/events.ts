@@ -50,6 +50,7 @@ export type BusinessEventPayload =
 export interface BusinessEvent {
   id: string;
   workspace_id: string;
+  organization_id?: string | null;
   event_type: BusinessEventType;
   record_id: string;
   record_type: string;
@@ -62,4 +63,5 @@ export interface BusinessEvent {
 export type CreateBusinessEventInput = Pick<
   BusinessEvent,
   "workspace_id" | "event_type" | "record_id" | "record_type" | "payload"
->;
+> &
+  Partial<Pick<BusinessEvent, "organization_id">>;

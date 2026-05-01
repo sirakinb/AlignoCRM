@@ -1,41 +1,12 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import { getTenantContextForUser } from "@/lib/data/organizations";
 import {
   createApiKeyForUser,
   getActiveApiKeyForUser,
   maskApiKey,
   revokeActiveApiKeyForUser,
 } from "@/lib/data/api-keys";
-
-interface AuthenticatedUser {
-  id: string;
-  email: string;
-}
-
-function getUserFromCookie(cookieValue?: string): AuthenticatedUser | null {
-  if (!cookieValue) return null;
-
-  try {
-    const user = JSON.parse(cookieValue) as {
-      id?: string;
-      email?: string;
-    };
-
-    if (typeof user.id !== "string" || typeof user.email !== "string") return null;
-    return { id: user.id, email: user.email };
-  } catch {
-    return null;
-  }
-}
-
-async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("insforge-session")?.value;
-  const user = getUserFromCookie(cookieStore.get("insforge-user")?.value);
-
-  if (!token || !user) return null;
-  return user;
-}
 
 function serializeApiKey(record: Awaited<ReturnType<typeof getActiveApiKeyForUser>>) {
   if (!record) return null;
@@ -56,7 +27,8 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const record = await getActiveApiKeyForUser(user.id);
+    const tenant = await getTenantContextForUser(user);
+    const record = await getActiveApiKeyForUser(user.id, tenant.organizationId);
     return NextResponse.json({ apiKey: serializeApiKey(record) });
   } catch (error) {
     console.error("GET /api/settings/api-key error:", error);
@@ -80,8 +52,10 @@ export async function POST(request: Request) {
         ? body.name.trim()
         : "Default API key";
 
+    const tenant = await getTenantContextForUser(user);
     const { apiKey, record } = await createApiKeyForUser({
       userId: user.id,
+      organizationId: tenant.organizationId,
       name,
     });
 
@@ -114,7 +88,8 @@ export async function DELETE() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    await revokeActiveApiKeyForUser(user.id);
+    const tenant = await getTenantContextForUser(user);
+    await revokeActiveApiKeyForUser(user.id, tenant.organizationId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/settings/api-key error:", error);

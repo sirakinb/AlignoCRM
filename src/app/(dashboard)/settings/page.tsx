@@ -6,7 +6,16 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Camera, Check, Copy, KeyRound, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Camera,
+  Check,
+  Copy,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 
 interface UserApiKey {
   id: string;
@@ -15,6 +24,19 @@ interface UserApiKey {
   key?: string;
   createdAt: string;
   lastUsedAt: string | null;
+}
+
+interface OrganizationMember {
+  id: string;
+  email: string;
+  role: "owner" | "admin" | "member";
+  status: "active" | "removed";
+}
+
+interface OrganizationPayload {
+  organization: { id: string; name: string } | null;
+  members: OrganizationMember[];
+  role: "owner" | "admin" | "member" | null;
 }
 
 async function copyTextToClipboard(value: string) {
@@ -70,30 +92,44 @@ export default function SettingsPage() {
   const [apiKeyLoading, setApiKeyLoading] = useState(true);
   const [apiKeyWorking, setApiKeyWorking] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
+  const [organization, setOrganization] = useState<OrganizationPayload | null>(null);
+  const [organizationLoading, setOrganizationLoading] = useState(true);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+  const [inviteWorking, setInviteWorking] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let ignore = false;
 
-    async function loadApiKey() {
+    async function loadSettingsData() {
       try {
-        const response = await fetch("/api/settings/api-key", {
-          cache: "no-store",
-        });
-        const data = await response.json();
+        const [apiKeyResponse, organizationResponse] = await Promise.all([
+          fetch("/api/settings/api-key", { cache: "no-store" }),
+          fetch("/api/organizations/current", { cache: "no-store" }),
+        ]);
+        const apiKeyData = await apiKeyResponse.json();
+        const organizationData = await organizationResponse.json();
 
-        if (!ignore && response.ok) {
-          setApiKey(data.apiKey ?? null);
+        if (!ignore && apiKeyResponse.ok) {
+          setApiKey(apiKeyData.apiKey ?? null);
+        }
+        if (!ignore && organizationResponse.ok) {
+          setOrganization(organizationData as OrganizationPayload);
         }
       } catch (err) {
-        console.error("[Settings] Failed to load API key:", err);
+        console.error("[Settings] Failed to load settings data:", err);
       } finally {
-        if (!ignore) setApiKeyLoading(false);
+        if (!ignore) {
+          setApiKeyLoading(false);
+          setOrganizationLoading(false);
+        }
       }
     }
 
-    loadApiKey();
+    loadSettingsData();
 
     return () => {
       ignore = true;
@@ -289,6 +325,42 @@ export default function SettingsPage() {
     window.setTimeout(() => setApiKeyCopied(false), 1800);
   }
 
+  async function handleInviteTeammate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    setInviteWorking(true);
+    setInviteUrl(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/organizations/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          role: inviteRole,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create invite");
+      }
+
+      setInviteEmail("");
+      setInviteUrl(data.inviteUrl ?? null);
+      setMessage({ type: "success", text: "Invite created" });
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to create invite",
+      });
+    } finally {
+      setInviteWorking(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -475,6 +547,107 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500">
                 No API key has been created for this user.
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Organization */}
+        <div>
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Organization
+            </label>
+            <p className="mt-1 text-sm text-gray-500">
+              Invite teammates into this workspace. Data is scoped to this organization.
+            </p>
+          </div>
+
+          <div
+            className="rounded-lg border bg-white p-4"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+          >
+            {organizationLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 size={14} className="animate-spin" />
+                Loading organization...
+              </div>
+            ) : organization ? (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {organization.organization?.name ?? "Workspace"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Your role: {organization.role ?? "member"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {organization.members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm"
+                    >
+                      <span className="truncate text-gray-700">{member.email}</span>
+                      <span className="rounded-full bg-[#F3EAFD] px-2 py-0.5 text-xs font-medium text-[#6C2BD9]">
+                        {member.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {["owner", "admin"].includes(organization.role ?? "") && (
+                  <form onSubmit={handleInviteTeammate} className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="teammate@example.com"
+                        className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
+                        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+                      />
+                      <select
+                        value={inviteRole}
+                        onChange={(e) =>
+                          setInviteRole(e.target.value === "admin" ? "admin" : "member")
+                        }
+                        className="rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
+                        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+                      >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={inviteWorking || !inviteEmail.trim()}
+                      className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
+                      style={{
+                        background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
+                      }}
+                    >
+                      {inviteWorking ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <UserPlus size={14} />
+                      )}
+                      Invite teammate
+                    </button>
+                  </form>
+                )}
+
+                {inviteUrl && (
+                  <div className="rounded-md bg-gray-50 p-3">
+                    <p className="text-xs font-medium text-gray-500">Invite link</p>
+                    <code className="mt-1 block break-all text-xs text-gray-700">
+                      {inviteUrl}
+                    </code>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No organization loaded.</p>
             )}
           </div>
         </div>

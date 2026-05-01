@@ -6,15 +6,44 @@ import {
   getPurpleScaleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
-import {
-  getWorkflows,
-  deleteWorkflow,
-  publishWorkflow,
-  unpublishWorkflow,
-  getWorkflow,
-} from "@/lib/data/workflows";
 import { WorkflowStatus, type Workflow } from "@/types/workflow";
 import { Loader2, Trash2, Power, PowerOff } from "lucide-react";
+
+async function fetchWorkflows() {
+  const response = await fetch("/api/workflows", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load workflows");
+  return (payload.workflows ?? []) as Workflow[];
+}
+
+async function deleteWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}`, { method: "DELETE" });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error || "Failed to delete workflow");
+  }
+}
+
+async function publishWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/publish`, { method: "POST" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to publish workflow");
+  return payload as { version: unknown | null; errors: string[] };
+}
+
+async function unpublishWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/unpublish`, { method: "POST" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to unpublish workflow");
+  return payload.workflow as Workflow;
+}
+
+async function fetchWorkflow(id: string) {
+  const response = await fetch(`/api/workflows/${id}`, { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load workflow");
+  return payload.workflow as Workflow;
+}
 
 export default function AutomationsPage() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -25,7 +54,7 @@ export default function AutomationsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getWorkflows("default");
+        const data = await fetchWorkflows();
         setWorkflows(data);
       } catch (err) {
         console.error("Failed to load workflows:", err);
@@ -46,7 +75,7 @@ export default function AutomationsPage() {
 
     setDeletingId(wfId);
     try {
-      await deleteWorkflow(wfId);
+      await deleteWorkflowApi(wfId);
       setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
     } catch (err) {
       console.error("Failed to delete workflow:", err);
@@ -69,7 +98,7 @@ export default function AutomationsPage() {
       }
       setTogglingId(wf.id);
       try {
-        await unpublishWorkflow(wf.id);
+        await unpublishWorkflowApi(wf.id);
         setWorkflows((prev) =>
           prev.map((w) =>
             w.id === wf.id ? { ...w, status: WorkflowStatus.Draft } : w
@@ -84,11 +113,11 @@ export default function AutomationsPage() {
     } else {
       setTogglingId(wf.id);
       try {
-        const result = await publishWorkflow(wf.id, "user");
+        const result = await publishWorkflowApi(wf.id);
         if (result.errors.length > 0) {
           alert("Cannot publish — validation errors:\n" + result.errors.join("\n"));
         } else {
-          const updated = await getWorkflow(wf.id);
+          const updated = await fetchWorkflow(wf.id);
           setWorkflows((prev) =>
             prev.map((w) => (w.id === wf.id ? updated : w))
           );

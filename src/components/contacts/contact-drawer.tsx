@@ -8,13 +8,6 @@ import {
   getStringPurpleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
-import { updateContact } from "@/lib/data/contacts";
-import {
-  addTagToContact,
-  removeTagFromContact,
-  createTag,
-  deleteTag,
-} from "@/lib/data/tags";
 import type { Contact, Tag } from "@/types/crm";
 
 interface ContactDrawerProps {
@@ -62,7 +55,7 @@ export default function ContactDrawer({
       setLoading(true);
       setLoadError(null);
       try {
-        const response = await fetch(`/api/contacts/${contactId}?workspaceId=default`, {
+        const response = await fetch(`/api/contacts/${contactId}`, {
           cache: "no-store",
         });
         const payload = await response.json();
@@ -124,13 +117,22 @@ export default function ContactDrawer({
     setSaving(true);
     setSaveError(null);
     try {
-      const updated = await updateContact(contact.id, {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        status,
+      const response = await fetch(`/api/contacts/${contact.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          status,
+        }),
       });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to save contact");
+      }
+      const updated = payload.contact as Contact;
       setContact(updated);
       setDirty(false);
       onSaved();
@@ -146,7 +148,15 @@ export default function ContactDrawer({
     if (contactTags.some((t) => t.id === tag.id)) return;
     setTagLoading(tag.id);
     try {
-      await addTagToContact(contactId, tag.id, "default");
+      const response = await fetch(`/api/contacts/${contactId}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId: tag.id }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to add tag");
+      }
       setContactTags((prev) => [...prev, tag]);
     } catch (err) {
       console.error("Failed to add tag:", err);
@@ -158,7 +168,14 @@ export default function ContactDrawer({
   async function handleRemoveTag(tagId: string) {
     setTagLoading(tagId);
     try {
-      await removeTagFromContact(contactId, tagId);
+      const response = await fetch(
+        `/api/contacts/${contactId}/tags?tagId=${encodeURIComponent(tagId)}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to remove tag");
+      }
       setContactTags((prev) => prev.filter((t) => t.id !== tagId));
     } catch (err) {
       console.error("Failed to remove tag:", err);
@@ -173,13 +190,20 @@ export default function ContactDrawer({
     setTagLoading("new");
     try {
       const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-      const tag = await createTag({
-        workspace_id: "default",
-        name,
-        color,
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color }),
       });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Failed to create tag");
+      const tag = payload.tag as Tag;
       setAllTags((prev) => [...prev, tag]);
-      await addTagToContact(contactId, tag.id, "default");
+      await fetch(`/api/contacts/${contactId}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId: tag.id }),
+      });
       setContactTags((prev) => [...prev, tag]);
       setNewTagName("");
     } catch (err) {
@@ -193,7 +217,11 @@ export default function ContactDrawer({
     if (!confirm(`Delete tag "${tagName}" from all contacts? This cannot be undone.`)) return;
     setTagLoading(tagId);
     try {
-      await deleteTag(tagId);
+      const response = await fetch(`/api/tags/${tagId}`, { method: "DELETE" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to delete tag");
+      }
       setAllTags((prev) => prev.filter((t) => t.id !== tagId));
       setContactTags((prev) => prev.filter((t) => t.id !== tagId));
     } catch (err) {

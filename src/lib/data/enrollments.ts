@@ -59,6 +59,7 @@ export async function createEnrollment(
     .from("workflow_enrollments")
     .insert({
       workspace_id: input.workspace_id,
+      ...(input.organization_id ? { organization_id: input.organization_id } : {}),
       workflow_id: input.workflow_id,
       workflow_version_id: input.workflow_version_id,
       record_id: input.record_id,

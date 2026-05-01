@@ -26,12 +26,6 @@ import {
   getStringPurpleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
-import { createContact, deleteContact, deleteContacts } from "@/lib/data/contacts";
-import {
-  addTagToContact,
-  createTag,
-  deleteTag,
-} from "@/lib/data/tags";
 import type { Contact, Tag } from "@/types/crm";
 import ContactDrawer from "@/components/contacts/contact-drawer";
 
@@ -103,7 +97,7 @@ export default function ContactsPage() {
   const fetchContacts = useCallback(async () => {
     try {
       setError(null);
-      const response = await fetch("/api/contacts/summary?workspaceId=default", {
+      const response = await fetch("/api/contacts/summary", {
         cache: "no-store",
       });
       const payload = await response.json();
@@ -183,18 +177,32 @@ export default function ContactsPage() {
     setSubmitError(null);
 
     try {
-      const newContact = await createContact({
-        workspace_id: "default",
-        first_name: formData.first_name.trim(),
-        last_name: formData.last_name.trim(),
-        email: formData.email.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
+      const response = await fetch("/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim(),
+          email: formData.email.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          source: "alignocrm",
+        }),
       });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to create contact");
+      }
+
+      const newContact = payload.contact as Contact;
 
       // Add selected tags (don't let tag failures block contact creation)
       for (const tag of modalSelectedTags) {
         try {
-          await addTagToContact(newContact.id, tag.id, "default");
+          await fetch(`/api/contacts/${newContact.id}/tags`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tagId: tag.id }),
+          });
         } catch (tagErr) {
           console.error(`Failed to add tag "${tag.name}":`, tagErr);
         }
@@ -253,7 +261,14 @@ export default function ContactsPage() {
     if (!name) return;
     try {
       const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-      const tag = await createTag({ workspace_id: "default", name, color });
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Failed to create tag");
+      const tag = payload.tag as Tag;
       setAllTags((prev) => [...prev, tag]);
       setModalSelectedTags((prev) => [...prev, tag]);
       setNewModalTagName("");
@@ -265,7 +280,11 @@ export default function ContactsPage() {
   async function handleDeleteTag(tagId: string, tagName: string) {
     if (!confirm(`Delete tag "${tagName}" from all contacts? This cannot be undone.`)) return;
     try {
-      await deleteTag(tagId);
+      const response = await fetch(`/api/tags/${tagId}`, { method: "DELETE" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to delete tag");
+      }
       setAllTags((prev) => prev.filter((t) => t.id !== tagId));
       setModalSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
       // Remove from contact tags map
@@ -286,7 +305,13 @@ export default function ContactsPage() {
 
     setDeletingId(contactId);
     try {
-      await deleteContact(contactId);
+      const response = await fetch(`/api/contacts/${contactId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to delete contact");
+      }
       setContacts((prev) => prev.filter((c) => c.id !== contactId));
     } catch (err) {
       console.error("Failed to delete contact:", err);
@@ -324,7 +349,17 @@ export default function ContactsPage() {
 
     setBulkDeleting(true);
     try {
-      await deleteContacts(Array.from(selectedIds));
+      await Promise.all(
+        Array.from(selectedIds).map(async (id) => {
+          const response = await fetch(`/api/contacts/${id}`, {
+            method: "DELETE",
+          });
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.error || `Failed to delete contact ${id}`);
+          }
+        })
+      );
       setContacts((prev) => prev.filter((c) => !selectedIds.has(c.id)));
       setSelectedIds(new Set());
     } catch (err) {

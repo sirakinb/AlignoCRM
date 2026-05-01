@@ -10,9 +10,30 @@ import type {
   StopWorkflowConfig,
 } from "@/types/workflow";
 import { inputClass, labelClass } from "./shared";
-import { getTags } from "@/lib/data/tags";
-import { getPipelines, getStages } from "@/lib/data/pipelines";
 import type { Tag, Pipeline, Stage } from "@/types/crm";
+
+async function fetchTags() {
+  const response = await fetch("/api/tags", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load tags");
+  return (payload.tags ?? []) as Tag[];
+}
+
+async function fetchPipelines() {
+  const response = await fetch("/api/pipelines", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load pipelines");
+  return (payload.pipelines ?? []) as Pipeline[];
+}
+
+async function fetchStages(pipelineId: string) {
+  const response = await fetch(`/api/pipelines?pipelineId=${pipelineId}`, {
+    cache: "no-store",
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load stages");
+  return (payload.stages ?? []) as Stage[];
+}
 
 // Add Tag
 interface AddTagFormProps {
@@ -25,7 +46,7 @@ export function AddTagForm({ config, onChange }: AddTagFormProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getTags("default")
+    fetchTags()
       .then(setTags)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -76,7 +97,7 @@ export function RemoveTagForm({ config, onChange }: RemoveTagFormProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getTags("default")
+    fetchTags()
       .then(setTags)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -129,7 +150,7 @@ export function MoveDealStageForm({ config, onChange }: MoveDealStageFormProps) 
   const [loadingStages, setLoadingStages] = useState(false);
 
   useEffect(() => {
-    getPipelines("default")
+    fetchPipelines()
       .then(setPipelines)
       .catch(console.error)
       .finally(() => setLoadingPipelines(false));
@@ -141,7 +162,7 @@ export function MoveDealStageForm({ config, onChange }: MoveDealStageFormProps) 
       return;
     }
     setLoadingStages(true);
-    getStages(config.pipelineId)
+    fetchStages(config.pipelineId)
       .then(setStages)
       .catch(console.error)
       .finally(() => setLoadingStages(false));

@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
+import {
+  getInternalApiAuthContext,
+  unauthorizedInternalApiResponse,
+} from "@/lib/api/internal-auth";
 import { getResumableEnrollments, claimEnrollmentForResume, updateEnrollment } from "@/lib/data/enrollments";
 import { advanceWorkflow } from "@/lib/workflows/executor";
 import { insforge } from "@/lib/insforge/client";
 import { EnrollmentStatus } from "@/types/enrollment";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const authContext = await getInternalApiAuthContext(request);
+    if (!authContext.authorized) {
+      return unauthorizedInternalApiResponse();
+    }
+
     const enrollments = await getResumableEnrollments();
 
     let resumed = 0;

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { insforge } from "@/lib/insforge/client";
+import { getContact } from "@/lib/data/contacts";
 import { createEnrollment } from "@/lib/data/enrollments";
+import { getWorkflow } from "@/lib/data/workflows";
 import { advanceWorkflow } from "@/lib/workflows/executor";
 import type { WorkflowVersion } from "@/types/workflow";
 
 export async function POST(request: Request) {
   try {
+    const tenant = await requireTenantContext();
     const { workflowId, contactId } = await request.json();
 
     if (!workflowId || !contactId) {
@@ -13,6 +17,18 @@ export async function POST(request: Request) {
         { error: "Missing required fields: workflowId, contactId" },
         { status: 400 }
       );
+    }
+
+    const [workflow, contact] = await Promise.all([
+      getWorkflow(workflowId),
+      getContact(contactId),
+    ]);
+
+    if (
+      workflow.workspace_id !== tenant.workspaceId ||
+      contact.workspace_id !== tenant.workspaceId
+    ) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     // Get the latest published version
@@ -35,7 +51,8 @@ export async function POST(request: Request) {
 
     // Create an enrollment for this contact
     const enrollment = await createEnrollment({
-      workspace_id: "default",
+      workspace_id: tenant.workspaceId,
+      ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
       workflow_id: workflowId,
       workflow_version_id: wfVersion.id,
       record_id: contactId,
@@ -47,6 +64,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ enrollmentId: enrollment.id });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("POST /api/workflows/test error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },

@@ -45,6 +45,7 @@ export async function createContact(input: CreateContactInput) {
   try {
     await emitEvent({
       workspace_id: contact.workspace_id,
+      ...(contact.organization_id ? { organization_id: contact.organization_id } : {}),
       event_type: BusinessEventType.ContactCreated,
       record_id: contact.id,
       record_type: "contact",

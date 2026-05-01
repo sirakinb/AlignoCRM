@@ -21,18 +21,88 @@ import {
 import type { ExecutionStep } from "@/types/enrollment";
 import { EnrollmentStatus } from "@/types/enrollment";
 import { nodeTypeConfigs } from "@/components/workflow/node-types";
-import {
-  getWorkflow,
-  getWorkflowNodes,
-  getWorkflowEdges,
-  saveWorkflowNodes,
-  publishWorkflow,
-  unpublishWorkflow,
-  createWorkflow,
-} from "@/lib/data/workflows";
-import { getEnrollmentsForWorkflow } from "@/lib/data/enrollments";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { Undo2, Redo2, Loader2, Check, Activity, Play } from "lucide-react";
+
+async function createWorkflowApi(name = "Untitled Workflow") {
+  const response = await fetch("/api/workflows", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to create workflow");
+  return payload.workflow as Workflow;
+}
+
+async function fetchWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}`, { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load workflow");
+  return payload.workflow as Workflow;
+}
+
+async function updateWorkflowApi(id: string, input: { name?: string }) {
+  const response = await fetch(`/api/workflows/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to update workflow");
+  return payload.workflow as Workflow;
+}
+
+async function fetchWorkflowNodesApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/nodes`, {
+    cache: "no-store",
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load workflow nodes");
+  return {
+    nodes: (payload.nodes ?? []) as DbWorkflowNode[],
+    edges: (payload.edges ?? []) as DbWorkflowEdge[],
+  };
+}
+
+async function saveWorkflowNodesApi(
+  id: string,
+  nodes: Omit<DbWorkflowNode, "workflow_id" | "created_at" | "updated_at">[],
+  edges: Omit<DbWorkflowEdge, "workflow_id">[]
+) {
+  const response = await fetch(`/api/workflows/${id}/nodes`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nodes, edges }),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error || "Failed to save workflow nodes");
+  }
+}
+
+async function publishWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/publish`, { method: "POST" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to publish workflow");
+  return payload as { version: unknown | null; errors: string[] };
+}
+
+async function unpublishWorkflowApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/unpublish`, { method: "POST" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to unpublish workflow");
+  return payload.workflow as Workflow;
+}
+
+async function fetchWorkflowEnrollmentsApi(id: string) {
+  const response = await fetch(`/api/workflows/${id}/enrollments`, {
+    cache: "no-store",
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Failed to load enrollments");
+  return (payload.enrollments ?? []) as EnrichedEnrollment[];
+}
 
 // --- Format conversions ---
 
@@ -191,7 +261,7 @@ export default function WorkflowBuilderPage({
       if (!wf) return;
       setSaveStatus("saving");
       try {
-        await saveWorkflowNodes(
+        await saveWorkflowNodesApi(
           wf.id,
           nodesRef.current.map(toDbNode),
           edgesRef.current.map(toDbEdge)
@@ -276,10 +346,7 @@ export default function WorkflowBuilderPage({
       const wf = workflowRef.current;
       if (!wf) return;
       try {
-        // Try to resume any ready enrollments via local API
-        await fetch("/api/workflows/resume", { method: "POST" }).catch(() => {});
-
-        const data = await getEnrollmentsForWorkflow(wf.id);
+        const data = await fetchWorkflowEnrollmentsApi(wf.id);
         setEnrollments(data);
 
         const counts = computeContactCounts(data);
@@ -317,14 +384,7 @@ export default function WorkflowBuilderPage({
       const wf = workflowRef.current;
       if (!wf) return;
       try {
-        // Try to resume any ready enrollments locally
-        try {
-          await fetch("/api/workflows/resume", { method: "POST" });
-        } catch {
-          // ignore — endpoint may not be available
-        }
-
-        const data = await getEnrollmentsForWorkflow(wf.id);
+        const data = await fetchWorkflowEnrollmentsApi(wf.id);
         setEnrollments(data);
 
         const counts = computeContactCounts(data);
@@ -361,29 +421,20 @@ export default function WorkflowBuilderPage({
   async function loadWorkflow() {
     try {
       if (params.id === "new") {
-        const wf = await createWorkflow({
-          workspace_id: "default",
-          name: "Untitled Workflow",
-          created_by: "user",
-        });
+        const wf = await createWorkflowApi("Untitled Workflow");
         setWorkflow(wf);
         router.replace(`/automations/${wf.id}/builder`);
       } else {
         let wf: Workflow;
         try {
-          wf = await getWorkflow(params.id);
+          wf = await fetchWorkflowApi(params.id);
         } catch {
-          wf = await createWorkflow({
-            workspace_id: "default",
-            name: "Untitled Workflow",
-            created_by: "user",
-          });
+          wf = await createWorkflowApi("Untitled Workflow");
           router.replace(`/automations/${wf.id}/builder`);
         }
         setWorkflow(wf);
 
-        const dbNodes = await getWorkflowNodes(wf.id);
-        const dbEdges = await getWorkflowEdges(wf.id);
+        const { nodes: dbNodes, edges: dbEdges } = await fetchWorkflowNodesApi(wf.id);
 
         setNodes(dbNodes.map(toRfNode));
         setEdges(dbEdges.map(toRfEdge));
@@ -429,17 +480,17 @@ export default function WorkflowBuilderPage({
 
     try {
       // Save current state first
-      await saveWorkflowNodes(
+      await saveWorkflowNodesApi(
         wf.id,
         nodesRef.current.map(toDbNode),
         edgesRef.current.map(toDbEdge)
       );
 
-      const result = await publishWorkflow(wf.id, "user");
+      const result = await publishWorkflowApi(wf.id);
       if (result.errors.length > 0) {
         alert("Validation errors:\n" + result.errors.join("\n"));
       } else {
-        const updated = await getWorkflow(wf.id);
+        const updated = await fetchWorkflowApi(wf.id);
         setWorkflow(updated);
         alert("Workflow published successfully!");
       }
@@ -464,8 +515,8 @@ export default function WorkflowBuilderPage({
     }
 
     try {
-      await unpublishWorkflow(wf.id);
-      const updated = await getWorkflow(wf.id);
+      await unpublishWorkflowApi(wf.id);
+      const updated = await fetchWorkflowApi(wf.id);
       setWorkflow(updated);
     } catch (err) {
       console.error("Unpublish failed:", err);
@@ -478,12 +529,11 @@ export default function WorkflowBuilderPage({
     const wf = workflowRef.current;
     if (!wf) return;
     setWorkflow({ ...wf, name });
-    // Save name to DB
-    const { error } = await (await import("@/lib/insforge/client")).insforge.database
-      .from("workflows")
-      .update({ name, updated_at: new Date().toISOString() })
-      .eq("id", wf.id);
-    if (error) console.error("Failed to save name:", error);
+    try {
+      await updateWorkflowApi(wf.id, { name });
+    } catch (error) {
+      console.error("Failed to save name:", error);
+    }
   };
 
   // --- Activity logic ---
@@ -505,7 +555,7 @@ export default function WorkflowBuilderPage({
     const wf = workflowRef.current;
     if (!wf) return;
     try {
-      const data = await getEnrollmentsForWorkflow(wf.id);
+      const data = await fetchWorkflowEnrollmentsApi(wf.id);
       setEnrollments(data);
 
       // Apply contact count badges
@@ -536,7 +586,7 @@ export default function WorkflowBuilderPage({
     setShowActivity(true);
 
     try {
-      const data = await getEnrollmentsForWorkflow(wf.id);
+      const data = await fetchWorkflowEnrollmentsApi(wf.id);
       setEnrollments(data);
 
       // Auto-select the new test enrollment

@@ -23,7 +23,7 @@ export function TestWorkflowModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/contacts?workspaceId=default")
+    fetch("/api/contacts")
       .then((res) => res.json())
       .then((json) => {
         const data: Contact[] = json.contacts ?? [];

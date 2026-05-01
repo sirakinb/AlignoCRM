@@ -1,17 +1,85 @@
 import { NextResponse } from "next/server";
+import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
+import { getWorkflow, updateWorkflow } from "@/lib/data/workflows";
 import { insforge } from "@/lib/insforge/client";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const tenant = await requireTenantContext();
+    const { id } = await params;
+    const workflow = await getWorkflow(id);
+
+    if (workflow.workspace_id !== tenant.workspaceId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ workflow });
+  } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
+    console.error("GET /api/workflows/[id] error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const tenant = await requireTenantContext();
+    const { id } = await params;
+    const workflow = await getWorkflow(id);
+
+    if (workflow.workspace_id !== tenant.workspaceId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const updated = await updateWorkflow(id, {
+      ...(typeof body.name === "string" ? { name: body.name } : {}),
+      ...(typeof body.description === "string"
+        ? { description: body.description }
+        : {}),
+    });
+
+    return NextResponse.json({ workflow: updated });
+  } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
+    console.error("PATCH /api/workflows/[id] error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
-
-  if (!id) {
-    return NextResponse.json({ error: "Missing workflow ID" }, { status: 400 });
-  }
-
   try {
+    const tenant = await requireTenantContext();
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing workflow ID" }, { status: 400 });
+    }
+
+    const workflow = await getWorkflow(id);
+    if (workflow.workspace_id !== tenant.workspaceId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     // Delete enrollment-dependent tables first.
     // RLS may hide rows from SELECT, so we delete by workflow_id where possible.
     const { data: enrollments } = await insforge.database
@@ -59,6 +127,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
+    const authResponse = tenantErrorResponse(err);
+    if (authResponse) return authResponse;
+
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Delete workflow error:", message);
     return NextResponse.json({ error: message }, { status: 500 });

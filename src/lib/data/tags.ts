@@ -45,6 +45,17 @@ export async function getTags(workspaceId: string) {
   return data as Tag[];
 }
 
+export async function getTag(id: string) {
+  const { data, error } = await insforge.database
+    .from("tags")
+    .select()
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data as Tag;
+}
+
 export async function createTag(input: CreateTagInput) {
   const { data, error } = await insforge.database
     .from("tags")

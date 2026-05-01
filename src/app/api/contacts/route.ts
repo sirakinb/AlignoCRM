@@ -6,13 +6,15 @@ import {
   getTags,
 } from "@/lib/data/tags";
 import {
-  isInternalApiRequestAuthorized,
+  getInternalApiAuthContext,
   unauthorizedInternalApiResponse,
 } from "@/lib/api/internal-auth";
+import {
+  requireTenantContext,
+  tenantErrorResponse,
+} from "@/lib/auth/tenant";
 import { getStringPurpleColor } from "@/lib/design/aligno-theme";
 import type { Tag } from "@/types/crm";
-
-const DEFAULT_WORKSPACE_ID = "default";
 
 function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -34,7 +36,11 @@ function normalizeSourceTagName(source: string) {
   return `source:${source.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
-async function getOrCreateSourceTag(workspaceId: string, source: string) {
+async function getOrCreateSourceTag(
+  workspaceId: string,
+  source: string,
+  organizationId?: string | null
+) {
   const tagName = normalizeSourceTagName(source);
   const tags = await getTags(workspaceId);
   const existingTag = tags.find(
@@ -45,6 +51,7 @@ async function getOrCreateSourceTag(workspaceId: string, source: string) {
 
   return createTag({
     workspace_id: workspaceId,
+    ...(organizationId ? { organization_id: organizationId } : {}),
     name: tagName,
     color: getStringPurpleColor(tagName),
   });
@@ -52,12 +59,14 @@ async function getOrCreateSourceTag(workspaceId: string, source: string) {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get("workspaceId") ?? "default";
+    const tenant = await requireTenantContext();
 
-    const contacts = await getContacts(workspaceId);
+    const contacts = await getContacts(tenant.workspaceId);
     return NextResponse.json({ contacts });
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("GET /api/contacts error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
@@ -68,16 +77,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    if (!(await isInternalApiRequestAuthorized(request))) {
-      return unauthorizedInternalApiResponse();
-    }
+    const authContext = await getInternalApiAuthContext(request);
+    const tenant = authContext.authorized
+      ? authContext.tenant
+      : await requireTenantContext();
 
     const body = await request.json();
     const name = normalizeString(body.name);
     const email = normalizeString(body.email);
     const phone = normalizeString(body.phone);
     const source = normalizeString(body.source);
-    const workspaceId = normalizeString(body.workspace_id) || DEFAULT_WORKSPACE_ID;
+    const workspaceId = tenant.workspaceId;
 
     if (!name) {
       return NextResponse.json(
@@ -110,6 +120,7 @@ export async function POST(request: Request) {
     const { firstName, lastName } = splitName(name);
     const contact = await createContact({
       workspace_id: workspaceId,
+      ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
       first_name: firstName,
       last_name: lastName,
       email: email || undefined,
@@ -119,7 +130,11 @@ export async function POST(request: Request) {
 
     let sourceTag: Tag | null = null;
     try {
-      sourceTag = await getOrCreateSourceTag(workspaceId, source);
+      sourceTag = await getOrCreateSourceTag(
+        workspaceId,
+        source,
+        tenant.organizationId
+      );
       await addTagToContact(contact.id, sourceTag.id, workspaceId);
     } catch (tagError) {
       console.error("POST /api/contacts source tag error:", tagError);
@@ -128,11 +143,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         contactId: contact.id,
+        contact,
         sourceTagId: sourceTag?.id ?? null,
       },
       { status: 201 }
     );
   } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return unauthorizedInternalApiResponse();
+
     console.error("POST /api/contacts error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },

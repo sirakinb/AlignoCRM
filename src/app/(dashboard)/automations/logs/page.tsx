@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { EnrollmentStatus } from "@/types/enrollment";
 import type { WorkflowEnrollment } from "@/types/enrollment";
 import { EnrollmentList } from "@/components/logs/enrollment-list";
-import { getEnrollments } from "@/lib/data/enrollments";
 import { Loader2, FileText } from "lucide-react";
 
 const statusFilters = [
@@ -28,7 +27,12 @@ export default function EnrollmentLogsPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getEnrollments("default");
+        const response = await fetch("/api/enrollments", { cache: "no-store" });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load enrollments");
+        }
+        const data = (payload.enrollments ?? []) as WorkflowEnrollment[];
         if (!cancelled) {
           setEnrollments(data);
         }

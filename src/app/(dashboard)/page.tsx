@@ -9,18 +9,16 @@ import {
 import type { Deal, Pipeline, Stage, Contact } from "@/types/crm";
 import { Loader2, BarChart3, TrendingUp, Users, DollarSign } from "lucide-react";
 
-const WORKSPACE_ID = "default";
-
 /* ── API helpers ── */
 async function fetchDeals(): Promise<Deal[]> {
-  const res = await fetch(`/api/deals?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/deals");
   if (!res.ok) throw new Error("Failed to load deals");
   const json = await res.json();
   return json.deals;
 }
 
 async function fetchPipelines(): Promise<Pipeline[]> {
-  const res = await fetch(`/api/pipelines?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/pipelines");
   if (!res.ok) throw new Error("Failed to load pipelines");
   const json = await res.json();
   return json.pipelines;
@@ -34,7 +32,7 @@ async function fetchStages(pipelineId: string): Promise<Stage[]> {
 }
 
 async function fetchContacts(): Promise<Contact[]> {
-  const res = await fetch(`/api/contacts?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/contacts");
   if (!res.ok) throw new Error("Failed to load contacts");
   const json = await res.json();
   return json.contacts;

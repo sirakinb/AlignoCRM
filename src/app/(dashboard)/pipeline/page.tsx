@@ -21,8 +21,6 @@ import {
 } from "lucide-react";
 import type { Pipeline, Stage, Deal, Contact } from "@/types/crm";
 
-const WORKSPACE_ID = "default";
-
 const DEFAULT_STAGE_COLORS = [...ALIGNO_PURPLE_SCALE];
 
 // ---------------------------------------------------------------------------
@@ -30,7 +28,7 @@ const DEFAULT_STAGE_COLORS = [...ALIGNO_PURPLE_SCALE];
 // ---------------------------------------------------------------------------
 
 async function fetchPipelines(): Promise<Pipeline[]> {
-  const res = await fetch(`/api/pipelines?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/pipelines");
   if (!res.ok) throw new Error("Failed to load pipelines");
   const json = await res.json();
   return json.pipelines;
@@ -46,14 +44,14 @@ async function fetchStages(pipelineId: string): Promise<Stage[]> {
 }
 
 async function fetchDeals(): Promise<Deal[]> {
-  const res = await fetch(`/api/deals?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/deals");
   if (!res.ok) throw new Error("Failed to load deals");
   const json = await res.json();
   return json.deals;
 }
 
 async function fetchContacts(): Promise<Contact[]> {
-  const res = await fetch(`/api/contacts?workspaceId=${WORKSPACE_ID}`);
+  const res = await fetch("/api/contacts");
   if (!res.ok) throw new Error("Failed to load contacts");
   const json = await res.json();
   return json.contacts;
@@ -62,8 +60,6 @@ async function fetchContacts(): Promise<Contact[]> {
 async function seedDefaultPipeline(): Promise<void> {
   const res = await fetch("/api/pipelines/seed", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ workspaceId: WORKSPACE_ID }),
   });
   if (!res.ok) throw new Error("Failed to seed pipeline");
 }
@@ -87,10 +83,7 @@ async function apiCreateDeal(input: {
   const res = await fetch("/api/deals", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      workspace_id: WORKSPACE_ID,
-      ...input,
-    }),
+    body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("Failed to create deal");
   const json = await res.json();
@@ -110,7 +103,6 @@ async function apiCreatePipeline(input: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      workspace_id: WORKSPACE_ID,
       name: input.name,
       stages: input.stages,
     }),
