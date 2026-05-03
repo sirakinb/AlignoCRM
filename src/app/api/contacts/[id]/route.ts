@@ -53,6 +53,8 @@ export async function PATCH(
       last_name: body.last_name,
       email: body.email,
       phone: body.phone,
+      company: body.company,
+      notes: body.notes,
       status: body.status,
       owner_id: body.owner_id,
     });

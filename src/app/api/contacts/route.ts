@@ -86,6 +86,8 @@ export async function POST(request: Request) {
     const name = normalizeString(body.name);
     const email = normalizeString(body.email);
     const phone = normalizeString(body.phone);
+    const company = normalizeString(body.company);
+    const notes = normalizeString(body.notes);
     const source = normalizeString(body.source);
     const workspaceId = tenant.workspaceId;
 
@@ -125,6 +127,8 @@ export async function POST(request: Request) {
       last_name: lastName,
       email: email || undefined,
       phone: phone || undefined,
+      company: company || undefined,
+      notes: notes || undefined,
       status: "active",
     });
 

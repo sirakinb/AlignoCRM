@@ -12,6 +12,7 @@ import {
   Plus,
   Mail,
   Phone,
+  Building2,
   X,
   Loader2,
   UserPlus,
@@ -42,6 +43,8 @@ interface ContactFormData {
   last_name: string;
   email: string;
   phone: string;
+  company: string;
+  notes: string;
 }
 
 const emptyForm: ContactFormData = {
@@ -49,6 +52,8 @@ const emptyForm: ContactFormData = {
   last_name: "",
   email: "",
   phone: "",
+  company: "",
+  notes: "",
 };
 
 function getContactDisplayName(contact: Pick<Contact, "first_name" | "last_name">) {
@@ -143,7 +148,8 @@ export default function ContactsPage() {
       normalizedSearch === "" ||
       getContactDisplayName(c).toLowerCase().includes(normalizedSearch) ||
       c.email?.toLowerCase().includes(normalizedSearch) ||
-      c.phone?.includes(deferredSearch);
+      c.phone?.includes(deferredSearch) ||
+      c.company?.toLowerCase().includes(normalizedSearch);
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -184,6 +190,8 @@ export default function ContactsPage() {
           name: `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim(),
           email: formData.email.trim() || undefined,
           phone: formData.phone.trim() || undefined,
+          company: formData.company.trim() || undefined,
+          notes: formData.notes.trim() || undefined,
           source: "alignocrm",
         }),
       });
@@ -549,6 +557,9 @@ export default function ContactsPage() {
                 Phone
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+                Company
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
                 Tags
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
@@ -610,6 +621,16 @@ export default function ContactsPage() {
                       <div className="flex items-center gap-1.5 text-[#5A4B78]">
                         <Phone size={13} className="shrink-0 text-[#8D88A0]" />
                         {contact.phone}
+                      </div>
+                    ) : (
+                      <span className="text-[#AAA3BC]">&mdash;</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {contact.company ? (
+                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
+                        <Building2 size={13} className="shrink-0 text-[#8D88A0]" />
+                        {contact.company}
                       </div>
                     ) : (
                       <span className="text-[#AAA3BC]">&mdash;</span>
@@ -879,6 +900,54 @@ export default function ContactsPage() {
                       className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
+                </div>
+
+                {/* Company */}
+                <div>
+                  <label
+                    htmlFor="company"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Company
+                  </label>
+                  <div className="relative">
+                    <Building2
+                      size={16}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      id="company"
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, company: e.target.value }))
+                      }
+                      placeholder="Acme Inc."
+                      disabled={submitting}
+                      className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label
+                    htmlFor="notes"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Notes
+                  </label>
+                  <textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, notes: e.target.value }))
+                    }
+                    placeholder="Additional info from DropCard, meeting notes, etc."
+                    disabled={submitting}
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
+                  />
                 </div>
               </div>
 

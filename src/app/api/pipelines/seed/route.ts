@@ -2,13 +2,22 @@ import { NextResponse } from "next/server";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { getPipelines, createPipeline, createStage } from "@/lib/data/pipelines";
 
-const DEFAULT_STAGES = [
+const DEFAULT_SALES_STAGES = [
   { name: "Lead", position: 0, color: "#6B7280" },
   { name: "Qualified", position: 1, color: "#3B82F6" },
   { name: "Proposal", position: 2, color: "#F59E0B" },
   { name: "Negotiation", position: 3, color: "#8B5CF6" },
   { name: "Closed Won", position: 4, color: "#10B981" },
   { name: "Closed Lost", position: 5, color: "#EF4444" },
+];
+
+const DEFAULT_RETAINER_STAGES = [
+  { name: "Scope Discussion", position: 0, color: "#6B7280" },
+  { name: "Proposal Sent", position: 1, color: "#3B82F6" },
+  { name: "Approved", position: 2, color: "#F59E0B" },
+  { name: "In Progress", position: 3, color: "#8B5CF6" },
+  { name: "Completed", position: 4, color: "#10B981" },
+  { name: "Renewed", position: 5, color: "#06B6D4" },
 ];
 
 export async function POST() {
@@ -24,30 +33,58 @@ export async function POST() {
       );
     }
 
-    // Create default pipeline
-    const pipeline = await createPipeline({
+    const orgId = tenant.organizationId ? { organization_id: tenant.organizationId } : {};
+
+    // Create Sales Pipeline
+    const salesPipeline = await createPipeline({
       workspace_id: tenant.workspaceId,
-      ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
+      ...orgId,
       name: "Sales Pipeline",
       description: "Default sales pipeline",
       position: 0,
     });
 
-    // Create stages for the pipeline
-    const stages = [];
-    for (const stageInput of DEFAULT_STAGES) {
+    const salesStages = [];
+    for (const stageInput of DEFAULT_SALES_STAGES) {
       const stage = await createStage({
-        pipeline_id: pipeline.id,
-        ...(tenant.organizationId ? { organization_id: tenant.organizationId } : {}),
+        pipeline_id: salesPipeline.id,
+        ...orgId,
         name: stageInput.name,
         position: stageInput.position,
         color: stageInput.color,
       });
-      stages.push(stage);
+      salesStages.push(stage);
+    }
+
+    // Create Retainer / Existing Client Pipeline
+    const retainerPipeline = await createPipeline({
+      workspace_id: tenant.workspaceId,
+      ...orgId,
+      name: "Retainer / Existing Client",
+      description: "Pipeline for retainer clients and existing clients signing on for additional work",
+      position: 1,
+    });
+
+    const retainerStages = [];
+    for (const stageInput of DEFAULT_RETAINER_STAGES) {
+      const stage = await createStage({
+        pipeline_id: retainerPipeline.id,
+        ...orgId,
+        name: stageInput.name,
+        position: stageInput.position,
+        color: stageInput.color,
+      });
+      retainerStages.push(stage);
     }
 
     return NextResponse.json(
-      { message: "Pipeline seeded", pipeline, stages },
+      {
+        message: "Pipelines seeded",
+        pipelines: [
+          { pipeline: salesPipeline, stages: salesStages },
+          { pipeline: retainerPipeline, stages: retainerStages },
+        ],
+      },
       { status: 201 }
     );
   } catch (error) {

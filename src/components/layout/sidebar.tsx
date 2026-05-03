@@ -13,7 +13,7 @@ import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen } from "lucide-
 /* eslint-disable @next/next/no-img-element */
 
 const navItems = [
-  { label: "Home", href: "/", icon: Home },
+  { label: "Home", href: "/dashboard", icon: Home },
   { label: "Pipeline", href: "/pipeline", icon: GitBranch },
   { label: "Contacts", href: "/contacts", icon: Users },
   { label: "Automations", href: "/automations", icon: Zap },
@@ -126,8 +126,8 @@ export function Sidebar({ width = 224 }: SidebarProps) {
         <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive =
-              item.href === "/"
-                ? pathname === "/"
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
                 : pathname.startsWith(item.href);
 
             return (

@@ -12,7 +12,7 @@ export function getAppUrl() {
   return "http://localhost:9000";
 }
 
-export function getPostAuthRedirectUrl(path = "/") {
+export function getPostAuthRedirectUrl(path = "/dashboard") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${getAppUrl()}${normalizedPath}`;
 }

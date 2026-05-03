@@ -59,6 +59,10 @@ describe("Sidebar", () => {
 
   it("renders correct navigation links", () => {
     render(<Sidebar />);
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
+      "href",
+      "/dashboard"
+    );
     expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute(
       "href",
       "/pipeline"

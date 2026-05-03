@@ -16,6 +16,8 @@ export interface Contact {
   last_name: string;
   email: string | null;
   phone: string | null;
+  company: string | null;
+  notes: string | null;
   status: ContactStatus;
   owner_id: string | null;
   created_at: string;
@@ -110,12 +112,12 @@ export type CreateContactInput = Pick<
   Contact,
   "workspace_id" | "first_name" | "last_name"
 > &
-  Partial<Pick<Contact, "organization_id" | "email" | "phone" | "status" | "owner_id">>;
+  Partial<Pick<Contact, "organization_id" | "email" | "phone" | "company" | "notes" | "status" | "owner_id">>;
 
 export type UpdateContactInput = Partial<
   Pick<
     Contact,
-    "first_name" | "last_name" | "email" | "phone" | "status" | "owner_id"
+    "first_name" | "last_name" | "email" | "phone" | "company" | "notes" | "status" | "owner_id"
   >
 >;
 

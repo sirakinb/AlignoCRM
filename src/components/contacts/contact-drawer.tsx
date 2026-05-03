@@ -35,6 +35,8 @@ export default function ContactDrawer({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"active" | "archived">("active");
 
   // Tags
@@ -73,6 +75,8 @@ export default function ContactDrawer({
         setLastName(c.last_name ?? "");
         setEmail(c.email ?? "");
         setPhone(c.phone ?? "");
+        setCompany(c.company ?? "");
+        setNotes(c.notes ?? "");
         setStatus((c.status as "active" | "archived") ?? "active");
         setContactTags(cTags);
         setAllTags(wTags);
@@ -108,9 +112,11 @@ export default function ContactDrawer({
       lastName !== contact.last_name ||
       email !== (contact.email ?? "") ||
       phone !== (contact.phone ?? "") ||
+      company !== (contact.company ?? "") ||
+      notes !== (contact.notes ?? "") ||
       status !== contact.status;
     setDirty(changed);
-  }, [firstName, lastName, email, phone, status, contact]);
+  }, [firstName, lastName, email, phone, company, notes, status, contact]);
 
   async function handleSave() {
     if (!dirty || !contact) return;
@@ -125,6 +131,8 @@ export default function ContactDrawer({
           last_name: lastName.trim(),
           email: email.trim() || undefined,
           phone: phone.trim() || undefined,
+          company: company.trim() || null,
+          notes: notes.trim() || null,
           status,
         }),
       });
@@ -329,6 +337,36 @@ export default function ContactDrawer({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1-555-0100"
+                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
+                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                />
+              </div>
+
+              {/* Company */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Company
+                </label>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Acme Inc."
+                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
+                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Notes
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional info from DropCard, meeting notes, etc."
+                  rows={3}
                   className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
                   style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
                 />

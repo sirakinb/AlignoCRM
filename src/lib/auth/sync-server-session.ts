@@ -29,7 +29,7 @@ export async function syncServerSession() {
 
 export function getSafeRedirectPath(redirect: string | null) {
   if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
-    return "/";
+    return "/dashboard";
   }
 
   return redirect;

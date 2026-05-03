@@ -4,10 +4,10 @@ import type { NextRequest } from "next/server";
 
 const insforgeMiddleware = InsforgeMiddleware({
   baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
-  publicRoutes: ["/sign-in", "/sign-up", "/invite"],
+  publicRoutes: ["/", "/sign-in", "/sign-up", "/invite", "/robots.txt", "/sitemap.xml"],
   signInUrl: "/sign-in",
   signUpUrl: "/sign-up",
-  afterSignInUrl: "/",
+  afterSignInUrl: "/dashboard",
   useBuiltInAuth: false,
 });
 
@@ -29,7 +29,7 @@ export default function middleware(request: NextRequest) {
   ) {
     const cookieResponse = insforgeMiddleware(request);
 
-    const redirectUrl = new URL("/", request.url);
+    const redirectUrl = new URL("/dashboard", request.url);
     const redirect = NextResponse.redirect(redirectUrl);
 
     for (const cookie of cookieResponse.cookies.getAll()) {

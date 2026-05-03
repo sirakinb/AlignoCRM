@@ -30,7 +30,7 @@ export function Providers({
   return (
     <InsforgeBrowserProvider
       client={insforge}
-      afterSignInUrl="/"
+      afterSignInUrl="/dashboard"
       initialState={initialState}
     >
       <ServerAuthProvider user={serverUser}>

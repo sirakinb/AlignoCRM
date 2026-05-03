@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
-import { getAuthFromCookies } from "@insforge/nextjs";
 import { Providers } from "./providers";
+import { getSiteUrl } from "@/lib/seo/site-url";
 import "./globals.css";
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  title: "AlignoCRM",
-  description: "AI-native pipeline and workflow command center",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Aligno CRM | AI-Native Pipeline and Workflow Automation",
+    template: "%s | Aligno CRM",
+  },
+  description:
+    "Aligno CRM is an AI-native pipeline and workflow command center for service businesses.",
+  applicationName: "Aligno CRM",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialState = await getAuthFromCookies();
-
   return (
     <html lang="en">
       <body className="antialiased">
-        <Providers initialState={initialState}>{children}</Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
