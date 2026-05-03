@@ -212,6 +212,16 @@ export async function getOrganizationMembers(organizationId: string) {
   return data as OrganizationMember[];
 }
 
+export async function removeOrganizationMember(memberId: string, organizationId: string) {
+  const { error } = await insforge.database
+    .from("organization_members")
+    .update({ status: "removed" })
+    .eq("id", memberId)
+    .eq("organization_id", organizationId);
+
+  if (error) throw error;
+}
+
 export async function createOrganizationInvite({
   organizationId,
   email,

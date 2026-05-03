@@ -98,6 +98,7 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviteWorking, setInviteWorking] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -323,6 +324,38 @@ export default function SettingsPage() {
     setApiKeyCopied(true);
     setMessage({ type: "success", text: "API key copied" });
     window.setTimeout(() => setApiKeyCopied(false), 1800);
+  }
+
+  async function handleRemoveMember(memberId: string, memberEmail: string) {
+    if (!confirm(`Remove ${memberEmail} from the organization? They will lose access to all workspace data.`)) return;
+
+    setRemovingMemberId(memberId);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/api/organizations/members/${memberId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to remove member");
+      }
+
+      setOrganization((prev) =>
+        prev
+          ? { ...prev, members: prev.members.filter((m) => m.id !== memberId) }
+          : prev
+      );
+      setMessage({ type: "success", text: `${memberEmail} has been removed` });
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to remove member",
+      });
+    } finally {
+      setRemovingMemberId(null);
+    }
   }
 
   async function handleInviteTeammate(e: React.FormEvent) {
@@ -589,9 +622,26 @@ export default function SettingsPage() {
                       className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm"
                     >
                       <span className="truncate text-gray-700">{member.email}</span>
-                      <span className="rounded-full bg-[#F3EAFD] px-2 py-0.5 text-xs font-medium text-[#6C2BD9]">
-                        {member.role}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-[#F3EAFD] px-2 py-0.5 text-xs font-medium text-[#6C2BD9]">
+                          {member.role}
+                        </span>
+                        {["owner", "admin"].includes(organization.role ?? "") &&
+                          member.role !== "owner" && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id, member.email)}
+                            disabled={removingMemberId === member.id}
+                            className="rounded p-1 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                            title={`Remove ${member.email}`}
+                          >
+                            {removingMemberId === member.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
