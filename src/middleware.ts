@@ -12,7 +12,7 @@ const insforgeMiddleware = InsforgeMiddleware({
 });
 
 export default function middleware(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+  const { searchParams, pathname } = request.nextUrl;
 
   // Handle PKCE OAuth callback: insforge_code must be processed client-side by the SDK.
   // Pass through without auth check so the SDK can exchange the code for tokens.
@@ -37,6 +37,14 @@ export default function middleware(request: NextRequest) {
     }
 
     return redirect;
+  }
+
+  // If user is authenticated and hits landing or sign-in/sign-up, redirect to dashboard
+  if (pathname === "/" || pathname === "/sign-in" || pathname === "/sign-up") {
+    const hasAuth = request.cookies.get("insforge-session");
+    if (hasAuth) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return insforgeMiddleware(request);

@@ -9,6 +9,7 @@ import {
   MailCheck,
   ShieldCheck,
   Sparkles,
+  Terminal,
   Users,
   Workflow,
   Zap,
@@ -50,19 +51,11 @@ export const metadata: Metadata = {
   },
 };
 
-const proofPoints = [
-  "Pipeline-first CRM built around real deal movement",
-  "Workflow automation tied directly to contacts, tags, and stages",
-  "AI drafting and routing with human approval where it matters",
-];
+/* ------------------------------------------------------------------ */
+/*  Data                                                               */
+/* ------------------------------------------------------------------ */
 
-const painPoints = [
-  "Leads arrive from forms, referrals, and partner tools, then sit too long before follow-up.",
-  "Pipeline updates, tags, tasks, and messages live in separate workflows that are hard to trust.",
-  "AI can draft useful responses, but operators still need guardrails before anything goes out.",
-];
-
-const outcomes = [
+const features = [
   {
     icon: GitBranch,
     title: "See every deal in motion",
@@ -78,9 +71,14 @@ const outcomes = [
     title: "Use AI with control",
     text: "Draft messages, analyze context, route records, and pause high-risk outputs for approval before customers see them.",
   },
+  {
+    icon: Zap,
+    title: "Visual workflow builder",
+    text: "Published workflow versions with execution logs, enrollment history, and full audit trails for every automation run.",
+  },
 ];
 
-const mechanism = [
+const howItWorks = [
   {
     step: "01",
     title: "Capture the business context",
@@ -98,14 +96,38 @@ const mechanism = [
   },
 ];
 
-const featureList = [
-  "Visual workflow builder",
-  "Published workflow versions",
-  "Execution logs and enrollment history",
-  "Email actions and message templates",
-  "Webhook actions for connected tools",
-  "API keys for contact capture",
+const stats = [
+  { value: "100%", label: "Free to start" },
+  { value: "< 2 min", label: "Setup time" },
+  { value: "Zero", label: "Leads dropped" },
 ];
+
+const audiences = [
+  {
+    icon: Users,
+    title: "Agencies",
+    text: "Lead intake from forms, events, referrals, or APIs with pipeline visibility across every client.",
+  },
+  {
+    icon: MailCheck,
+    title: "Creators & coaches",
+    text: "Nurture and sales follow-up that should not wait, powered by automated sequences.",
+  },
+  {
+    icon: Clock3,
+    title: "Consultants",
+    text: "Long-running sequences with waits, retries, and logs so nothing falls through the cracks.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Service teams",
+    text: "Human review before AI-generated outputs ship, keeping quality high without slowing routine work.",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function LandingPage() {
   const productJsonLd = {
@@ -132,36 +154,44 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
 
-      <header className="border-b border-[#44106F]/10 bg-white/72 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
+      {/* ---------------------------------------------------------- */}
+      {/*  Nav                                                        */}
+      {/* ---------------------------------------------------------- */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-[#44106F]/10 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6 lg:px-8">
+          {/* Logo left */}
           <Link href="/" className="flex items-center gap-2.5" aria-label="Aligno CRM home">
             <Image
               src="/aligno-crm_logo.png"
               alt=""
-              width={36}
-              height={36}
+              width={32}
+              height={32}
               priority
-              className="h-9 w-9 object-contain"
+              className="h-8 w-8 object-contain"
             />
             <span className="text-base font-bold tracking-tight text-[#21173A]">
               Aligno CRM
             </span>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-medium text-[#5D5474] md:flex">
-            <a href="#product" className="hover:text-[#44106F]">
-              Product
+
+          {/* Nav links center */}
+          <nav className="hidden items-center gap-8 text-sm font-medium text-[#5D5474] md:flex">
+            <a href="#features" className="transition hover:text-[#44106F]">
+              Features
             </a>
-            <a href="#workflows" className="hover:text-[#44106F]">
-              Workflows
+            <a href="#how-it-works" className="transition hover:text-[#44106F]">
+              How it works
             </a>
-            <a href="#fit" className="hover:text-[#44106F]">
-              Fit
+            <a href="#who-its-for" className="transition hover:text-[#44106F]">
+              Who it&apos;s for
             </a>
           </nav>
+
+          {/* CTA button right */}
           <div className="flex items-center gap-3">
             <Link
               href="/sign-in"
-              className="hidden text-sm font-medium text-[#5D5474] hover:text-[#44106F] sm:inline"
+              className="hidden text-sm font-medium text-[#5D5474] transition hover:text-[#44106F] sm:inline"
             >
               Log in
             </Link>
@@ -178,23 +208,35 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[1fr_0.92fr] lg:px-8 lg:pb-20 lg:pt-20">
-        <div className="max-w-3xl">
-          <p className="inline-flex rounded-full border border-[#6E2ABD]/20 bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+      {/* ---------------------------------------------------------- */}
+      {/*  Hero                                                       */}
+      {/* ---------------------------------------------------------- */}
+      <section className="relative px-5 pb-0 pt-32 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Badge / pill */}
+          <p className="inline-flex rounded-full border border-[#6E2ABD]/20 bg-white/72 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
             AI-native CRM command center
           </p>
-          <h1 className="mt-6 max-w-4xl text-5xl font-bold leading-[1.02] tracking-tight text-[#21173A] sm:text-6xl lg:text-7xl">
-            Turn every lead into the next right follow-up.
+
+          {/* Big bold heading */}
+          <h1 className="mt-7 text-5xl font-bold leading-[1.05] tracking-tight text-[#21173A] sm:text-6xl lg:text-7xl">
+            Turn every lead into
+            <br />
+            the next right follow-up.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-[#5D5474]">
+
+          {/* Subtitle */}
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-[#5D5474]">
             Aligno CRM gives service businesses one focused place to manage
             pipeline, automate follow-up, and use AI without losing operator
             control.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+          {/* Two CTA buttons side by side */}
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/sign-up"
-              className="inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
@@ -204,153 +246,256 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-5 py-3 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
+              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-6 py-3 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
             >
               Open app
             </Link>
           </div>
-          <div className="mt-8 grid gap-3 text-sm text-[#4A3A6A] sm:grid-cols-3">
-            {proofPoints.map((point) => (
-              <div key={point} className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#6E2ABD]" />
-                <span>{point}</span>
-              </div>
-            ))}
-          </div>
+
+          {/* Small note underneath */}
+          <p className="mt-4 text-xs text-[#7B7590]">
+            Free to start. No credit card required.
+          </p>
         </div>
 
-        <div
-          id="product"
-          className="aligno-panel rounded-lg p-4 lg:self-center"
-          style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.2) }}
-        >
-          <div className="rounded-lg border border-[#44106F]/10 bg-white/84 p-4">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7B7590]">
-                  Pipeline
-                </p>
-                <p className="mt-1 text-lg font-bold text-[#21173A]">
-                  New client acquisition
-                </p>
-              </div>
-              <span className="rounded-full bg-[#F3EAFD] px-3 py-1 text-xs font-semibold text-[#6E2ABD]">
-                Active
-              </span>
+        {/* App screenshot with chrome bar and gradient fade */}
+        <div className="relative mx-auto mt-14 max-w-5xl">
+          {/* Chrome overlay bar */}
+          <div
+            className="relative overflow-hidden rounded-t-xl border border-b-0 shadow-2xl shadow-[#44106F]/10"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+          >
+            {/* Fake browser chrome */}
+            <div
+              className="flex items-center gap-2 px-4 py-3"
+              style={{ backgroundColor: withAlpha(getPurpleScaleColor(1), 0.06) }}
+            >
+              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
+              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
+              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
+              <span className="mx-auto block h-5 w-56 rounded-md bg-[#F3EAFD]" />
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                ["New Lead", "$42k", "8 contacts"],
-                ["Qualified", "$86k", "5 deals"],
-                ["Proposal", "$124k", "3 reviews"],
-              ].map(([stage, value, detail], index) => (
-                <div
-                  key={stage}
-                  className="rounded-lg border bg-[#FCFAFF] p-3"
-                  style={{ borderColor: withAlpha(getPurpleScaleColor(index + 1), 0.2) }}
-                >
-                  <div
-                    className="mb-3 h-1.5 rounded-full"
-                    style={{ backgroundColor: getPurpleScaleColor(index + 1) }}
-                  />
-                  <p className="text-sm font-semibold text-[#21173A]">{stage}</p>
-                  <p className="mt-2 text-2xl font-bold text-[#44106F]">{value}</p>
-                  <p className="mt-1 text-xs text-[#6B6481]">{detail}</p>
-                </div>
-              ))}
+
+            {/* Screenshot */}
+            <Image
+              src="/dashboard.png"
+              alt="Aligno CRM app screenshot showing pipeline view and workflow automation"
+              width={1920}
+              height={1080}
+              className="block w-full"
+              priority
+            />
+          </div>
+
+          {/* Gradient fade at bottom */}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
+            style={{
+              background:
+                "linear-gradient(to top, var(--aligno-page-surface, #FAF8FF) 0%, transparent 100%)",
+            }}
+          />
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- */}
+      {/*  Problem section — single card, terminal style              */}
+      {/* ---------------------------------------------------------- */}
+      <section className="px-5 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl">
+          <div
+            className="aligno-panel overflow-hidden rounded-xl"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.2) }}
+          >
+            {/* Terminal chrome bar */}
+            <div
+              className="flex items-center gap-2 border-b px-4 py-3"
+              style={{
+                borderColor: withAlpha(getPurpleScaleColor(4), 0.12),
+                backgroundColor: withAlpha(getPurpleScaleColor(1), 0.05),
+              }}
+            >
+              <Terminal className="h-4 w-4 text-[#6E2ABD]" />
+              <span className="text-xs font-semibold text-[#7B7590]">the_problem.sh</span>
             </div>
-            <div className="mt-4 rounded-lg border border-[#44106F]/10 bg-[#FBF8FF] p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-[#6E2ABD]" />
-                <p className="text-sm font-semibold text-[#21173A]">
-                  Workflow running
+
+            <div className="space-y-4 p-6 sm:p-8">
+              <h2 className="text-2xl font-bold tracking-tight text-[#21173A] sm:text-3xl">
+                Most CRMs record work after the fact.
+                <br />
+                Your revenue needs movement now.
+              </h2>
+
+              <div className="mt-6 space-y-3 font-mono text-sm leading-7 text-[#5D5474]">
+                <p>
+                  <span className="text-[#6E2ABD]">$</span> Leads arrive from forms, referrals,
+                  and partner tools, then sit too long before follow-up.
                 </p>
-              </div>
-              <div className="grid gap-2 text-xs text-[#5D5474] sm:grid-cols-4">
-                {["Tag added", "Wait 1 day", "AI draft", "Approval"].map((node) => (
-                  <div key={node} className="rounded-md bg-white px-3 py-2 shadow-sm">
-                    {node}
-                  </div>
-                ))}
+                <p>
+                  <span className="text-[#6E2ABD]">$</span> Pipeline updates, tags, tasks, and
+                  messages live in separate workflows that are hard to trust.
+                </p>
+                <p>
+                  <span className="text-[#6E2ABD]">$</span> AI can draft useful responses, but
+                  operators still need guardrails before anything goes out.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-[#44106F]/10 bg-white/58">
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-6 lg:grid-cols-[0.8fr_1fr] lg:px-8">
-          <div>
+      {/* ---------------------------------------------------------- */}
+      {/*  Features grid — 2 columns                                  */}
+      {/* ---------------------------------------------------------- */}
+      <section id="features" className="px-5 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-              The problem
+              Features
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
-              Most CRMs record work after the fact. Your revenue needs movement now.
+              One operating layer for pipeline, automation, and AI-assisted follow-up.
             </h2>
           </div>
-          <div className="grid gap-3">
-            {painPoints.map((point) => (
-              <div
-                key={point}
-                className="rounded-lg border border-[#44106F]/12 bg-white/82 p-4 text-sm leading-6 text-[#5D5474] shadow-sm"
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2">
+            {features.map((item, index) => (
+              <article
+                key={item.title}
+                className="aligno-panel rounded-xl p-7"
+                style={{ borderColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.2) }}
               >
-                {point}
-              </div>
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.14),
+                  }}
+                >
+                  <item.icon
+                    className="h-5 w-5"
+                    style={{ color: getPurpleScaleColor((index % 4) + 2) }}
+                  />
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-[#21173A]">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#5D5474]">{item.text}</p>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="workflows" className="mx-auto max-w-7xl px-5 py-16 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-            The promise
-          </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
-            One operating layer for pipeline, automation, and AI-assisted follow-up.
-          </h2>
-        </div>
-        <div className="mt-9 grid gap-4 md:grid-cols-3">
-          {outcomes.map((item, index) => (
-            <article
-              key={item.title}
-              className="aligno-panel rounded-lg p-6"
-              style={{ borderColor: withAlpha(getPurpleScaleColor(index + 2), 0.2) }}
-            >
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg"
-                style={{ backgroundColor: withAlpha(getPurpleScaleColor(index + 2), 0.14) }}
-              >
-                <item.icon className="h-5 w-5" style={{ color: getPurpleScaleColor(index + 2) }} />
-              </div>
-              <h3 className="mt-5 text-lg font-bold text-[#21173A]">{item.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[#5D5474]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white/52">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-6 lg:grid-cols-[0.9fr_1fr] lg:px-8">
-          <div>
+      {/* ---------------------------------------------------------- */}
+      {/*  How it works — numbered steps with icon boxes              */}
+      {/* ---------------------------------------------------------- */}
+      <section id="how-it-works" className="border-y border-[#44106F]/10 bg-white/52 px-5 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-              The mechanism
+              How it works
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
               Built for service businesses that sell through process.
             </h2>
             <p className="mt-4 text-base leading-7 text-[#5D5474]">
-              Aligno CRM keeps the system narrow on purpose: pipeline stages,
-              workflow triggers, deterministic actions, AI steps, and approval
+              Pipeline stages, workflow triggers, deterministic actions, AI steps, and approval
               history. The pieces operators need every day stay close together.
             </p>
           </div>
-          <div className="grid gap-4">
-            {mechanism.map((item) => (
-              <div key={item.step} className="flex gap-4 rounded-lg border border-[#44106F]/12 bg-white/82 p-5 shadow-sm">
-                <span className="font-mono text-sm font-bold text-[#6E2ABD]">{item.step}</span>
+
+          <div className="mx-auto mt-14 grid max-w-3xl gap-6">
+            {howItWorks.map((item, index) => {
+              const icons = [GitBranch, Workflow, ShieldCheck];
+              const Icon = icons[index];
+              return (
+                <div
+                  key={item.step}
+                  className="flex items-start gap-5 rounded-xl border border-[#44106F]/12 bg-white/82 p-6 shadow-sm"
+                >
+                  {/* Icon box on the left */}
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                    style={{
+                      backgroundColor: withAlpha(getPurpleScaleColor(index + 2), 0.14),
+                    }}
+                  >
+                    <Icon
+                      className="h-5 w-5"
+                      style={{ color: getPurpleScaleColor(index + 2) }}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-mono text-xs font-bold text-[#6E2ABD]">
+                      Step {item.step}
+                    </p>
+                    <h3 className="mt-1 text-lg font-bold text-[#21173A]">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#5D5474]">{item.text}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- */}
+      {/*  Stats row — 3 stat blocks                                  */}
+      {/* ---------------------------------------------------------- */}
+      <section className="px-5 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-3">
+          {stats.map((stat, index) => (
+            <div
+              key={stat.label}
+              className="aligno-panel rounded-xl p-6 text-center"
+              style={{ borderColor: withAlpha(getPurpleScaleColor(index + 2), 0.2) }}
+            >
+              <p
+                className="text-4xl font-bold"
+                style={{ color: getPurpleScaleColor(index + 2) }}
+              >
+                {stat.value}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[#5D5474]">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- */}
+      {/*  Who it's for — 2x2 grid                                    */}
+      {/* ---------------------------------------------------------- */}
+      <section id="who-its-for" className="px-5 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+              Who it&apos;s for
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
+              Built for teams who need follow-up to run on rails.
+            </h2>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2">
+            {audiences.map((item, index) => (
+              <div
+                key={item.title}
+                className="aligno-panel flex items-start gap-4 rounded-xl p-6"
+                style={{ borderColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.2) }}
+              >
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.14),
+                  }}
+                >
+                  <item.icon
+                    className="h-5 w-5"
+                    style={{ color: getPurpleScaleColor((index % 4) + 2) }}
+                  />
+                </div>
                 <div>
-                  <h3 className="font-bold text-[#21173A]">{item.title}</h3>
+                  <h3 className="text-lg font-bold text-[#21173A]">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[#5D5474]">{item.text}</p>
                 </div>
               </div>
@@ -359,62 +504,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="fit" className="mx-auto max-w-7xl px-5 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-          <div className="aligno-panel rounded-lg p-6 sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-              Who it is for
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A]">
-              Agencies, creators, coaches, and consultants who need follow-up to run on rails.
-            </h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {[
-                [Users, "Lead intake from forms, events, referrals, or APIs"],
-                [MailCheck, "Nurture and sales follow-up that should not wait"],
-                [Clock3, "Long-running sequences with waits, retries, and logs"],
-                [ShieldCheck, "Human review before AI-generated outputs ship"],
-              ].map(([Icon, text]) => (
-                <div key={text as string} className="flex items-start gap-3 text-sm leading-6 text-[#4A3A6A]">
-                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#6E2ABD]" />
-                  <span>{text as string}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-lg border border-[#44106F]/12 bg-white/82 p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#21173A]">Core capabilities</h3>
-            <div className="mt-5 grid gap-3">
-              {featureList.map((feature) => (
-                <div key={feature} className="flex items-center gap-3 text-sm text-[#4A3A6A]">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#6E2ABD]" />
-                  {feature}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-5 pb-20 sm:px-6 lg:px-8">
+      {/* ---------------------------------------------------------- */}
+      {/*  Final CTA                                                  */}
+      {/* ---------------------------------------------------------- */}
+      <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
         <div
-          className="aligno-panel rounded-lg px-6 py-10 text-center sm:px-10 sm:py-12"
+          className="aligno-panel mx-auto max-w-4xl rounded-2xl px-6 py-14 text-center sm:px-12 sm:py-16"
           style={{ borderColor: withAlpha(getPurpleScaleColor(5), 0.22) }}
         >
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-            Start with the next lead
-          </p>
-          <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
-            Build the command center that turns pipeline activity into reliable follow-up.
+          <h2 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl lg:text-5xl">
+            Build the command center that turns pipeline into revenue.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[#5D5474]">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
             Put contacts, deals, workflow automation, and AI-assisted review in
             one place before another opportunity slips through the cracks.
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-9 flex justify-center">
             <Link
               href="/sign-up"
-              className="inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
@@ -425,6 +533,36 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ---------------------------------------------------------- */}
+      {/*  Footer — logo left, links right                            */}
+      {/* ---------------------------------------------------------- */}
+      <footer className="border-t border-[#44106F]/10 bg-white/60">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 py-8 sm:flex-row sm:px-6 lg:px-8">
+          {/* Logo left */}
+          <Link href="/" className="flex items-center gap-2" aria-label="Aligno CRM home">
+            <Image
+              src="/aligno-crm_logo.png"
+              alt=""
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
+            />
+            <span className="text-sm font-bold text-[#21173A]">Aligno CRM</span>
+          </Link>
+
+          {/* Links right */}
+          <div className="flex items-center gap-6 text-sm text-[#7B7590]">
+            <Link href="/sign-in" className="transition hover:text-[#44106F]">
+              Log in
+            </Link>
+            <Link href="/sign-up" className="transition hover:text-[#44106F]">
+              Sign up
+            </Link>
+            <span>&copy; {new Date().getFullYear()} Aligno</span>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
