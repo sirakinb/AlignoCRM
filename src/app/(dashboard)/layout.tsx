@@ -2,6 +2,8 @@ import { getAuthFromCookies } from "@insforge/nextjs";
 import type { ServerUser } from "@/components/auth/server-auth-context";
 import { ServerAuthProvider } from "@/components/auth/server-auth-context";
 import { AppShell } from "@/components/layout/app-shell";
+import { SubscriptionProvider } from "@/components/auth/subscription-context";
+import { SubscriptionGate } from "@/components/auth/subscription-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,11 @@ export default async function DashboardLayout({
 
   return (
     <ServerAuthProvider user={serverUser}>
-      <AppShell>{children}</AppShell>
+      <SubscriptionProvider>
+        <SubscriptionGate>
+          <AppShell>{children}</AppShell>
+        </SubscriptionGate>
+      </SubscriptionProvider>
     </ServerAuthProvider>
   );
 }
