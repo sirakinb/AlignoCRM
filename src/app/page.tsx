@@ -519,8 +519,8 @@ export default function LandingPage() {
             One subscription. Every tool.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
-            Aligno CRM is part of Pentridge Labs — a single subscription that
-            unlocks every tool in the suite, including Aligno Project Management.
+            Subscribe to Pentridge Labs to unlock Aligno CRM, Aligno PM, and
+            every tool we build.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
