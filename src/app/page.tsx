@@ -97,7 +97,7 @@ const howItWorks = [
 ];
 
 const stats = [
-  { value: "100%", label: "Free to start" },
+  { value: "1", label: "Subscription for every tool" },
   { value: "< 2 min", label: "Setup time" },
   { value: "Zero", label: "Leads dropped" },
 ];
@@ -142,8 +142,8 @@ export default function LandingPage() {
     offers: {
       "@type": "Offer",
       availability: "https://schema.org/InStock",
-      price: "0",
-      priceCurrency: "USD",
+      url: "https://pentridgemedia.com/labs",
+      name: "Pentridge Labs",
     },
   };
 
@@ -254,7 +254,7 @@ export default function LandingPage() {
 
           {/* Small note underneath */}
           <p className="mt-4 text-xs text-[#7B7590]">
-            Free to start. No credit card required.
+            Part of Pentridge Labs — one subscription for every tool.
           </p>
         </div>
 
@@ -505,30 +505,41 @@ export default function LandingPage() {
       </section>
 
       {/* ---------------------------------------------------------- */}
-      {/*  Final CTA                                                  */}
+      {/*  Pentridge Labs CTA                                         */}
       {/* ---------------------------------------------------------- */}
       <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
         <div
           className="aligno-panel mx-auto max-w-4xl rounded-2xl px-6 py-14 text-center sm:px-12 sm:py-16"
           style={{ borderColor: withAlpha(getPurpleScaleColor(5), 0.22) }}
         >
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD] mb-4">
+            Pentridge Labs
+          </p>
           <h2 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl lg:text-5xl">
-            Build the command center that turns pipeline into revenue.
+            One subscription. Every tool.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
-            Put contacts, deals, workflow automation, and AI-assisted review in
-            one place before another opportunity slips through the cracks.
+            Aligno CRM is part of Pentridge Labs — a single subscription that
+            unlocks every tool in the suite, including Aligno Project Management.
           </p>
-          <div className="mt-9 flex justify-center">
-            <Link
-              href="/sign-up"
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="https://pentridgemedia.com/labs"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
             >
-              Start free with Aligno CRM
+              View Plans
               <ArrowRight className="h-4 w-4" />
+            </a>
+            <Link
+              href="/sign-in"
+              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-6 py-3.5 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
+            >
+              Log in
             </Link>
           </div>
         </div>
