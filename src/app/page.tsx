@@ -520,7 +520,7 @@ export default function LandingPage() {
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
             Subscribe to Pentridge Labs to unlock Aligno CRM, Aligno PM, and
-            every tool we build.
+            a growing suite of tools built to help businesses operate and grow.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
