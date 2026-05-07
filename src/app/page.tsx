@@ -34,10 +34,10 @@ export const metadata: Metadata = {
     siteName: "Aligno CRM",
     images: [
       {
-        url: "/aligno-crm_logo.png",
-        width: 512,
-        height: 512,
-        alt: "Aligno CRM logo",
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aligno CRM — AI-Native Pipeline and Workflow Automation",
       },
     ],
     type: "website",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "Aligno CRM | AI-Native Pipeline and Workflow Automation",
     description:
       "Manage deal flow, automate follow-up, and review AI-assisted workflow outputs from one CRM command center.",
-    images: ["/aligno-crm_logo.png"],
+    images: ["/og-image.png"],
   },
 };
 
