@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useServerUser } from "./server-auth-context";
+import { insforge } from "@/lib/insforge/client";
 
 interface SubscriptionState {
   has_subscription: boolean;
@@ -65,9 +66,20 @@ export function SubscriptionProvider({
   const [loading, setLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
-    const email = user?.email?.toLowerCase();
+    let email = user?.email?.toLowerCase();
+
+    // Fallback: if server user isn't available yet, try the client SDK session
     if (!email) {
-      // If user hasn't loaded yet, stay in loading state — don't lock them out
+      try {
+        const session = await insforge.auth.getCurrentSession();
+        email = session.data?.session?.user?.email?.toLowerCase() ?? undefined;
+      } catch {
+        // SDK not ready yet
+      }
+    }
+
+    if (!email) {
+      // Still no email — stay in loading state, don't lock them out
       return;
     }
 
@@ -111,13 +123,20 @@ export function SubscriptionProvider({
     checkSubscription();
   }, [checkSubscription]);
 
-  // Safety: if user never loads after 5s, stop loading and show the gate
+  // Retry: if first check found no email, try again after a short delay (SDK may need time)
   useEffect(() => {
-    if (!user?.email) {
-      const timeout = setTimeout(() => setLoading(false), 5000);
-      return () => clearTimeout(timeout);
+    if (loading && !user?.email) {
+      const retryInterval = setInterval(() => checkSubscription(), 1000);
+      const timeout = setTimeout(() => {
+        clearInterval(retryInterval);
+        setLoading(false);
+      }, 8000);
+      return () => {
+        clearInterval(retryInterval);
+        clearTimeout(timeout);
+      };
     }
-  }, [user?.email]);
+  }, [loading, user?.email, checkSubscription]);
 
   return (
     <SubscriptionContext.Provider
