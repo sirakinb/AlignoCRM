@@ -107,6 +107,23 @@ export interface ActivityLog {
   created_at: string;
 }
 
+export type AppStatus = "active" | "archived";
+
+export interface App {
+  id: string;
+  workspace_id: string;
+  organization_id?: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  url: string | null;
+  icon_url: string | null;
+  insforge_project_url: string | null;
+  status: AppStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 // Input types for creating/updating entities
 export type CreateContactInput = Pick<
   Contact,
@@ -159,6 +176,13 @@ export type UpdateTaskInput = Partial<
     Task,
     "title" | "description" | "status" | "assignee_id" | "due_date"
   >
+>;
+
+export type CreateAppInput = Pick<App, "workspace_id" | "name" | "slug"> &
+  Partial<Pick<App, "organization_id" | "description" | "url" | "icon_url" | "insforge_project_url" | "status">>;
+
+export type UpdateAppInput = Partial<
+  Pick<App, "name" | "slug" | "description" | "url" | "icon_url" | "insforge_project_url" | "status">
 >;
 
 export type CreateActivityLogInput = Pick<

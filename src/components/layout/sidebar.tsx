@@ -8,7 +8,7 @@ import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { syncServerSession } from "@/lib/auth/sync-server-session";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen } from "lucide-react";
+import { Home, GitBranch, Users, Zap, Blocks, Settings, LogOut, BookOpen } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Pipeline", href: "/pipeline", icon: GitBranch },
   { label: "Contacts", href: "/contacts", icon: Users },
   { label: "Automations", href: "/automations", icon: Zap },
+  { label: "Apps", href: "/apps", icon: Blocks },
 ] as const;
 
 interface SidebarProps {
