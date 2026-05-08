@@ -67,8 +67,7 @@ export function SubscriptionProvider({
   const checkSubscription = useCallback(async () => {
     const email = user?.email?.toLowerCase();
     if (!email) {
-      setState(NO_SUB);
-      setLoading(false);
+      // If user hasn't loaded yet, stay in loading state — don't lock them out
       return;
     }
 
@@ -111,6 +110,14 @@ export function SubscriptionProvider({
   useEffect(() => {
     checkSubscription();
   }, [checkSubscription]);
+
+  // Safety: if user never loads after 5s, stop loading and show the gate
+  useEffect(() => {
+    if (!user?.email) {
+      const timeout = setTimeout(() => setLoading(false), 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [user?.email]);
 
   return (
     <SubscriptionContext.Provider
