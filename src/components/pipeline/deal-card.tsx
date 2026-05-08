@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import type { Deal } from "@/types/crm";
 
@@ -12,6 +12,7 @@ interface DealCardProps {
   ownerInitials: string | null;
   accentColor?: string;
   onDelete?: (dealId: string) => void;
+  onEdit?: (dealId: string) => void;
 }
 
 function formatCurrency(value: number): string {
@@ -29,6 +30,7 @@ export function DealCard({
   ownerInitials,
   accentColor = getPurpleScaleColor(3),
   onDelete,
+  onEdit,
 }: DealCardProps) {
   const {
     attributes,
@@ -67,21 +69,38 @@ export function DealCard({
         <p className="text-sm font-medium leading-tight text-[#21173A]">
           {deal.title}
         </p>
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onDelete(deal.id);
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="shrink-0 rounded p-1 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/70"
-            style={{ color: withAlpha(accentColor, 0.6) }}
-            title="Delete deal"
-          >
-            <Trash2 size={12} />
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-all group-hover:opacity-100">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onEdit(deal.id);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="rounded p-1 hover:bg-white/70"
+              style={{ color: withAlpha(accentColor, 0.6) }}
+              title="Edit deal"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onDelete(deal.id);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="rounded p-1 hover:bg-white/70"
+              style={{ color: withAlpha(accentColor, 0.6) }}
+              title="Delete deal"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
       </div>
       {contactName && (
         <p className="mt-1 text-xs text-[#6B6481]">{contactName}</p>

@@ -18,6 +18,7 @@ interface StageColumnProps {
   getContactName: (contactId: string | null) => string | null;
   getOwnerInitials: (ownerId: string | null) => string | null;
   onDeleteDeal?: (dealId: string) => void;
+  onEditDeal?: (dealId: string) => void;
 }
 
 function formatCurrency(value: number): string {
@@ -35,6 +36,7 @@ export function StageColumn({
   getContactName,
   getOwnerInitials,
   onDeleteDeal,
+  onEditDeal,
 }: StageColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
@@ -99,6 +101,7 @@ export function StageColumn({
               ownerInitials={getOwnerInitials(deal.owner_id)}
               accentColor={accentColor}
               onDelete={onDeleteDeal}
+              onEdit={onEditDeal}
             />
           ))}
           {deals.length === 0 && (

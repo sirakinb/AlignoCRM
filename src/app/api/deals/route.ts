@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
-import { getDeals, createDeal, deleteDeal } from "@/lib/data/deals";
+import { getDeals, createDeal, updateDeal, deleteDeal } from "@/lib/data/deals";
 
 export async function GET() {
   try {
@@ -50,6 +50,46 @@ export async function POST(request: Request) {
     if (authResponse) return authResponse;
 
     console.error("POST /api/deals error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const tenant = await requireTenantContext();
+    const body = await request.json();
+    const { id, ...fields } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing required field: id" },
+        { status: 400 }
+      );
+    }
+
+    // Verify deal belongs to this workspace
+    const deals = await getDeals(tenant.workspaceId);
+    const existing = deals.find((d) => d.id === id);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const allowedKeys = ["title", "value", "contact_id", "owner_id", "status"] as const;
+    const update: Record<string, unknown> = {};
+    for (const key of allowedKeys) {
+      if (key in fields) update[key] = fields[key];
+    }
+
+    const deal = await updateDeal(id, update);
+    return NextResponse.json({ deal });
+  } catch (error) {
+    const authResponse = tenantErrorResponse(error);
+    if (authResponse) return authResponse;
+
+    console.error("PATCH /api/deals error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }

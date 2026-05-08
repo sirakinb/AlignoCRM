@@ -7,7 +7,7 @@ import {
   withAlpha,
 } from "@/lib/design/aligno-theme";
 import type { Deal, Pipeline, Stage, Contact } from "@/types/crm";
-import { Loader2, BarChart3, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Loader2, BarChart3, TrendingUp, Users, DollarSign, ChevronDown } from "lucide-react";
 
 /* ── API helpers ── */
 async function fetchDeals(): Promise<Deal[]> {
@@ -77,12 +77,15 @@ function buildDonutPath(
   return paths;
 }
 
+const ALL_PIPELINES = "__all__";
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedPipelineId, setSelectedPipelineId] = useState<string>(ALL_PIPELINES);
 
   useEffect(() => {
     async function load() {
@@ -125,16 +128,17 @@ export default function DashboardPage() {
     );
   }
 
-  // Use the first pipeline as the primary view
-  const pipeline = pipelines[0] ?? null;
-  const pipelineStages = pipeline
-    ? stages
-        .filter((s) => s.pipeline_id === pipeline.id)
-        .sort((a, b) => a.position - b.position)
-    : [];
-  const pipelineDeals = pipeline
-    ? deals.filter((d) => d.pipeline_id === pipeline.id)
-    : deals;
+  // Filter by selected pipeline or show all
+  const isAll = selectedPipelineId === ALL_PIPELINES;
+  const pipeline = isAll ? null : pipelines.find((p) => p.id === selectedPipelineId) ?? null;
+  const pipelineStages = isAll
+    ? stages.sort((a, b) => a.position - b.position)
+    : stages
+        .filter((s) => s.pipeline_id === selectedPipelineId)
+        .sort((a, b) => a.position - b.position);
+  const pipelineDeals = isAll
+    ? deals
+    : deals.filter((d) => d.pipeline_id === selectedPipelineId);
 
   // KPI calculations
   const totalValue = pipelineDeals.reduce((sum, d) => sum + d.value, 0);
@@ -242,13 +246,35 @@ export default function DashboardPage() {
 
   return (
     <div className="aligno-page-surface min-h-full p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#21173A]">Dashboard</h1>
-        <p className="mt-1 text-sm text-[#6B6481]">
-          {pipeline
-            ? `Pipeline overview for ${pipeline.name}`
-            : "Pipeline overview"}
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#21173A]">Dashboard</h1>
+          <p className="mt-1 text-sm text-[#6B6481]">
+            {pipeline
+              ? `Pipeline overview for ${pipeline.name}`
+              : "Overview across all pipelines"}
+          </p>
+        </div>
+        {pipelines.length > 1 && (
+          <div className="relative">
+            <select
+              value={selectedPipelineId}
+              onChange={(e) => setSelectedPipelineId(e.target.value)}
+              className="appearance-none rounded-lg border border-[#E6DCF9] bg-white pl-3.5 pr-9 py-2.5 text-sm font-medium text-[#33254F] shadow-sm focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+            >
+              <option value={ALL_PIPELINES}>All Pipelines</option>
+              {pipelines.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={14}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8D88A0]"
+            />
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}

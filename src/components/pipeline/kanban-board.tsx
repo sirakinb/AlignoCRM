@@ -21,6 +21,7 @@ interface KanbanBoardProps {
   getOwnerInitials: (ownerId: string | null) => string | null;
   onMoveDeal?: (dealId: string, newStageId: string) => void;
   onDeleteDeal?: (dealId: string) => void;
+  onEditDeal?: (dealId: string) => void;
 }
 
 export function KanbanBoard({
@@ -30,6 +31,7 @@ export function KanbanBoard({
   getOwnerInitials,
   onMoveDeal,
   onDeleteDeal,
+  onEditDeal,
 }: KanbanBoardProps) {
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const originalStageRef = useRef<string | null>(null);
@@ -134,6 +136,7 @@ export function KanbanBoard({
             getContactName={getContactName}
             getOwnerInitials={getOwnerInitials}
             onDeleteDeal={onDeleteDeal}
+            onEditDeal={onEditDeal}
           />
         ))}
       </div>
