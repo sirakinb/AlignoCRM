@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { insforge } from "@/lib/insforge/client";
+import { useServerUser } from "./server-auth-context";
 
 interface SubscriptionState {
   has_subscription: boolean;
@@ -33,39 +33,62 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
 });
 
 const CHECK_URL =
-  "https://3nm75tby.us-east.insforge.app/functions/check-subscription";
+  "https://3nm75tby.us-east.insforge.app/functions/check-subscription-public";
+
+const ALLOWLISTED_EMAILS = new Set([
+  "aki.b@pentridgemedia.com",
+  "sirakinb@gmail.com",
+  "dropcardai@gmail.com",
+  "bajulaiye@protonmail.com",
+  "raichellaram@gmail.com",
+  "08lin.kevin121@gmail.com",
+  "tyronepeace.qa@gmail.com",
+  "jyho0243@gmail.com",
+  "astrid.nigrovic@gmail.com",
+]);
+
+const NO_SUB: SubscriptionState = {
+  has_subscription: false,
+  tier: null,
+  billing_period: null,
+  status: null,
+  current_period_end: null,
+};
 
 export function SubscriptionProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [state, setState] = useState<SubscriptionState>({
-    has_subscription: false,
-    tier: null,
-    billing_period: null,
-    status: null,
-    current_period_end: null,
-  });
+  const { user } = useServerUser();
+  const [state, setState] = useState<SubscriptionState>(NO_SUB);
   const [loading, setLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
+    const email = user?.email?.toLowerCase();
+    if (!email) {
+      setState(NO_SUB);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await insforge.auth.getCurrentSession();
-      const token = result.data?.session?.accessToken;
-      if (!token) {
-        setState((s) => ({ ...s, has_subscription: false }));
+      // Bypass for allowlisted emails
+      if (ALLOWLISTED_EMAILS.has(email)) {
+        setState({ has_subscription: true, tier: "granted", billing_period: null, status: "active", current_period_end: null });
         setLoading(false);
         return;
       }
 
       const res = await fetch(CHECK_URL, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
         cache: "no-store",
       });
 
       if (!res.ok) {
-        setState((s) => ({ ...s, has_subscription: false }));
+        setState(NO_SUB);
         setLoading(false);
         return;
       }
@@ -79,11 +102,11 @@ export function SubscriptionProvider({
         current_period_end: data.current_period_end ?? null,
       });
     } catch {
-      setState((s) => ({ ...s, has_subscription: false }));
+      setState(NO_SUB);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.email]);
 
   useEffect(() => {
     checkSubscription();
