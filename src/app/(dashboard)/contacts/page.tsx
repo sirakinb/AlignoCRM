@@ -78,6 +78,7 @@ export default function ContactsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
+  const [subscriberEmails, setSubscriberEmails] = useState<Set<string>>(new Set());
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -126,6 +127,17 @@ export default function ContactsPage() {
 
   useEffect(() => {
     fetchContacts();
+    // Load subscriber emails for badge display
+    fetch("/api/subscribers?status=active")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.subscribers) {
+          setSubscriberEmails(
+            new Set(data.subscribers.map((s: { email: string }) => s.email.toLowerCase()))
+          );
+        }
+      })
+      .catch(() => {});
   }, [fetchContacts]);
 
   // Close modal tag dropdown on outside click
@@ -604,6 +616,11 @@ export default function ContactsPage() {
                         {initials}
                       </div>
                       <span className="font-medium text-[#21173A]">{displayName}</span>
+                      {contact.email && subscriberEmails.has(contact.email.toLowerCase()) && (
+                        <span className="ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: withAlpha("#9333ea", 0.12), color: "#7c3aed" }}>
+                          Labs
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
