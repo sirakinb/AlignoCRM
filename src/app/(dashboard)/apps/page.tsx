@@ -53,6 +53,20 @@ interface SubscriberStats {
   yearly_count: number;
 }
 
+interface AppUser {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  providers: string[];
+  profile: Record<string, unknown>;
+}
+
+interface AppUserStats {
+  total: number;
+}
+
 // ---------------------------------------------------------------------------
 // API helpers
 // ---------------------------------------------------------------------------
@@ -70,6 +84,7 @@ async function apiCreateApp(input: {
   description?: string;
   url?: string;
   icon_url?: string;
+  insforge_appkey?: string;
 }): Promise<App> {
   const res = await fetch("/api/apps", {
     method: "POST",
@@ -107,6 +122,17 @@ async function fetchSubscribers(
   if (search) params.set("search", search);
   const res = await fetch(`/api/subscribers?${params.toString()}`);
   if (!res.ok) throw new Error("Failed to load subscribers");
+  return res.json();
+}
+
+async function fetchAppUsers(
+  appkey: string,
+  search?: string
+): Promise<{ users: AppUser[]; stats: AppUserStats }> {
+  const params = new URLSearchParams({ appkey });
+  if (search) params.set("search", search);
+  const res = await fetch(`/api/apps/users?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to load app users");
   return res.json();
 }
 
@@ -154,6 +180,7 @@ function AppModal({ app, open, onClose, onSaved }: AppModalProps) {
   const [description, setDescription] = useState(app?.description ?? "");
   const [url, setUrl] = useState(app?.url ?? "");
   const [iconUrl, setIconUrl] = useState(app?.icon_url ?? "");
+  const [appkey, setAppkey] = useState(app?.insforge_appkey ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoSlug, setAutoSlug] = useState(!isEdit);
@@ -165,6 +192,7 @@ function AppModal({ app, open, onClose, onSaved }: AppModalProps) {
       setDescription(app.description ?? "");
       setUrl(app.url ?? "");
       setIconUrl(app.icon_url ?? "");
+      setAppkey(app.insforge_appkey ?? "");
       setAutoSlug(false);
     } else {
       setName("");
@@ -172,6 +200,7 @@ function AppModal({ app, open, onClose, onSaved }: AppModalProps) {
       setDescription("");
       setUrl("");
       setIconUrl("");
+      setAppkey("");
       setAutoSlug(true);
     }
     setError(null);
@@ -190,8 +219,8 @@ function AppModal({ app, open, onClose, onSaved }: AppModalProps) {
     setError(null);
     try {
       const saved = isEdit
-        ? await apiUpdateApp(app.id, { name: name.trim(), slug: slug.trim(), description: description.trim() || null, url: url.trim() || null, icon_url: iconUrl.trim() || null })
-        : await apiCreateApp({ name: name.trim(), slug: slug.trim(), description: description.trim() || undefined, url: url.trim() || undefined, icon_url: iconUrl.trim() || undefined });
+        ? await apiUpdateApp(app.id, { name: name.trim(), slug: slug.trim(), description: description.trim() || null, url: url.trim() || null, icon_url: iconUrl.trim() || null, insforge_appkey: appkey.trim() || null })
+        : await apiCreateApp({ name: name.trim(), slug: slug.trim(), description: description.trim() || undefined, url: url.trim() || undefined, icon_url: iconUrl.trim() || undefined, insforge_appkey: appkey.trim() || undefined });
       onSaved(saved);
       onClose();
     } catch (err) {
@@ -218,6 +247,7 @@ function AppModal({ app, open, onClose, onSaved }: AppModalProps) {
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label><input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description" className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors" /></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">App URL</label><div className="relative"><Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://myapp.com" className="w-full rounded-lg border border-gray-300 pl-9 pr-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors" /></div></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Icon URL</label><input type="url" value={iconUrl} onChange={(e) => setIconUrl(e.target.value)} placeholder="https://example.com/icon.png" className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors" /></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">InsForge App Key</label><input type="text" value={appkey} onChange={(e) => setAppkey(e.target.value)} placeholder="e.g. 25565ha3" className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm font-mono text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors" /><p className="mt-1 text-xs text-[#8D88A0]">Links this app to its InsForge project for user data.</p></div>
           <div className="flex items-center justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">Cancel</button>
             <button type="submit" disabled={submitting} className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#5b24b8] disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
@@ -380,37 +410,64 @@ function AppDetail({
   onBack: () => void;
 }) {
   const accent = getPurpleScaleColor(2);
+  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
+  const [appUserStats, setAppUserStats] = useState<AppUserStats | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [stats, setStats] = useState<SubscriberStats | null>(null);
+  const [subStats, setSubStats] = useState<SubscriberStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [compOpen, setCompOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"users" | "subscribers">(app.insforge_appkey ? "users" : "subscribers");
 
-  const loadSubscribers = useCallback(async () => {
+  // Build a set of subscriber emails for badge display
+  const subscriberEmailSet = useMemo(
+    () => new Set(subscribers.filter((s) => s.status === "active").map((s) => s.email.toLowerCase())),
+    [subscribers]
+  );
+
+  const loadData = useCallback(async () => {
     try {
-      const data = await fetchSubscribers(search || undefined);
-      setSubscribers(data.subscribers);
-      setStats(data.stats);
+      const promises: Promise<void>[] = [];
+
+      // Load app-specific users if InsForge appkey is set
+      if (app.insforge_appkey) {
+        promises.push(
+          fetchAppUsers(app.insforge_appkey, search || undefined).then((data) => {
+            setAppUsers(data.users);
+            setAppUserStats(data.stats);
+          })
+        );
+      }
+
+      // Always load Pentridge Labs subscriber data
+      promises.push(
+        fetchSubscribers(search || undefined).then((data) => {
+          setSubscribers(data.subscribers);
+          setSubStats(data.stats);
+        })
+      );
+
+      await Promise.all(promises);
     } catch (err) {
-      console.error("Failed to load subscribers:", err);
+      console.error("Failed to load data:", err);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [app.insforge_appkey, search]);
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(loadSubscribers, search ? 300 : 0);
+    const timer = setTimeout(loadData, search ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [loadSubscribers, search]);
+  }, [loadData, search]);
 
   const handleRevoke = async (email: string) => {
-    if (!window.confirm(`Revoke access for ${email}?`)) return;
+    if (!window.confirm(`Revoke Pentridge Labs access for ${email}?`)) return;
     setActionLoading(email);
     try {
       await apiManageSubscription({ action: "revoke", email });
-      await loadSubscribers();
+      await loadData();
     } catch (err) {
       console.error("Failed to revoke:", err);
     } finally {
@@ -422,7 +479,7 @@ function AppDetail({
     setActionLoading(email);
     try {
       await apiManageSubscription({ action: "comp", email });
-      await loadSubscribers();
+      await loadData();
     } catch (err) {
       console.error("Failed to reactivate:", err);
     } finally {
@@ -431,10 +488,10 @@ function AppDetail({
   };
 
   const kpiCards = [
-    { label: "Active Subscribers", value: stats?.active ?? 0, icon: Users, accent: getPurpleScaleColor(4) },
-    { label: "MRR", value: `$${stats?.mrr?.toFixed(0) ?? 0}`, icon: DollarSign, accent: getPurpleScaleColor(5) },
-    { label: "Monthly", value: stats?.monthly_count ?? 0, icon: TrendingUp, accent: getPurpleScaleColor(3) },
-    { label: "Yearly", value: stats?.yearly_count ?? 0, icon: TrendingUp, accent: getPurpleScaleColor(1) },
+    { label: "App Users", value: appUserStats?.total ?? 0, icon: Users, accent: getPurpleScaleColor(4) },
+    { label: "Labs Subscribers", value: subStats?.active ?? 0, icon: UserPlus, accent: getPurpleScaleColor(5) },
+    { label: "MRR", value: `$${subStats?.mrr?.toFixed(0) ?? 0}`, icon: DollarSign, accent: getPurpleScaleColor(3) },
+    { label: "Monthly / Yearly", value: `${subStats?.monthly_count ?? 0} / ${subStats?.yearly_count ?? 0}`, icon: TrendingUp, accent: getPurpleScaleColor(1) },
   ];
 
   return (
@@ -457,6 +514,7 @@ function AppDetail({
             <div>
               <h2 className="text-xl font-bold text-[#21173A]">{app.name}</h2>
               {app.description && <p className="mt-1 text-sm text-[#6B6481]">{app.description}</p>}
+              {app.insforge_appkey && <p className="mt-0.5 text-xs text-[#8D88A0] font-mono">InsForge: {app.insforge_appkey}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -472,7 +530,7 @@ function AppDetail({
         </div>
       </div>
 
-      {/* Revenue KPIs */}
+      {/* KPIs */}
       <div className="mb-6 grid grid-cols-4 gap-4">
         {kpiCards.map((card) => {
           const Icon = card.icon;
@@ -490,101 +548,139 @@ function AppDetail({
         })}
       </div>
 
-      {/* Subscribers table */}
+      {/* Tabs + Table */}
       <div className="aligno-panel rounded-xl p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#3B2E56]">Subscribers</h3>
+          <div className="flex items-center gap-1 rounded-lg bg-[#F5EEFF] p-1">
+            {app.insforge_appkey && (
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "users" ? "bg-white text-[#6C2BD9] shadow-sm" : "text-[#6B6481] hover:text-[#21173A]"}`}
+              >
+                App Users ({appUserStats?.total ?? 0})
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab("subscribers")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "subscribers" ? "bg-white text-[#6C2BD9] shadow-sm" : "text-[#6B6481] hover:text-[#21173A]"}`}
+            >
+              Labs Subscribers ({subStats?.active ?? 0})
+            </button>
+          </div>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by email..."
-              className="w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
-            />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by email..." className="w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors" />
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-[#8A5DDE]" />
-          </div>
-        ) : subscribers.length === 0 ? (
-          <div className="flex flex-col items-center py-12 text-center">
-            <Users className="mb-2 h-8 w-8 text-[#C4B5D9]" />
-            <p className="text-sm text-[#8D88A0]">{search ? "No subscribers match your search" : "No subscribers yet"}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E6DCF9]">
-                  <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Email</th>
-                  <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Tier</th>
-                  <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Billing</th>
-                  <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Status</th>
-                  <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Renews</th>
-                  <th className="pb-2 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subscribers.map((sub) => (
-                  <tr key={sub.id} className="border-b border-[#F3EDF9] last:border-0">
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium" style={{ backgroundColor: withAlpha(accent, 0.12), color: accent }}>
-                          {sub.email[0]?.toUpperCase()}
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#8A5DDE]" /></div>
+        ) : activeTab === "users" && app.insforge_appkey ? (
+          /* App Users Tab */
+          appUsers.length === 0 ? (
+            <div className="flex flex-col items-center py-12 text-center">
+              <Users className="mb-2 h-8 w-8 text-[#C4B5D9]" />
+              <p className="text-sm text-[#8D88A0]">{search ? "No users match your search" : "No users yet"}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E6DCF9]">
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Email</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Verified</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Providers</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Joined</th>
+                    <th className="pb-2 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Labs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appUsers.map((u) => (
+                    <tr key={u.id} className="border-b border-[#F3EDF9] last:border-0">
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium" style={{ backgroundColor: withAlpha(accent, 0.12), color: accent }}>
+                            {u.email[0]?.toUpperCase()}
+                          </div>
+                          <span className="font-medium text-[#21173A]">{u.email}</span>
                         </div>
-                        <span className="font-medium text-[#21173A]">{sub.email}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4 capitalize text-[#6B6481]">{sub.tier}</td>
-                    <td className="py-3 pr-4 capitalize text-[#6B6481]">{sub.billing_period}</td>
-                    <td className="py-3 pr-4">
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ backgroundColor: withAlpha(sub.status === "active" ? "#22c55e" : "#ef4444", 0.12), color: sub.status === "active" ? "#16a34a" : "#dc2626" }}>
-                        {sub.status === "active" ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                        {sub.status}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-[#6B6481]">
-                      {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
-                    </td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-1">
+                      </td>
+                      <td className="py-3 pr-4">
+                        {u.emailVerified ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-gray-300" />}
+                      </td>
+                      <td className="py-3 pr-4 text-[#6B6481]">{u.providers.join(", ")}</td>
+                      <td className="py-3 pr-4 text-[#6B6481]">{new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
+                      <td className="py-3">
+                        {subscriberEmailSet.has(u.email.toLowerCase()) ? (
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ backgroundColor: withAlpha("#9333ea", 0.12), color: "#7c3aed" }}>Active</span>
+                        ) : (
+                          <span className="text-xs text-[#AAA3BC]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* Subscribers Tab */
+          subscribers.length === 0 ? (
+            <div className="flex flex-col items-center py-12 text-center">
+              <Users className="mb-2 h-8 w-8 text-[#C4B5D9]" />
+              <p className="text-sm text-[#8D88A0]">{search ? "No subscribers match your search" : "No subscribers yet"}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E6DCF9]">
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Email</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Tier</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Billing</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Status</th>
+                    <th className="pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Renews</th>
+                    <th className="pb-2 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscribers.map((sub) => (
+                    <tr key={sub.id} className="border-b border-[#F3EDF9] last:border-0">
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium" style={{ backgroundColor: withAlpha(accent, 0.12), color: accent }}>{sub.email[0]?.toUpperCase()}</div>
+                          <span className="font-medium text-[#21173A]">{sub.email}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 capitalize text-[#6B6481]">{sub.tier}</td>
+                      <td className="py-3 pr-4 capitalize text-[#6B6481]">{sub.billing_period}</td>
+                      <td className="py-3 pr-4">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ backgroundColor: withAlpha(sub.status === "active" ? "#22c55e" : "#ef4444", 0.12), color: sub.status === "active" ? "#16a34a" : "#dc2626" }}>
+                          {sub.status === "active" ? <CheckCircle size={10} /> : <XCircle size={10} />}{sub.status}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-[#6B6481]">{sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                      <td className="py-3">
                         {sub.status === "active" ? (
-                          <button
-                            onClick={() => handleRevoke(sub.email)}
-                            disabled={actionLoading === sub.email}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                            title="Revoke access"
-                          >
-                            {actionLoading === sub.email ? <Loader2 size={12} className="animate-spin" /> : <UserMinus size={12} />}
-                            Revoke
+                          <button onClick={() => handleRevoke(sub.email)} disabled={actionLoading === sub.email} className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50">
+                            {actionLoading === sub.email ? <Loader2 size={12} className="animate-spin" /> : <UserMinus size={12} />}Revoke
                           </button>
                         ) : (
-                          <button
-                            onClick={() => handleComp(sub.email)}
-                            disabled={actionLoading === sub.email}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium hover:bg-[#F5EEFF] transition-colors disabled:opacity-50"
-                            style={{ color: accent }}
-                            title="Reactivate access"
-                          >
-                            {actionLoading === sub.email ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}
-                            Reactivate
+                          <button onClick={() => handleComp(sub.email)} disabled={actionLoading === sub.email} className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium hover:bg-[#F5EEFF] transition-colors disabled:opacity-50" style={{ color: accent }}>
+                            {actionLoading === sub.email ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}Reactivate
                           </button>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
 
-      <CompModal open={compOpen} onClose={() => setCompOpen(false)} onDone={loadSubscribers} />
+      <CompModal open={compOpen} onClose={() => setCompOpen(false)} onDone={loadData} />
     </div>
   );
 }
@@ -601,12 +697,29 @@ export default function AppsPage() {
   const [editingApp, setEditingApp] = useState<App | null>(null);
   const [selectedApp, setSelectedApp] = useState<App | null>(null);
   const [subscriberStats, setSubscriberStats] = useState<SubscriberStats | null>(null);
+  const [appUserCounts, setAppUserCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     Promise.all([fetchApps(), fetchSubscribers()])
-      .then(([appList, subData]) => {
+      .then(async ([appList, subData]) => {
         setApps(appList);
         setSubscriberStats(subData.stats);
+
+        // Fetch per-app user counts for apps with InsForge appkeys
+        const counts: Record<string, number> = {};
+        await Promise.all(
+          appList
+            .filter((a) => a.insforge_appkey)
+            .map(async (a) => {
+              try {
+                const data = await fetchAppUsers(a.insforge_appkey!);
+                counts[a.id] = data.stats.total;
+              } catch {
+                counts[a.id] = 0;
+              }
+            })
+        );
+        setAppUserCounts(counts);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -692,7 +805,7 @@ export default function AppsPage() {
                   key={app.id}
                   app={app}
                   index={i}
-                  subscriberCount={subscriberStats?.active ?? 0}
+                  subscriberCount={appUserCounts[app.id] ?? subscriberStats?.active ?? 0}
                   onEdit={(a) => { setEditingApp(a); setModalOpen(true); }}
                   onDelete={handleDelete}
                   onSelect={setSelectedApp}

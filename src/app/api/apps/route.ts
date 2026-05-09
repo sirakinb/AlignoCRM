@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       url: body.url ?? null,
       icon_url: body.icon_url ?? null,
       insforge_project_url: body.insforge_project_url ?? null,
+      insforge_appkey: body.insforge_appkey ?? null,
     });
 
     return NextResponse.json({ app }, { status: 201 });
@@ -70,7 +71,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const allowedKeys = ["name", "slug", "description", "url", "icon_url", "insforge_project_url", "status"] as const;
+    const allowedKeys = ["name", "slug", "description", "url", "icon_url", "insforge_project_url", "insforge_appkey", "status"] as const;
     const update: Record<string, unknown> = {};
     for (const key of allowedKeys) {
       if (key in fields) update[key] = fields[key];

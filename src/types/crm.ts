@@ -119,6 +119,7 @@ export interface App {
   url: string | null;
   icon_url: string | null;
   insforge_project_url: string | null;
+  insforge_appkey: string | null;
   status: AppStatus;
   created_at: string;
   updated_at: string;
@@ -179,10 +180,10 @@ export type UpdateTaskInput = Partial<
 >;
 
 export type CreateAppInput = Pick<App, "workspace_id" | "name" | "slug"> &
-  Partial<Pick<App, "organization_id" | "description" | "url" | "icon_url" | "insforge_project_url" | "status">>;
+  Partial<Pick<App, "organization_id" | "description" | "url" | "icon_url" | "insforge_project_url" | "insforge_appkey" | "status">>;
 
 export type UpdateAppInput = Partial<
-  Pick<App, "name" | "slug" | "description" | "url" | "icon_url" | "insforge_project_url" | "status">
+  Pick<App, "name" | "slug" | "description" | "url" | "icon_url" | "insforge_project_url" | "insforge_appkey" | "status">
 >;
 
 export type CreateActivityLogInput = Pick<
