@@ -1,6 +1,14 @@
 import { insforge } from "@/lib/insforge/client";
 import type { App, CreateAppInput, UpdateAppInput } from "@/types/crm";
 
+function isTableMissing(error: unknown): boolean {
+  const err = error as { code?: string; message?: string };
+  return (
+    err?.code === "42P01" ||
+    /relation .* does not exist/i.test(err?.message ?? "")
+  );
+}
+
 export async function getApps(workspaceId: string) {
   const { data, error } = await insforge.database
     .from("apps")
@@ -8,7 +16,10 @@ export async function getApps(workspaceId: string) {
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    if (isTableMissing(error)) return [] as App[];
+    throw error;
+  }
   return data as App[];
 }
 
