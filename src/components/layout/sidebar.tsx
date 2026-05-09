@@ -8,7 +8,7 @@ import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { syncServerSession } from "@/lib/auth/sync-server-session";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen } from "lucide-react";
+import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen, Shield } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -153,6 +153,24 @@ export function Sidebar({ width = 224 }: SidebarProps) {
 
       {/* Utility Navigation */}
       <div className="space-y-1 px-3 pb-2">
+        {effectiveUser?.email &&
+          ["aki.b@pentridgemedia.com", "sirakinb@gmail.com"].includes(
+            effectiveUser.email.toLowerCase()
+          ) && (
+            <Link
+              href="/admin"
+              prefetch={false}
+              onClick={handleNavigation("/admin")}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                pathname.startsWith("/admin")
+                  ? "bg-[#F3EAFD] text-[#6C2BD9]"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <Shield size={18} className="shrink-0" />
+              <span className="truncate">Admin</span>
+            </Link>
+          )}
         <Link
           href="/docs"
           prefetch={false}
