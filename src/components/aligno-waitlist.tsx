@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import Link from "next/link";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 
@@ -105,17 +104,6 @@ export function AlignoWaitlist() {
 
       {errorMsg && !submitted && (
         <p className="mt-4 text-sm text-rose-600">{errorMsg}</p>
-      )}
-
-      {!submitted && (
-        <div className="mt-6">
-          <Link
-            href="/sign-in"
-            className="text-sm font-semibold text-[#6E2ABD] underline decoration-[#6E2ABD]/40 underline-offset-4 transition hover:text-[#44106F]"
-          >
-            Already have an account? Log in
-          </Link>
-        </div>
       )}
     </div>
   );

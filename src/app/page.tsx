@@ -190,12 +190,6 @@ export default function LandingPage() {
 
           {/* CTA button right */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/sign-in"
-              className="hidden text-sm font-medium text-[#5D5474] transition hover:text-[#44106F] sm:inline"
-            >
-              Log in
-            </Link>
             <a
               href="#waitlist"
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
@@ -245,12 +239,6 @@ export default function LandingPage() {
               Join the Waitlist
               <ArrowRight className="h-4 w-4" />
             </a>
-            <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-6 py-3 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
-            >
-              Open app
-            </Link>
           </div>
 
           {/* Small note underneath */}
@@ -531,9 +519,6 @@ export default function LandingPage() {
 
           {/* Links right */}
           <div className="flex items-center gap-6 text-sm text-[#7B7590]">
-            <Link href="/sign-in" className="transition hover:text-[#44106F]">
-              Log in
-            </Link>
             <a href="/#waitlist" className="transition hover:text-[#44106F]">
               Waitlist
             </a>
