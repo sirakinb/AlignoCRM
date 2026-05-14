@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { getSiteUrl } from "@/lib/seo/site-url";
+import { AlignoWaitlist } from "@/components/aligno-waitlist";
 
 const siteUrl = getSiteUrl();
 
@@ -505,44 +506,10 @@ export default function LandingPage() {
       </section>
 
       {/* ---------------------------------------------------------- */}
-      {/*  Pentridge Labs CTA                                         */}
+      {/*  Waitlist                                                   */}
       {/* ---------------------------------------------------------- */}
       <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
-        <div
-          className="aligno-panel mx-auto max-w-4xl rounded-2xl px-6 py-14 text-center sm:px-12 sm:py-16"
-          style={{ borderColor: withAlpha(getPurpleScaleColor(5), 0.22) }}
-        >
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD] mb-4">
-            Pentridge Labs
-          </p>
-          <h2 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl lg:text-5xl">
-            One subscription. Every tool.
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
-            Subscribe to Pentridge to unlock Aligno CRM, Aligno PM, and
-            a growing suite of tools built to help businesses operate and grow.
-          </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="https://pentridgemedia.com/labs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
-              }}
-            >
-              View Plans
-              <ArrowRight className="h-4 w-4" />
-            </a>
-            <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-6 py-3.5 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
-            >
-              Log in
-            </Link>
-          </div>
-        </div>
+        <AlignoWaitlist />
       </section>
 
       {/* ---------------------------------------------------------- */}
