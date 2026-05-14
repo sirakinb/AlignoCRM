@@ -196,15 +196,15 @@ export default function LandingPage() {
             >
               Log in
             </Link>
-            <Link
-              href="/sign-up"
+            <a
+              href="#waitlist"
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
             >
-              Start free
-            </Link>
+              Join Waitlist
+            </a>
           </div>
         </div>
       </header>
@@ -235,16 +235,16 @@ export default function LandingPage() {
 
           {/* Two CTA buttons side by side */}
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/sign-up"
+            <a
+              href="#waitlist"
               className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
             >
-              Build your command center
+              Join the Waitlist
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </a>
             <Link
               href="/sign-in"
               className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/16 bg-white/78 px-6 py-3 text-sm font-semibold text-[#3B2E56] transition hover:bg-white"
@@ -508,7 +508,7 @@ export default function LandingPage() {
       {/* ---------------------------------------------------------- */}
       {/*  Waitlist                                                   */}
       {/* ---------------------------------------------------------- */}
-      <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
+      <section id="waitlist" className="px-5 pb-24 pt-8 sm:px-6 lg:px-8 scroll-mt-24">
         <AlignoWaitlist />
       </section>
 
@@ -534,9 +534,9 @@ export default function LandingPage() {
             <Link href="/sign-in" className="transition hover:text-[#44106F]">
               Log in
             </Link>
-            <Link href="/sign-up" className="transition hover:text-[#44106F]">
-              Sign up
-            </Link>
+            <a href="/#waitlist" className="transition hover:text-[#44106F]">
+              Waitlist
+            </a>
             <span>&copy; {new Date().getFullYear()} Aligno</span>
           </div>
         </div>
