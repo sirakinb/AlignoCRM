@@ -1,4 +1,3 @@
-"use server";
 
 import { insforge } from "@/lib/insforge/client";
 import type {

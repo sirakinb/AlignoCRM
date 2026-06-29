@@ -1,9 +1,15 @@
 "use client";
 
+import { SWRConfig } from "swr";
 import { InsforgeBrowserProvider } from "@insforge/nextjs";
 import type { InitialAuthState } from "@insforge/nextjs";
 import { insforge } from "@/lib/insforge/client";
 import { ServerAuthProvider } from "@/components/auth/server-auth-context";
+
+const swrDefaults = {
+  revalidateOnFocus: false,
+  dedupingInterval: 5000,
+};
 
 export function Providers({
   children,
@@ -28,14 +34,16 @@ export function Providers({
     : null;
 
   return (
-    <InsforgeBrowserProvider
-      client={insforge}
-      afterSignInUrl="/dashboard"
-      initialState={initialState}
-    >
-      <ServerAuthProvider user={serverUser}>
-        {children}
-      </ServerAuthProvider>
-    </InsforgeBrowserProvider>
+    <SWRConfig value={swrDefaults}>
+      <InsforgeBrowserProvider
+        client={insforge}
+        afterSignInUrl="/dashboard"
+        initialState={initialState}
+      >
+        <ServerAuthProvider user={serverUser}>
+          {children}
+        </ServerAuthProvider>
+      </InsforgeBrowserProvider>
+    </SWRConfig>
   );
 }

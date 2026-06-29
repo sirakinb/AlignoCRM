@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
-import { syncServerSession } from "@/lib/auth/sync-server-session";
+import { isAdminEmail } from "@/lib/auth/allowlist";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen, Shield } from "lucide-react";
 
@@ -71,7 +71,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   };
 
   const handleNavigation =
-    (href: string) => async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
       if (
         event.metaKey ||
         event.ctrlKey ||
@@ -83,13 +83,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
       }
 
       event.preventDefault();
-
-      try {
-        await syncServerSession();
-      } finally {
-        router.push(href);
-        router.refresh();
-      }
+      router.push(href);
     };
 
   useEffect(() => {
@@ -134,7 +128,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  prefetch={false}
+                  prefetch
                   onClick={handleNavigation(item.href)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
@@ -153,13 +147,10 @@ export function Sidebar({ width = 224 }: SidebarProps) {
 
       {/* Utility Navigation */}
       <div className="space-y-1 px-3 pb-2">
-        {effectiveUser?.email &&
-          ["aki.b@pentridgemedia.com", "sirakinb@gmail.com"].includes(
-            effectiveUser.email.toLowerCase()
-          ) && (
+        {effectiveUser?.email && isAdminEmail(effectiveUser.email) && (
             <Link
               href="/admin"
-              prefetch={false}
+              prefetch
               onClick={handleNavigation("/admin")}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 pathname.startsWith("/admin")
@@ -173,7 +164,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
           )}
         <Link
           href="/docs"
-          prefetch={false}
+          prefetch
           onClick={handleNavigation("/docs")}
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             pathname.startsWith("/docs")
@@ -186,7 +177,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
         </Link>
         <Link
           href="/settings"
-          prefetch={false}
+          prefetch
           onClick={handleNavigation("/settings")}
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             pathname.startsWith("/settings")

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
-import { getDeals, createDeal, updateDeal, deleteDeal } from "@/lib/data/deals";
+import {
+  getDeals,
+  getDeal,
+  createDeal,
+  updateDeal,
+  deleteDeal,
+} from "@/lib/data/deals";
 
 export async function GET() {
   try {
@@ -70,10 +76,8 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Verify deal belongs to this workspace
-    const deals = await getDeals(tenant.workspaceId);
-    const existing = deals.find((d) => d.id === id);
-    if (!existing) {
+    const existing = await getDeal(id);
+    if (existing.workspace_id !== tenant.workspaceId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
@@ -110,10 +114,8 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const [deal] = await getDeals(tenant.workspaceId).then((deals) =>
-      deals.filter((candidate) => candidate.id === dealId)
-    );
-    if (!deal) {
+    const deal = await getDeal(dealId);
+    if (deal.workspace_id !== tenant.workspaceId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 

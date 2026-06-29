@@ -36,17 +36,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
 const CHECK_URL =
   "https://3nm75tby.us-east.insforge.app/functions/check-subscription-public";
 
-const ALLOWLISTED_EMAILS = new Set([
-  "aki.b@pentridgemedia.com",
-  "sirakinb@gmail.com",
-  "dropcardai@gmail.com",
-  "bajulaiye@protonmail.com",
-  "raichellaram@gmail.com",
-  "08lin.kevin121@gmail.com",
-  "tyronepeace.qa@gmail.com",
-  "jyho0243@gmail.com",
-  "astrid.nigrovic@gmail.com",
-]);
+import { hasSubscriptionBypass } from "@/lib/auth/allowlist";
 
 const NO_SUB: SubscriptionState = {
   has_subscription: false,
@@ -85,7 +75,7 @@ export function SubscriptionProvider({
 
     try {
       // Bypass for allowlisted emails
-      if (ALLOWLISTED_EMAILS.has(email)) {
+      if (hasSubscriptionBypass(email)) {
         setState({ has_subscription: true, tier: "granted", billing_period: null, status: "active", current_period_end: null });
         setLoading(false);
         return;

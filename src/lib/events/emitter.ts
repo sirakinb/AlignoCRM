@@ -4,20 +4,14 @@ import type {
   CreateBusinessEventInput,
 } from "@/types/events";
 
-function generateIdempotencyKey(
-  eventType: string,
-  recordId: string
-): string {
-  return `${eventType}:${recordId}:${Date.now()}`;
+function generateIdempotencyKey(input: CreateBusinessEventInput): string {
+  return `${input.event_type}:${input.record_id}:${JSON.stringify(input.payload)}`;
 }
 
 export async function emitEvent(
   input: CreateBusinessEventInput
 ): Promise<BusinessEvent | null> {
-  const idempotency_key = generateIdempotencyKey(
-    input.event_type,
-    input.record_id
-  );
+  const idempotency_key = generateIdempotencyKey(input);
 
   const { data, error } = await insforge.database
     .from("business_events")
