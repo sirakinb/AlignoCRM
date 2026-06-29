@@ -29,14 +29,12 @@ import {
 } from "@/lib/design/aligno-theme";
 import type { Contact, Tag } from "@/types/crm";
 import ContactDrawer from "@/components/contacts/contact-drawer";
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import {
+  formatContactDate,
+  getContactDisplayName,
+  getContactInitials,
+} from "@/lib/contacts/display";
+import { mutateContactsSummary, useContactsSummary } from "@/hooks/use-crm-data";
 
 interface ContactFormData {
   first_name: string;
@@ -56,26 +54,20 @@ const emptyForm: ContactFormData = {
   notes: "",
 };
 
-function getContactDisplayName(contact: Pick<Contact, "first_name" | "last_name">) {
-  const firstName = contact.first_name?.trim() ?? "";
-  const lastName = contact.last_name?.trim() ?? "";
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  return fullName || "Unnamed Contact";
-}
-
-function getContactInitials(contact: Pick<Contact, "first_name" | "last_name">) {
-  const firstInitial = contact.first_name?.trim().charAt(0) ?? "";
-  const lastInitial = contact.last_name?.trim().charAt(0) ?? "";
-  const initials = `${firstInitial}${lastInitial}`.toUpperCase();
-
-  return initials || "UC";
-}
-
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: summary,
+    error: summaryError,
+    isLoading: loading,
+    mutate: refreshContacts,
+  } = useContactsSummary();
+  const contacts = summary?.contacts ?? [];
+  const allTags = summary?.tags ?? [];
+  const contactTagsMap = summary?.contactTagsMap ?? {};
+  const error = summaryError
+    ? "Failed to load contacts. Please try again."
+    : null;
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
 
@@ -91,42 +83,14 @@ export default function ContactsPage() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
 
-  // Tags state
-  const [allTags, setAllTags] = useState<Tag[]>([]);
-  const [contactTagsMap, setContactTagsMap] = useState<Record<string, Tag[]>>({});
   const [modalSelectedTags, setModalSelectedTags] = useState<Tag[]>([]);
   const [showModalTagDropdown, setShowModalTagDropdown] = useState(false);
   const [newModalTagName, setNewModalTagName] = useState("");
   const modalTagDropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchContacts = useCallback(async () => {
-    try {
-      setError(null);
-      const response = await fetch("/api/contacts/summary", {
-        cache: "no-store",
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Failed to load contacts");
-      }
-
-      setContacts((payload.contacts as Contact[]) ?? []);
-      setAllTags((payload.tags as Tag[]) ?? []);
-      setContactTagsMap(
-        (payload.contactTagsMap as Record<string, Tag[]>) ?? {}
-      );
-    } catch (err) {
-      console.error("Failed to fetch contacts:", err);
-      setError("Failed to load contacts. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchContacts();
-  }, [fetchContacts]);
+    await refreshContacts();
+  }, [refreshContacts]);
 
   // Close modal tag dropdown on outside click
   useEffect(() => {
@@ -222,10 +186,13 @@ export default function ContactsPage() {
       setModalSelectedTags([]);
       setShowModal(false);
 
-      setContacts((prev) => [newContact, ...prev]);
-      setContactTagsMap((prev) => ({
-        ...prev,
-        [newContact.id]: modalSelectedTags,
+      void mutateContactsSummary((current) => ({
+        contacts: [newContact, ...(current?.contacts ?? [])],
+        tags: current?.tags ?? [],
+        contactTagsMap: {
+          ...(current?.contactTagsMap ?? {}),
+          [newContact.id]: modalSelectedTags,
+        },
       }));
     } catch (err) {
       console.error("Failed to create contact:", err);
@@ -277,7 +244,11 @@ export default function ContactsPage() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Failed to create tag");
       const tag = payload.tag as Tag;
-      setAllTags((prev) => [...prev, tag]);
+      void mutateContactsSummary((current) => ({
+        contacts: current?.contacts ?? [],
+        tags: [...(current?.tags ?? []), tag],
+        contactTagsMap: current?.contactTagsMap ?? {},
+      }));
       setModalSelectedTags((prev) => [...prev, tag]);
       setNewModalTagName("");
     } catch (err) {
@@ -293,16 +264,18 @@ export default function ContactsPage() {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload.error || "Failed to delete tag");
       }
-      setAllTags((prev) => prev.filter((t) => t.id !== tagId));
-      setModalSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
-      // Remove from contact tags map
-      setContactTagsMap((prev) => {
-        const updated = { ...prev };
-        for (const key of Object.keys(updated)) {
-          updated[key] = updated[key].filter((t) => t.id !== tagId);
+      void mutateContactsSummary((current) => {
+        const contactTagsMap = { ...(current?.contactTagsMap ?? {}) };
+        for (const key of Object.keys(contactTagsMap)) {
+          contactTagsMap[key] = contactTagsMap[key].filter((t) => t.id !== tagId);
         }
-        return updated;
+        return {
+          contacts: current?.contacts ?? [],
+          tags: (current?.tags ?? []).filter((t) => t.id !== tagId),
+          contactTagsMap,
+        };
       });
+      setModalSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
     } catch (err) {
       console.error("Failed to delete tag:", err);
     }
@@ -320,7 +293,11 @@ export default function ContactsPage() {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload.error || "Failed to delete contact");
       }
-      setContacts((prev) => prev.filter((c) => c.id !== contactId));
+      void mutateContactsSummary((current) => ({
+        contacts: (current?.contacts ?? []).filter((c) => c.id !== contactId),
+        tags: current?.tags ?? [],
+        contactTagsMap: current?.contactTagsMap ?? {},
+      }));
     } catch (err) {
       console.error("Failed to delete contact:", err);
       alert("Failed to delete contact. Please try again.");
@@ -368,7 +345,11 @@ export default function ContactsPage() {
           }
         })
       );
-      setContacts((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      void mutateContactsSummary((current) => ({
+        contacts: (current?.contacts ?? []).filter((c) => !selectedIds.has(c.id)),
+        tags: current?.tags ?? [],
+        contactTagsMap: current?.contactTagsMap ?? {},
+      }));
       setSelectedIds(new Set());
     } catch (err) {
       console.error("Failed to bulk delete contacts:", err);
@@ -403,8 +384,7 @@ export default function ContactsPage() {
           <p className="text-sm text-[#33254F]">{error}</p>
           <button
             onClick={() => {
-              setLoading(true);
-              fetchContacts();
+              void fetchContacts();
             }}
             className="mt-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors"
             style={{
@@ -494,8 +474,7 @@ export default function ContactsPage() {
           {error}
           <button
             onClick={() => {
-              setLoading(true);
-              fetchContacts();
+              void fetchContacts();
             }}
             className="ml-auto text-xs font-medium text-red-800 underline hover:no-underline"
           >
@@ -667,7 +646,7 @@ export default function ContactsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[#6B6481]">
-                    {formatDate(contact.created_at)}
+                    {formatContactDate(contact.created_at)}
                   </td>
                   <td className="px-4 py-3">
                     <button

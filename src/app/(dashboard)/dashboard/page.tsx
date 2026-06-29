@@ -1,42 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   getPurpleScaleColor,
   getStatusPurple,
   withAlpha,
 } from "@/lib/design/aligno-theme";
-import type { Deal, Pipeline, Stage, Contact } from "@/types/crm";
+import {
+  useAllStages,
+  useContacts,
+  useDeals,
+  usePipelines,
+} from "@/hooks/use-crm-data";
 import { Loader2, BarChart3, TrendingUp, Users, DollarSign, ChevronDown } from "lucide-react";
-
-/* ── API helpers ── */
-async function fetchDeals(): Promise<Deal[]> {
-  const res = await fetch("/api/deals");
-  if (!res.ok) throw new Error("Failed to load deals");
-  const json = await res.json();
-  return json.deals;
-}
-
-async function fetchPipelines(): Promise<Pipeline[]> {
-  const res = await fetch("/api/pipelines");
-  if (!res.ok) throw new Error("Failed to load pipelines");
-  const json = await res.json();
-  return json.pipelines;
-}
-
-async function fetchStages(pipelineId: string): Promise<Stage[]> {
-  const res = await fetch(`/api/pipelines?pipelineId=${pipelineId}`);
-  if (!res.ok) throw new Error("Failed to load stages");
-  const json = await res.json();
-  return json.stages;
-}
-
-async function fetchContacts(): Promise<Contact[]> {
-  const res = await fetch("/api/contacts");
-  if (!res.ok) throw new Error("Failed to load contacts");
-  const json = await res.json();
-  return json.contacts;
-}
 
 /* ── helpers ── */
 function formatCurrency(value: number) {
@@ -80,42 +56,14 @@ function buildDonutPath(
 const ALL_PIPELINES = "__all__";
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const { data: deals = [], isLoading: dealsLoading } = useDeals();
+  const { data: pipelines = [], isLoading: pipelinesLoading } = usePipelines();
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts();
+  const { data: stages = [], isLoading: stagesLoading } = useAllStages(pipelines);
   const [selectedPipelineId, setSelectedPipelineId] = useState<string>(ALL_PIPELINES);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [fetchedDeals, fetchedPipelines, fetchedContacts] =
-          await Promise.all([
-            fetchDeals(),
-            fetchPipelines(),
-            fetchContacts(),
-          ]);
-
-        setDeals(fetchedDeals);
-        setPipelines(fetchedPipelines);
-        setContacts(fetchedContacts);
-
-        // Load stages for all pipelines
-        if (fetchedPipelines.length > 0) {
-          const allStages = await Promise.all(
-            fetchedPipelines.map((p) => fetchStages(p.id))
-          );
-          setStages(allStages.flat());
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard data:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
+  const loading =
+    dealsLoading || pipelinesLoading || contactsLoading || stagesLoading;
 
   if (loading) {
     return (

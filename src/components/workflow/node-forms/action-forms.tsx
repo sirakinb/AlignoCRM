@@ -9,31 +9,9 @@ import type {
   WebhookConfig,
   StopWorkflowConfig,
 } from "@/types/workflow";
+import { fetchPipelines, fetchStages, fetchTags } from "@/lib/api/crm";
 import { inputClass, labelClass } from "./shared";
 import type { Tag, Pipeline, Stage } from "@/types/crm";
-
-async function fetchTags() {
-  const response = await fetch("/api/tags", { cache: "no-store" });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "Failed to load tags");
-  return (payload.tags ?? []) as Tag[];
-}
-
-async function fetchPipelines() {
-  const response = await fetch("/api/pipelines", { cache: "no-store" });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "Failed to load pipelines");
-  return (payload.pipelines ?? []) as Pipeline[];
-}
-
-async function fetchStages(pipelineId: string) {
-  const response = await fetch(`/api/pipelines?pipelineId=${pipelineId}`, {
-    cache: "no-store",
-  });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "Failed to load stages");
-  return (payload.stages ?? []) as Stage[];
-}
 
 // Add Tag
 interface AddTagFormProps {
