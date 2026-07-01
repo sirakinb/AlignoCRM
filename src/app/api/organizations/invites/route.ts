@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
-          from: "AlignoCRM <aki.b@pentridgemedia.com>",
+          from: process.env.EMAIL_FROM ?? "AlignoCRM <aki.b@pentridgemedia.com>",
           to: email,
           subject: `You've been invited to join ${orgName} on AlignoCRM`,
           html: `

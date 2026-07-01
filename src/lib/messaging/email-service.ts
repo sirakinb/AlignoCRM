@@ -38,7 +38,7 @@ export class ResendEmailProvider implements EmailProvider {
     body: string;
   }): Promise<EmailSendResult> {
     const { data, error } = await this.getClient().emails.send({
-      from: "aki.b@pentridgemedia.com",
+      from: process.env.EMAIL_FROM ?? "aki.b@pentridgemedia.com",
       to: input.to,
       subject: input.subject,
       html: input.body,

@@ -250,9 +250,9 @@ export default function LandingPage() {
             {/* Screenshot */}
             <Image
               src="/dashboard.png"
-              alt="Aligno CRM app screenshot showing the pipeline view"
+              alt="Aligno CRM app screenshot showing the dashboard view"
               width={1920}
-              height={1080}
+              height={1035}
               className="block w-full"
               priority
             />
