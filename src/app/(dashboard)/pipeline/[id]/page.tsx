@@ -12,7 +12,6 @@ import {
   Save,
   User,
 } from "lucide-react";
-import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import type { Contact, Deal, Pipeline, Stage } from "@/types/crm";
 
 interface LeadDetailPayload {
@@ -66,13 +65,13 @@ function DetailRow({
   value: string | null;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-gray-100 bg-white px-4 py-3">
-      <Icon size={17} className="mt-0.5 text-[#6C2BD9]" />
+    <div className="flex items-start gap-3 rounded-lg border border-[#e7e7ea] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(17,17,26,0.05)]">
+      <Icon size={16} strokeWidth={1.8} className="mt-0.5 text-zinc-400" />
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
           {label}
         </p>
-        <p className="mt-1 break-words text-sm font-medium text-gray-900">
+        <p className="mt-1 break-words text-[13px] font-medium text-zinc-900">
           {value || "Not provided"}
         </p>
       </div>
@@ -153,8 +152,8 @@ export default function LeadDetailPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <Loader2 size={18} className="animate-spin text-[#6C2BD9]" />
+        <div className="flex items-center gap-3 text-[13px] text-zinc-500">
+          <Loader2 size={18} className="animate-spin text-[#6c2bd9]" />
           Loading lead information...
         </div>
       </div>
@@ -167,9 +166,9 @@ export default function LeadDetailPage() {
         <button
           type="button"
           onClick={goBackToPipeline}
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[#6C2BD9]"
+          className="mb-6 inline-flex items-center gap-2 text-[13px] font-medium text-[#6c2bd9] hover:text-[#5b21b6]"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={16} strokeWidth={1.8} />
           Back to pipeline
         </button>
         <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
@@ -186,26 +185,23 @@ export default function LeadDetailPage() {
       <button
         type="button"
         onClick={goBackToPipeline}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[#6C2BD9] hover:text-[#5b24b8]"
+        className="mb-6 inline-flex items-center gap-2 text-[13px] font-medium text-[#6c2bd9] hover:text-[#5b21b6]"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={16} strokeWidth={1.8} />
         Back to pipeline
       </button>
 
-      <div
-        className="rounded-2xl border bg-white p-6 shadow-sm"
-        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.16) }}
-      >
+      <div className="crisp-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-[#6B6481]">
+            <p className="text-xs text-zinc-500">
               {data.pipeline.name} / {data.stage.name}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-[#21173A]">
+            <h1 className="mt-2 text-[22px] font-semibold tracking-[-0.01em] text-zinc-900">
               {contactName}
             </h1>
           </div>
-          <span className="rounded-full bg-[#F3EAFD] px-3 py-1 text-sm font-medium text-[#6C2BD9]">
+          <span className="rounded-md bg-[#efe7fb] px-1.5 py-0.5 text-[11px] font-medium text-[#5b21b6]">
             {data.deal.status}
           </span>
         </div>
@@ -223,16 +219,13 @@ export default function LeadDetailPage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section
-          className="rounded-2xl border bg-white p-6 shadow-sm"
-          style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.16) }}
-        >
+        <section className="crisp-card p-6">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-gray-950">
+              <h2 className="text-[15px] font-semibold text-zinc-900">
                 Case details and notes
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-[13px] text-zinc-500">
                 Website form details and internal follow-up notes.
               </p>
             </div>
@@ -240,7 +233,7 @@ export default function LeadDetailPage() {
               type="button"
               onClick={handleSaveNotes}
               disabled={!data.contact || saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin" />
@@ -258,10 +251,10 @@ export default function LeadDetailPage() {
             disabled={!data.contact}
             rows={12}
             placeholder="Add case details, call notes, intake updates, or next steps."
-            className="mt-3 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition-colors focus:border-[#6C2BD9] focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50"
+            className="mt-3 w-full resize-y rounded-lg border border-[#e7e7ea] bg-white px-4 py-3 text-sm leading-6 text-zinc-900 placeholder:text-zinc-400 outline-none transition-colors disabled:bg-zinc-50"
           />
           {!data.contact && (
-            <p className="mt-2 text-sm text-red-600">
+            <p className="mt-2 text-[13px] text-red-600">
               This pipeline item is not linked to a contact, so notes cannot be
               saved yet.
             </p>
@@ -273,27 +266,24 @@ export default function LeadDetailPage() {
           )}
         </section>
 
-        <aside
-          className="rounded-2xl border bg-white p-6 shadow-sm"
-          style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.16) }}
-        >
-          <h2 className="text-lg font-semibold text-gray-950">Lead record</h2>
-          <dl className="mt-4 space-y-3 text-sm">
+        <aside className="crisp-card p-6">
+          <h2 className="text-[15px] font-semibold text-zinc-900">Lead record</h2>
+          <dl className="mt-4 space-y-3">
             <div>
-              <dt className="text-gray-500">Created</dt>
-              <dd className="mt-1 font-medium text-gray-900">
+              <dt className="text-xs text-zinc-500">Created</dt>
+              <dd className="mt-1 text-[13px] font-medium text-zinc-900 tabular-nums">
                 {new Date(data.deal.created_at).toLocaleString()}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Last updated</dt>
-              <dd className="mt-1 font-medium text-gray-900">
+              <dt className="text-xs text-zinc-500">Last updated</dt>
+              <dd className="mt-1 text-[13px] font-medium text-zinc-900 tabular-nums">
                 {new Date(data.deal.updated_at).toLocaleString()}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">CRM contact</dt>
-              <dd className="mt-1 font-medium text-gray-900">
+              <dt className="text-xs text-zinc-500">CRM contact</dt>
+              <dd className="mt-1 text-[13px] font-medium text-zinc-900">
                 {data.contact ? "Created" : "Not linked"}
               </dd>
             </div>

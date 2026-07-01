@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ALIGNO_PURPLE_SCALE,
-  getPurpleScaleColor,
-  withAlpha,
-} from "@/lib/design/aligno-theme";
+import { ALIGNO_PURPLE_SCALE } from "@/lib/design/aligno-theme";
 import { KanbanBoard } from "@/components/pipeline/kanban-board";
 import { PipelineSelector } from "@/components/pipeline/pipeline-selector";
 import {
@@ -190,15 +186,15 @@ function CreatePipelineModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">New Pipeline</h2>
+      <div className="relative w-full max-w-lg rounded-xl border border-[#e7e7ea] bg-white shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
+        <div className="flex items-center justify-between border-b border-[#e7e7ea] px-6 py-4">
+          <h2 className="text-[15px] font-semibold text-zinc-900">New Pipeline</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
           >
             <X size={18} />
           </button>
@@ -213,7 +209,7 @@ function CreatePipelineModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
               Pipeline Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -221,13 +217,13 @@ function CreatePipelineModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Sales Pipeline"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+              className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-[13px] font-medium text-zinc-700 mb-2">
               Stages <span className="text-red-500">*</span>
             </label>
             <div className="space-y-2">
@@ -237,14 +233,14 @@ function CreatePipelineModal({
                     type="color"
                     value={stage.color}
                     onChange={(e) => updateStage(i, "color", e.target.value)}
-                    className="h-9 w-9 shrink-0 cursor-pointer rounded border border-gray-300 p-0.5"
+                    className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-[#e7e7ea] p-0.5"
                   />
                   <input
                     type="text"
                     value={stage.name}
                     onChange={(e) => updateStage(i, "name", e.target.value)}
                     placeholder={`Stage ${i + 1}`}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+                    className="flex-1 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
                   />
                   {stageInputs.length > 1 && (
                     <button
@@ -261,7 +257,7 @@ function CreatePipelineModal({
             <button
               type="button"
               onClick={addStage}
-              className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#6C2BD9] hover:text-[#5b24b8] transition-colors"
+              className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#6c2bd9] hover:text-[#5b21b6] transition-colors"
             >
               <Plus size={12} />
               Add stage
@@ -272,14 +268,14 @@ function CreatePipelineModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#5b24b8] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? (
                 <>
@@ -413,18 +409,18 @@ function CreateDealModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-xl border border-[#e7e7ea] bg-white shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">New Deal</h2>
+        <div className="flex items-center justify-between border-b border-[#e7e7ea] px-6 py-4">
+          <h2 className="text-[15px] font-semibold text-zinc-900">New Deal</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
           >
             <X size={18} />
           </button>
@@ -441,7 +437,7 @@ function CreateDealModal({
 
           {/* Deal Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
               Deal Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -449,14 +445,14 @@ function CreateDealModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Acme Corp - Enterprise License"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+              className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
               autoFocus
             />
           </div>
 
           {/* Value */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
               Deal Value
             </label>
             <div className="relative">
@@ -471,14 +467,14 @@ function CreateDealModal({
                 placeholder="0"
                 min="0"
                 step="100"
-                className="w-full rounded-lg border border-gray-300 pl-9 pr-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+                className="w-full rounded-lg border border-[#e7e7ea] bg-white pl-9 pr-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Contact */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
               Contact
             </label>
             <div className="relative">
@@ -489,7 +485,7 @@ function CreateDealModal({
               <select
                 value={contactId}
                 onChange={(e) => setContactId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-300 bg-white pl-9 pr-8 py-2.5 text-sm text-gray-900 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+                className="w-full appearance-none rounded-lg border border-[#e7e7ea] bg-white pl-9 pr-8 py-2 text-sm text-zinc-900 focus:outline-none transition-colors"
               >
                 <option value="">No contact</option>
                 {contacts.map((c) => (
@@ -505,13 +501,13 @@ function CreateDealModal({
           {/* Pipeline & Stage side-by-side */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
                 Pipeline
               </label>
               <select
                 value={pipelineId}
                 onChange={(e) => handlePipelineChange(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+                className="w-full appearance-none rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none transition-colors"
               >
                 {pipelines.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -521,13 +517,13 @@ function CreateDealModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[13px] font-medium text-zinc-700 mb-1.5">
                 Stage
               </label>
               <select
                 value={stageId}
                 onChange={(e) => setStageId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+                className="w-full appearance-none rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none transition-colors"
               >
                 {modalStages.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -543,14 +539,14 @@ function CreateDealModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#5b24b8] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? (
                 <>
@@ -834,14 +830,14 @@ export default function PipelinePage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <div className="relative">
-          <div className="h-12 w-12 rounded-full border-4 border-gray-200" />
-          <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-[#6C2BD9] border-t-transparent animate-spin" />
+          <div className="h-12 w-12 rounded-full border-4 border-zinc-200" />
+          <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-[#6c2bd9] border-t-transparent animate-spin" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-[13px] font-medium text-zinc-700">
             Loading pipeline...
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-zinc-400">
             Setting up your deal board
           </p>
         </div>
@@ -860,14 +856,14 @@ export default function PipelinePage() {
           <AlertCircle size={24} className="text-red-500" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-[13px] font-medium text-zinc-900">
             Something went wrong
           </p>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <p className="mt-1 text-[13px] text-zinc-500">{error}</p>
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="rounded-lg bg-[#6C2BD9] px-4 py-2 text-sm font-medium text-white hover:bg-[#5b24b8] transition-colors"
+          className="rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] transition-colors"
         >
           Retry
         </button>
@@ -880,7 +876,7 @@ export default function PipelinePage() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="aligno-page-surface flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[#f7f7f8]">
       {/* Move error toasts */}
       {moveErrors.length > 0 && (
         <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
@@ -897,10 +893,10 @@ export default function PipelinePage() {
       )}
 
       {/* Header */}
-      <div className="border-b border-[#E6DCF9] bg-white/85 px-6 py-4 backdrop-blur-sm">
+      <div className="border-b border-[#e7e7ea] bg-white px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-[#21173A]">Pipeline</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-zinc-900">Pipeline</h1>
             {pipelines.length > 0 && selectedPipelineId && (
               <PipelineSelector
                 pipelines={pipelines}
@@ -910,11 +906,7 @@ export default function PipelinePage() {
             )}
             <button
               onClick={() => setShowCreatePipelineModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-sm font-medium transition-colors"
-              style={{
-                borderColor: withAlpha(getPurpleScaleColor(2), 0.34),
-                color: "#6B6481",
-              }}
+              className="flex items-center gap-1.5 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               <Plus size={14} />
               New Pipeline
@@ -924,18 +916,15 @@ export default function PipelinePage() {
           <div className="flex items-center gap-3">
             {/* Pipeline stats */}
             <div className="hidden sm:flex items-center gap-4 mr-2">
-              <div className="flex items-center gap-1.5 text-sm text-[#6B6481]">
-                <TrendingUp
-                  size={14}
-                  style={{ color: getPurpleScaleColor(4) }}
-                />
-                <span className="font-medium text-[#33254F]">
+              <div className="flex items-center gap-1.5 text-[13px] text-zinc-500">
+                <TrendingUp size={14} strokeWidth={1.8} className="text-zinc-400" />
+                <span className="font-medium text-zinc-800 tabular-nums">
                   {formatCurrency(totalPipelineValue)}
                 </span>
-                <span className="text-[#8D88A0]">in pipeline</span>
+                <span className="text-zinc-400">in pipeline</span>
               </div>
-              <div className="h-4 w-px bg-[#E6DCF9]" />
-              <span className="text-sm text-[#6B6481]">
+              <div className="h-4 w-px bg-[#e7e7ea]" />
+              <span className="text-[13px] text-zinc-500 tabular-nums">
                 {openDeals.length} open{" "}
                 {openDeals.length === 1 ? "deal" : "deals"}
               </span>
@@ -944,7 +933,7 @@ export default function PipelinePage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="rounded-lg p-2 text-[#8D88A0] hover:bg-[#F5EEFF] hover:text-[#6F43BF] disabled:opacity-50 transition-colors"
+              className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-50 transition-colors"
               title="Refresh"
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
@@ -952,10 +941,7 @@ export default function PipelinePage() {
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(5)})`,
-              }}
+              className="flex items-center gap-2 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] transition-colors"
             >
               <Plus size={16} />
               Add Deal
@@ -968,13 +954,13 @@ export default function PipelinePage() {
       <div className="flex-1 overflow-x-auto p-6">
         {stages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <div className="rounded-full bg-[#F1E8FF] p-3">
-              <LayoutGrid size={24} className="text-[#8A5DDE]" />
+            <div className="rounded-full bg-[#efe7fb] p-3">
+              <LayoutGrid size={24} strokeWidth={1.8} className="text-[#5b21b6]" />
             </div>
-            <p className="text-sm font-medium text-[#33254F]">
+            <p className="text-[13px] font-medium text-zinc-800">
               No stages configured
             </p>
-            <p className="text-sm text-[#6B6481]">
+            <p className="text-[13px] text-zinc-500">
               This pipeline doesn&apos;t have any stages yet.
             </p>
           </div>

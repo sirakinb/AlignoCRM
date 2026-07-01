@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="h-8 w-0.5 rounded-full bg-transparent transition-colors group-hover:bg-[#6C2BD9]/40" />
       </div>
-      <main className="flex-1 overflow-y-auto bg-gray-50">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-[#f7f7f8]">{children}</main>
     </div>
   );
 }

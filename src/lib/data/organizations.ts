@@ -282,20 +282,35 @@ export async function acceptOrganizationInvite({
     throw new Error("This invite has expired.");
   }
 
-  const { data: member, error: memberError } = await insforge.database
+  // Guard against duplicate membership rows: if the user is already an
+  // active member of this organization, reuse that row instead of inserting.
+  const { data: existingMembers } = await insforge.database
     .from("organization_members")
-    .insert({
-      organization_id: invite.organization_id,
-      user_id: user.id,
-      email: user.email,
-      role: invite.role,
-      status: "active",
-      invited_by: invite.invited_by,
-    })
     .select()
-    .single();
+    .eq("organization_id", invite.organization_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1);
 
-  if (memberError) throw memberError;
+  let member = existingMembers?.[0] as OrganizationMember | undefined;
+
+  if (!member) {
+    const { data: insertedMember, error: memberError } = await insforge.database
+      .from("organization_members")
+      .insert({
+        organization_id: invite.organization_id,
+        user_id: user.id,
+        email: user.email,
+        role: invite.role,
+        status: "active",
+        invited_by: invite.invited_by,
+      })
+      .select()
+      .single();
+
+    if (memberError) throw memberError;
+    member = insertedMember as OrganizationMember;
+  }
 
   await insforge.database
     .from("organization_invites")

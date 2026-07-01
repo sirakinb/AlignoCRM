@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import {
   ALIGNO_PURPLE_SCALE,
-  getPurpleScaleColor,
   getStringPurpleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
@@ -256,9 +255,6 @@ export default function ContactsPage() {
   }
 
   const TAG_COLORS = [...ALIGNO_PURPLE_SCALE];
-  const primaryPurple = getPurpleScaleColor(3);
-  const deepPurple = getPurpleScaleColor(5);
-  const mutedPurple = getPurpleScaleColor(1);
 
   function getTagColor(tag: Tag) {
     return getStringPurpleColor(tag.id || tag.name);
@@ -383,10 +379,10 @@ export default function ContactsPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="aligno-page-surface flex h-full items-center justify-center p-6">
+      <div className="flex h-full items-center justify-center bg-[#f7f7f8] p-6">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 size={32} className="animate-spin" style={{ color: primaryPurple }} />
-          <p className="text-sm text-[#6B6481]">Loading contacts...</p>
+          <Loader2 size={28} strokeWidth={1.8} className="animate-spin text-[#6c2bd9]" />
+          <p className="text-[13px] text-zinc-500">Loading contacts...</p>
         </div>
       </div>
     );
@@ -395,21 +391,18 @@ export default function ContactsPage() {
   // Error state
   if (error && contacts.length === 0) {
     return (
-      <div className="aligno-page-surface flex h-full items-center justify-center p-6">
+      <div className="flex h-full items-center justify-center bg-[#f7f7f8] p-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <AlertCircle size={24} className="text-red-500" />
+            <AlertCircle size={22} strokeWidth={1.8} className="text-red-500" />
           </div>
-          <p className="text-sm text-[#33254F]">{error}</p>
+          <p className="text-[13px] text-zinc-600">{error}</p>
           <button
             onClick={() => {
               setLoading(true);
               fetchContacts();
             }}
-            className="mt-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors"
-            style={{
-              background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-            }}
+            className="mt-2 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6]"
           >
             Try Again
           </button>
@@ -419,20 +412,20 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="aligno-page-surface min-h-full p-6">
+    <div className="min-h-full bg-[#f7f7f8] p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#21173A]">Contacts</h1>
-          <p className="mt-1 text-sm text-[#6B6481]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-zinc-900">Contacts</h1>
+          <p className="mt-1 text-[13px] text-zinc-500">
             {contacts.length} contact{contacts.length !== 1 ? "s" : ""} total
             {activeCount > 0 && (
-              <span className="ml-1 text-[#8D88A0]">
+              <span className="ml-1 text-zinc-400">
                 &middot; {activeCount} active
               </span>
             )}
             {archivedCount > 0 && (
-              <span className="ml-1 text-[#8D88A0]">
+              <span className="ml-1 text-zinc-400">
                 &middot; {archivedCount} archived
               </span>
             )}
@@ -440,12 +433,9 @@ export default function ContactsPage() {
         </div>
         <button
           onClick={openModal}
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
-          style={{
-            background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-          }}
+          className="flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6]"
         >
-          <Plus size={16} />
+          <Plus size={15} strokeWidth={1.8} />
           Add Contact
         </button>
       </div>
@@ -454,19 +444,16 @@ export default function ContactsPage() {
       <div className="mb-4 flex items-center gap-3">
         <div className="relative flex-1">
           <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8D88A0]"
+            size={15}
+            strokeWidth={1.8}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
           />
           <input
             type="text"
             placeholder="Search by name, email, or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="aligno-panel-soft w-full rounded-lg py-2 pl-9 pr-3 text-sm text-[#21173A] placeholder-[#8D88A0] focus:outline-none focus:ring-1"
-            style={{
-              border: `1px solid ${withAlpha(mutedPurple, 0.18)}`,
-              boxShadow: `0 8px 20px ${withAlpha(mutedPurple, 0.06)}`,
-            }}
+            className="w-full rounded-lg border border-[#e7e7ea] bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
           />
         </div>
         <div className="flex gap-1">
@@ -474,12 +461,11 @@ export default function ContactsPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className="rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors"
-              style={{
-                backgroundColor:
-                  statusFilter === s ? primaryPurple : withAlpha(mutedPurple, 0.14),
-                color: statusFilter === s ? "#FFFFFF" : "#5A4B78",
-              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                statusFilter === s
+                  ? "border border-transparent bg-[#efe7fb] text-[#5b21b6]"
+                  : "border border-[#e7e7ea] bg-white text-zinc-600 hover:bg-zinc-50"
+              }`}
             >
               {s}
             </button>
@@ -506,11 +492,8 @@ export default function ContactsPage() {
 
       {/* Bulk actions bar */}
       {selectedIds.size > 0 && (
-        <div
-          className="mb-3 flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm"
-          style={{ backgroundColor: withAlpha(primaryPurple, 0.08), border: `1px solid ${withAlpha(primaryPurple, 0.18)}` }}
-        >
-          <span className="font-medium" style={{ color: deepPurple }}>
+        <div className="mb-3 flex items-center gap-3 rounded-lg border border-[#e3d5f8] bg-[#f4eefc] px-4 py-2.5 text-[13px]">
+          <span className="font-medium text-[#5b21b6]">
             {selectedIds.size} selected
           </span>
           <button
@@ -519,15 +502,15 @@ export default function ContactsPage() {
             className="ml-auto flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
           >
             {bulkDeleting ? (
-              <Loader2 size={12} className="animate-spin" />
+              <Loader2 size={12} strokeWidth={1.8} className="animate-spin" />
             ) : (
-              <Trash2 size={12} />
+              <Trash2 size={12} strokeWidth={1.8} />
             )}
             {bulkDeleting ? "Deleting..." : "Delete Selected"}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#6B6481] transition-colors hover:bg-white/60"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-white"
           >
             Cancel
           </button>
@@ -535,43 +518,43 @@ export default function ContactsPage() {
       )}
 
       {/* Table */}
-      <div className="aligno-panel overflow-hidden rounded-xl">
+      <div className="crisp-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#EEE6FF] bg-white/70">
-              <th className="w-10 px-4 py-3">
+            <tr className="border-b border-[#e7e7ea] bg-[#fafafa]">
+              <th className="w-10 px-4 py-2.5">
                 <input
                   type="checkbox"
                   checked={filtered.length > 0 && selectedIds.size === filtered.length}
                   onChange={toggleSelectAll}
-                  className="h-4 w-4 rounded border-gray-300 accent-[#6C2BD9] cursor-pointer"
+                  className="h-4 w-4 rounded border-zinc-300 accent-[#6c2bd9] cursor-pointer"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Name
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Email
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Phone
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Company
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Tags
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#7B7590]">
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
                 Added
               </th>
-              <th className="w-12 px-4 py-3"></th>
+              <th className="w-12 px-4 py-2.5"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#EEE6FF]">
+          <tbody className="divide-y divide-[#f0f0f2]">
             {filtered.map((contact) => {
               const initials = getContactInitials(contact);
               const displayName = getContactDisplayName(contact);
@@ -580,96 +563,93 @@ export default function ContactsPage() {
                 <tr
                   key={contact.id}
                   onClick={() => setSelectedContactId(contact.id)}
-                  className="cursor-pointer transition-colors hover:bg-[#FBF7FF]"
-                  style={selectedIds.has(contact.id) ? { backgroundColor: withAlpha(primaryPurple, 0.06) } : undefined}
+                  className={`cursor-pointer text-[13px] transition-colors ${
+                    selectedIds.has(contact.id)
+                      ? "bg-[#f4eefc]"
+                      : "hover:bg-zinc-50/80"
+                  }`}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(contact.id)}
                       onChange={() => toggleSelect(contact.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="h-4 w-4 rounded border-gray-300 accent-[#6C2BD9] cursor-pointer"
+                      className="h-4 w-4 rounded border-zinc-300 accent-[#6c2bd9] cursor-pointer"
                     />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: withAlpha(primaryPurple, 0.12),
-                          color: deepPurple,
-                        }}
-                      >
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6c2bd9]/10 text-[10px] font-semibold text-[#5b21b6]">
                         {initials}
                       </div>
-                      <span className="font-medium text-[#21173A]">{displayName}</span>
+                      <span className="font-medium text-zinc-900">{displayName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     {contact.email ? (
-                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
-                        <Mail size={13} className="shrink-0 text-[#8D88A0]" />
+                      <div className="flex items-center gap-1.5 text-zinc-500">
+                        <Mail size={15} strokeWidth={1.8} className="shrink-0 text-zinc-400" />
                         {contact.email}
                       </div>
                     ) : (
-                      <span className="text-[#AAA3BC]">&mdash;</span>
+                      <span className="text-zinc-300">&mdash;</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     {contact.phone ? (
-                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
-                        <Phone size={13} className="shrink-0 text-[#8D88A0]" />
+                      <div className="flex items-center gap-1.5 text-zinc-500 tabular-nums">
+                        <Phone size={15} strokeWidth={1.8} className="shrink-0 text-zinc-400" />
                         {contact.phone}
                       </div>
                     ) : (
-                      <span className="text-[#AAA3BC]">&mdash;</span>
+                      <span className="text-zinc-300">&mdash;</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     {contact.company ? (
-                      <div className="flex items-center gap-1.5 text-[#5A4B78]">
-                        <Building2 size={13} className="shrink-0 text-[#8D88A0]" />
+                      <div className="flex items-center gap-1.5 text-zinc-500">
+                        <Building2 size={15} strokeWidth={1.8} className="shrink-0 text-zinc-400" />
                         {contact.company}
                       </div>
                     ) : (
-                      <span className="text-[#AAA3BC]">&mdash;</span>
+                      <span className="text-zinc-300">&mdash;</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {(contactTagsMap[contact.id] ?? []).map((tag) => (
                         <span
                           key={tag.id}
-                          className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                          style={{ backgroundColor: getTagColor(tag) }}
+                          className="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                          style={{
+                            backgroundColor: withAlpha(getTagColor(tag), 0.1),
+                            color: getTagColor(tag),
+                          }}
                         >
                           {tag.name}
                         </span>
                       ))}
                       {(!contactTagsMap[contact.id] || contactTagsMap[contact.id].length === 0) && (
-                        <span className="text-[#AAA3BC]">&mdash;</span>
+                        <span className="text-zinc-300">&mdash;</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <span
-                      className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                      style={{
-                        backgroundColor:
-                          contact.status === "active"
-                            ? withAlpha(primaryPurple, 0.14)
-                            : withAlpha(mutedPurple, 0.16),
-                        color: contact.status === "active" ? deepPurple : "#6B6481",
-                      }}
+                      className={`inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+                        contact.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-700"
+                          : "bg-zinc-500/10 text-zinc-600"
+                      }`}
                     >
                       {contact.status === "active" ? "Active" : "Archived"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-[#6B6481]">
+                  <td className="px-4 py-2.5 text-zinc-500 tabular-nums">
                     {formatDate(contact.created_at)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -679,13 +659,13 @@ export default function ContactsPage() {
                         );
                       }}
                       disabled={deletingId === contact.id}
-                      className="rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      className="rounded-lg p-1.5 text-zinc-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                       title="Delete contact"
                     >
                       {deletingId === contact.id ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={15} strokeWidth={1.8} className="animate-spin" />
                       ) : (
-                        <Trash2 size={14} />
+                        <Trash2 size={15} strokeWidth={1.8} />
                       )}
                     </button>
                   </td>
@@ -696,30 +676,27 @@ export default function ContactsPage() {
         </table>
 
         {filtered.length === 0 && contacts.length > 0 && (
-          <div className="px-4 py-12 text-center">
-            <Search size={32} className="mx-auto mb-3 text-[#C4BDD6]" />
-            <p className="text-sm font-medium text-[#6B6481]">No contacts found</p>
-            <p className="mt-1 text-xs text-[#8D88A0]">
+          <div className="border-t border-[#f0f0f2] px-4 py-12 text-center">
+            <Search size={28} strokeWidth={1.8} className="mx-auto mb-3 text-zinc-300" />
+            <p className="text-[13px] font-medium text-zinc-600">No contacts found</p>
+            <p className="mt-1 text-xs text-zinc-400">
               Try adjusting your search or filter criteria.
             </p>
           </div>
         )}
 
         {contacts.length === 0 && !error && (
-          <div className="px-4 py-16 text-center">
-            <Users size={40} className="mx-auto mb-4 text-[#C4BDD6]" />
-            <p className="text-sm font-medium text-[#33254F]">No contacts yet</p>
-            <p className="mt-1 text-sm text-[#8D88A0]">
+          <div className="border-t border-[#f0f0f2] px-4 py-16 text-center">
+            <Users size={32} strokeWidth={1.8} className="mx-auto mb-4 text-zinc-300" />
+            <p className="text-sm font-semibold text-zinc-900">No contacts yet</p>
+            <p className="mt-1 text-[13px] text-zinc-500">
               Get started by adding your first contact.
             </p>
             <button
               onClick={openModal}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
-              style={{
-                background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-              }}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6]"
             >
-              <UserPlus size={16} />
+              <UserPlus size={15} strokeWidth={1.8} />
               Add Your First Contact
             </button>
           </div>
@@ -745,31 +722,28 @@ export default function ContactsPage() {
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/20 transition-opacity"
             onClick={closeModal}
           />
 
           {/* Modal content */}
-          <div className="aligno-panel relative z-10 mx-4 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+          <div className="relative z-10 mx-4 w-full max-w-md rounded-xl border border-[#e7e7ea] bg-white p-6 shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
             {/* Header */}
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: withAlpha(primaryPurple, 0.14) }}
-                >
-                  <UserPlus size={20} style={{ color: deepPurple }} />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#efe7fb]">
+                  <UserPlus size={16} strokeWidth={1.8} className="text-[#5b21b6]" />
                 </div>
-                <h2 id="modal-title" className="text-lg font-semibold text-[#21173A]">
+                <h2 id="modal-title" className="text-sm font-semibold text-zinc-900">
                   Add Contact
                 </h2>
               </div>
               <button
                 onClick={closeModal}
                 disabled={submitting}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors disabled:opacity-50"
               >
-                <X size={20} />
+                <X size={16} strokeWidth={1.8} />
               </button>
             </div>
 
@@ -781,7 +755,7 @@ export default function ContactsPage() {
                   <div>
                     <label
                       htmlFor="first_name"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-xs font-medium text-zinc-500"
                     >
                       First name <span className="text-red-500">*</span>
                     </label>
@@ -797,10 +771,10 @@ export default function ContactsPage() {
                       }}
                       placeholder="Jane"
                       disabled={submitting}
-                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-1 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500 ${
                         formErrors.first_name
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-200 focus:border-[#6C2BD9] focus:ring-[#6C2BD9]"
+                          ? "border-red-300"
+                          : "border-[#e7e7ea]"
                       }`}
                     />
                     {formErrors.first_name && (
@@ -810,7 +784,7 @@ export default function ContactsPage() {
                   <div>
                     <label
                       htmlFor="last_name"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-xs font-medium text-zinc-500"
                     >
                       Last name <span className="text-red-500">*</span>
                     </label>
@@ -826,10 +800,10 @@ export default function ContactsPage() {
                       }}
                       placeholder="Doe"
                       disabled={submitting}
-                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-1 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500 ${
                         formErrors.last_name
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-200 focus:border-[#6C2BD9] focus:ring-[#6C2BD9]"
+                          ? "border-red-300"
+                          : "border-[#e7e7ea]"
                       }`}
                     />
                     {formErrors.last_name && (
@@ -842,14 +816,15 @@ export default function ContactsPage() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-xs font-medium text-zinc-500"
                   >
                     Email
                   </label>
                   <div className="relative">
                     <Mail
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={15}
+                      strokeWidth={1.8}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                     />
                     <input
                       id="email"
@@ -863,10 +838,10 @@ export default function ContactsPage() {
                       }}
                       placeholder="jane@company.com"
                       disabled={submitting}
-                      className={`w-full rounded-lg border bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-1 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      className={`w-full rounded-lg border bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500 ${
                         formErrors.email
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-200 focus:border-[#6C2BD9] focus:ring-[#6C2BD9]"
+                          ? "border-red-300"
+                          : "border-[#e7e7ea]"
                       }`}
                     />
                   </div>
@@ -879,14 +854,15 @@ export default function ContactsPage() {
                 <div>
                   <label
                     htmlFor="phone"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-xs font-medium text-zinc-500"
                   >
                     Phone
                   </label>
                   <div className="relative">
                     <Phone
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={15}
+                      strokeWidth={1.8}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                     />
                     <input
                       id="phone"
@@ -897,7 +873,7 @@ export default function ContactsPage() {
                       }
                       placeholder="+1-555-0100"
                       disabled={submitting}
-                      className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
+                      className="w-full rounded-lg border border-[#e7e7ea] bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
                     />
                   </div>
                 </div>
@@ -906,14 +882,15 @@ export default function ContactsPage() {
                 <div>
                   <label
                     htmlFor="company"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-xs font-medium text-zinc-500"
                   >
                     Company
                   </label>
                   <div className="relative">
                     <Building2
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={15}
+                      strokeWidth={1.8}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                     />
                     <input
                       id="company"
@@ -924,7 +901,7 @@ export default function ContactsPage() {
                       }
                       placeholder="Acme Inc."
                       disabled={submitting}
-                      className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
+                      className="w-full rounded-lg border border-[#e7e7ea] bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
                     />
                   </div>
                 </div>
@@ -933,7 +910,7 @@ export default function ContactsPage() {
                 <div>
                   <label
                     htmlFor="notes"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-xs font-medium text-zinc-500"
                   >
                     Notes
                   </label>
@@ -946,14 +923,14 @@ export default function ContactsPage() {
                     placeholder="Additional info from DropCard, meeting notes, etc."
                     disabled={submitting}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
                   />
                 </div>
               </div>
 
               {/* Tags */}
               <div className="mt-4">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500">
                   Tags
                 </label>
 
@@ -963,8 +940,11 @@ export default function ContactsPage() {
                     {modalSelectedTags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-                        style={{ backgroundColor: getTagColor(tag) }}
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                        style={{
+                          backgroundColor: withAlpha(getTagColor(tag), 0.1),
+                          color: getTagColor(tag),
+                        }}
                       >
                         {tag.name}
                         <button
@@ -974,9 +954,9 @@ export default function ContactsPage() {
                               prev.filter((t) => t.id !== tag.id)
                             )
                           }
-                          className="ml-0.5 rounded-full p-0.5 hover:bg-white/20 transition-colors"
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-black/5 transition-colors"
                         >
-                          <X size={10} />
+                          <X size={10} strokeWidth={1.8} />
                         </button>
                       </span>
                     ))}
@@ -991,16 +971,15 @@ export default function ContactsPage() {
                       setShowModalTagDropdown(!showModalTagDropdown)
                     }
                     disabled={submitting}
-                    className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium text-[#6B6481] transition-colors disabled:opacity-50"
-                    style={{ borderColor: withAlpha(primaryPurple, 0.24) }}
+                    className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#dcdce1] px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                   >
-                    <Plus size={12} />
+                    <Plus size={12} strokeWidth={1.8} />
                     Add tag
-                    <ChevronDown size={12} />
+                    <ChevronDown size={12} strokeWidth={1.8} />
                   </button>
 
                   {showModalTagDropdown && (
-                    <div className="aligno-panel absolute left-0 top-full z-10 mt-1 w-56 rounded-lg py-1 shadow-lg">
+                    <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-lg border border-[#e7e7ea] bg-white py-1 shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
                       {allTags.filter(
                         (t) => !modalSelectedTags.some((s) => s.id === t.id)
                       ).length > 0 && (
@@ -1013,7 +992,7 @@ export default function ContactsPage() {
                             .map((tag) => (
                               <div
                                 key={tag.id}
-                                className="flex items-center justify-between px-3 py-2 hover:bg-[#FBF7FF]"
+                                className="flex items-center justify-between px-3 py-2 hover:bg-zinc-50"
                               >
                                 <button
                                   type="button"
@@ -1024,7 +1003,7 @@ export default function ContactsPage() {
                                     ]);
                                     setShowModalTagDropdown(false);
                                   }}
-                                  className="flex flex-1 items-center gap-2 text-left text-sm text-gray-700"
+                                  className="flex flex-1 items-center gap-2 text-left text-[13px] text-zinc-700"
                                 >
                                   <span
                                     className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -1040,10 +1019,10 @@ export default function ContactsPage() {
                                     e.stopPropagation();
                                     handleDeleteTag(tag.id, tag.name);
                                   }}
-                                  className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                  className="rounded p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500 transition-colors"
                                   title={`Delete "${tag.name}" tag`}
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={12} strokeWidth={1.8} />
                                 </button>
                               </div>
                             ))}
@@ -1053,7 +1032,7 @@ export default function ContactsPage() {
                       {allTags.filter(
                         (t) => !modalSelectedTags.some((s) => s.id === t.id)
                       ).length > 0 && (
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-[#f0f0f2]" />
                       )}
 
                       {/* Create new tag */}
@@ -1070,17 +1049,13 @@ export default function ContactsPage() {
                               }
                             }}
                             placeholder="Create new tag..."
-                            className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none"
-                            style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                            className="flex-1 rounded-md border border-[#e7e7ea] bg-white px-2 py-1 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           />
                           <button
                             type="button"
                             onClick={handleCreateModalTag}
                             disabled={!newModalTagName.trim()}
-                            className="rounded px-2 py-1 text-xs font-medium text-white disabled:opacity-50 transition-colors"
-                            style={{
-                              background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-                            }}
+                            className="rounded-md bg-[#6c2bd9] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:opacity-50"
                           >
                             Add
                           </button>
@@ -1093,8 +1068,8 @@ export default function ContactsPage() {
 
               {/* Submit error */}
               {submitError && (
-                <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-                  <AlertCircle size={16} className="shrink-0" />
+                <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
+                  <AlertCircle size={15} strokeWidth={1.8} className="shrink-0" />
                   {submitError}
                 </div>
               )}
@@ -1105,26 +1080,23 @@ export default function ContactsPage() {
                   type="button"
                   onClick={closeModal}
                   disabled={submitting}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#5A4B78] hover:bg-[#FBF7FF] transition-colors disabled:opacity-50"
+                  className="rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-70"
-                  style={{
-                    background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:opacity-70"
                 >
                   {submitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={15} strokeWidth={1.8} className="animate-spin" />
                       Creating...
                     </>
                   ) : (
                     <>
-                      <Plus size={16} />
+                      <Plus size={15} strokeWidth={1.8} />
                       Create Contact
                     </>
                   )}

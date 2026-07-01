@@ -127,7 +127,7 @@ export function KanbanBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-5 overflow-x-auto pb-6">
+      <div className="flex gap-3 overflow-x-auto pb-6">
         {stages.map((stage) => (
           <StageColumn
             key={stage.id}

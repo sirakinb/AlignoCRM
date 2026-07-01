@@ -119,10 +119,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="aligno-page-surface flex h-[60vh] items-center justify-center">
+      <div className="flex h-[60vh] items-center justify-center bg-[#f7f7f8]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#8A5DDE]" />
-          <p className="text-sm text-[#6B6481]">Loading dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#6c2bd9]" />
+          <p className="text-[13px] text-zinc-600">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -245,11 +245,11 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="aligno-page-surface min-h-full p-6">
+    <div className="min-h-full bg-[#f7f7f8] px-8 py-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#21173A]">Dashboard</h1>
-          <p className="mt-1 text-sm text-[#6B6481]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-zinc-900">Dashboard</h1>
+          <p className="mt-1 text-[13px] text-zinc-600">
             {pipeline
               ? `Pipeline overview for ${pipeline.name}`
               : "Overview across all pipelines"}
@@ -260,7 +260,7 @@ export default function DashboardPage() {
             <select
               value={selectedPipelineId}
               onChange={(e) => setSelectedPipelineId(e.target.value)}
-              className="appearance-none rounded-lg border border-[#E6DCF9] bg-white pl-3.5 pr-9 py-2.5 text-sm font-medium text-[#33254F] shadow-sm focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
+              className="appearance-none rounded-lg border border-[#e7e7ea] bg-white pl-3.5 pr-9 py-2 text-[13px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(17,17,26,0.05)] transition-colors hover:bg-zinc-50 focus:border-[#6c2bd9] focus:outline-none"
             >
               <option value={ALL_PIPELINES}>All Pipelines</option>
               {pipelines.map((p) => (
@@ -271,40 +271,32 @@ export default function DashboardPage() {
             </select>
             <ChevronDown
               size={14}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8D88A0]"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
             />
           </div>
         )}
       </div>
 
       {/* KPI Cards */}
-      <div className="mb-8 grid grid-cols-4 gap-4">
+      <div className="mb-6 grid grid-cols-4 gap-4">
         {kpiCards.map((card) => {
           const Icon = card.icon;
 
           return (
             <div
               key={card.label}
-              className="aligno-panel rounded-xl p-5"
-              style={{
-                borderColor: withAlpha(card.accent, 0.24),
-              }}
+              className="crisp-card crisp-card-hover p-5"
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: withAlpha(card.accent, 0.14) }}
-                >
-                  <Icon className="h-4 w-4" style={{ color: card.accent }} />
-                </div>
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#7B7590]">
+              <div className="flex items-center justify-between">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   {card.label}
                 </p>
+                <Icon className="h-4 w-4 text-zinc-300" />
               </div>
-              <p className="mt-3 text-2xl font-bold" style={{ color: card.accent }}>
+              <p className="mt-3 text-[26px] font-semibold tracking-tight text-zinc-900 tabular-nums">
                 {card.value}
               </p>
-              <p className="mt-1 text-xs text-[#6B6481]">{card.detail}</p>
+              <p className="mt-1 text-xs text-zinc-500 tabular-nums">{card.detail}</p>
             </div>
           );
         })}
@@ -312,15 +304,15 @@ export default function DashboardPage() {
 
       {!hasData ? (
         /* Empty state */
-        <div className="aligno-panel rounded-xl border-dashed p-12">
+        <div className="crisp-card border-dashed p-12">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4 rounded-full bg-[#F1E8FF] p-4">
-              <BarChart3 className="h-8 w-8 text-[#8A5DDE]" />
+            <div className="mb-4 rounded-full bg-[#efe7fb] p-4">
+              <BarChart3 className="h-8 w-8 text-[#6c2bd9]" />
             </div>
-            <h2 className="text-lg font-semibold text-[#21173A]">
+            <h2 className="text-sm font-semibold text-zinc-900">
               No data yet
             </h2>
-            <p className="mt-2 max-w-sm text-sm text-[#6B6481]">
+            <p className="mt-2 max-w-sm text-[13px] text-zinc-600">
               Your dashboard will come to life once you start adding deals to
               your pipeline. Head over to the Pipeline page to create your first
               deal.
@@ -329,10 +321,10 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-4">
             {/* Bar Chart - Value by Stage */}
-            <div className="aligno-panel col-span-2 rounded-xl p-5">
-              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
+            <div className="crisp-card col-span-2 p-5">
+              <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                 Pipeline Value by Stage
               </h2>
               {stageData.length > 0 ? (
@@ -340,19 +332,20 @@ export default function DashboardPage() {
                   {stageData.map((stage) => (
                     <div key={stage.id}>
                       <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="font-medium text-[#3B2E56]">
+                        <span className="flex items-center gap-1.5 font-medium text-zinc-700">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ backgroundColor: stage.color }}
+                          />
                           {stage.name}
                         </span>
-                        <span className="text-[#6B6481]">
+                        <span className="text-zinc-500 tabular-nums">
                           {formatCurrency(stage.value)} &middot; {stage.count}{" "}
                           deal
                           {stage.count !== 1 && "s"}
                         </span>
                       </div>
-                      <div
-                        className="aligno-panel-soft h-6 w-full overflow-hidden rounded-full"
-                        style={{ border: `1px solid ${withAlpha(stage.color, 0.18)}` }}
-                      >
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -360,8 +353,7 @@ export default function DashboardPage() {
                               (stage.value / maxStageValue) * 100,
                               stage.value > 0 ? 2 : 0
                             )}%`,
-                            background: `linear-gradient(90deg, ${withAlpha(stage.color, 0.78)}, ${stage.color})`,
-                            boxShadow: `0 0 18px ${withAlpha(stage.color, 0.28)}`,
+                            backgroundColor: stage.color,
                           }}
                         />
                       </div>
@@ -369,15 +361,15 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-[#8D88A0]">
+                <p className="py-8 text-center text-[13px] text-zinc-500">
                   No stages configured yet
                 </p>
               )}
             </div>
 
             {/* Donut Chart - Stage Distribution */}
-            <div className="aligno-panel rounded-xl p-5">
-              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
+            <div className="crisp-card p-5">
+              <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                 Value Distribution
               </h2>
               {donutSegments.length > 0 ? (
@@ -389,16 +381,15 @@ export default function DashboardPage() {
                           key={i}
                           d={seg.d}
                           fill={seg.color}
-                          opacity={0.85}
                         />
                       ))}
-                      <circle cx="90" cy="90" r="45" fill="#FCFAFF" />
+                      <circle cx="90" cy="90" r="45" fill="#ffffff" />
                       <text
                         x="90"
                         y="85"
                         textAnchor="middle"
                         className="text-xs font-medium"
-                        fill="#7B7590"
+                        fill="#a1a1aa"
                       >
                         Total
                       </text>
@@ -406,8 +397,8 @@ export default function DashboardPage() {
                         x="90"
                         y="102"
                         textAnchor="middle"
-                        className="text-sm font-bold"
-                        fill="#21173A"
+                        className="text-sm font-semibold"
+                        fill="#18181b"
                       >
                         {formatCurrency(donutTotal)}
                       </text>
@@ -420,11 +411,11 @@ export default function DashboardPage() {
                         className="flex items-center gap-2 text-xs"
                       >
                         <div
-                          className="h-2.5 w-2.5 rounded-full"
+                          className="h-1.5 w-1.5 rounded-full"
                           style={{ backgroundColor: seg.color }}
                         />
-                        <span className="flex-1 text-[#6B6481]">{seg.name}</span>
-                        <span className="font-medium text-[#21173A]">
+                        <span className="flex-1 text-zinc-600">{seg.name}</span>
+                        <span className="font-medium text-zinc-900 tabular-nums">
                           {formatCurrency(seg.value)}
                         </span>
                       </div>
@@ -433,7 +424,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div className="flex h-[220px] items-center justify-center">
-                  <p className="text-sm text-[#8D88A0]">
+                  <p className="text-[13px] text-zinc-500">
                     No deal values to display
                   </p>
                 </div>
@@ -442,10 +433,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Second row */}
-          <div className="mt-6 grid grid-cols-3 gap-6">
+          <div className="mt-4 grid grid-cols-3 gap-4">
             {/* Deal Status Pie */}
-            <div className="aligno-panel rounded-xl p-5">
-              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
+            <div className="crisp-card p-5">
+              <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                 Deal Status
               </h2>
               {statusData.length > 0 ? (
@@ -457,16 +448,15 @@ export default function DashboardPage() {
                           key={i}
                           d={seg.d}
                           fill={seg.color}
-                          opacity={0.85}
                         />
                       ))}
-                      <circle cx="70" cy="70" r="35" fill="#FCFAFF" />
+                      <circle cx="70" cy="70" r="35" fill="#ffffff" />
                       <text
                         x="70"
                         y="73"
                         textAnchor="middle"
-                        className="text-sm font-bold"
-                        fill="#21173A"
+                        className="text-sm font-semibold"
+                        fill="#18181b"
                       >
                         {statusTotal}
                       </text>
@@ -479,11 +469,11 @@ export default function DashboardPage() {
                         className="flex items-center gap-2 text-xs"
                       >
                         <div
-                          className="h-2.5 w-2.5 rounded-full"
+                          className="h-1.5 w-1.5 rounded-full"
                           style={{ backgroundColor: s.color }}
                         />
-                        <span className="flex-1 text-[#6B6481]">{s.label}</span>
-                        <span className="font-medium text-[#21173A]">
+                        <span className="flex-1 text-zinc-600">{s.label}</span>
+                        <span className="font-medium text-zinc-900 tabular-nums">
                           {s.count}
                         </span>
                       </div>
@@ -492,46 +482,43 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div className="flex h-[180px] items-center justify-center">
-                  <p className="text-sm text-[#8D88A0]">No deals yet</p>
+                  <p className="text-[13px] text-zinc-500">No deals yet</p>
                 </div>
               )}
             </div>
 
             {/* Recent Deals */}
-            <div className="aligno-panel col-span-2 rounded-xl p-5">
-              <h2 className="mb-4 text-sm font-semibold text-[#3B2E56]">
+            <div className="crisp-card col-span-2 p-5">
+              <h2 className="mb-2 text-sm font-semibold text-zinc-900">
                 Recent Deals
               </h2>
               {recentDeals.length > 0 ? (
-                <div className="space-y-3">
+                <div className="divide-y divide-[#f0f0f2]">
                   {recentDeals.map((deal) => (
                     <div
                       key={deal.id}
-                      className="aligno-panel-soft flex items-center justify-between rounded-lg px-3 py-2.5"
-                      style={{
-                        border: `1px solid ${withAlpha(getStageColor(deal.stage_id), 0.14)}`,
-                      }}
+                      className="-mx-2 flex items-center justify-between rounded-md px-2 py-2.5 transition-colors hover:bg-zinc-50/80"
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="h-2 w-2 rounded-full"
+                          className="h-1.5 w-1.5 rounded-full"
                           style={{
                             backgroundColor: getStageColor(deal.stage_id),
                           }}
                         />
                         <div>
-                          <p className="text-sm font-medium text-[#21173A]">
+                          <p className="text-[13px] font-medium text-zinc-900">
                             {deal.title}
                           </p>
-                          <p className="text-xs text-[#6B6481]">
+                          <p className="text-xs text-zinc-500">
                             {getStageName(deal.stage_id)}
                             {deal.status !== "open" && (
                               <span
-                                className="ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium"
+                                className="ml-2 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium"
                                 style={{
                                   backgroundColor: withAlpha(
                                     getStatusPurple(deal.status),
-                                    0.14
+                                    0.1
                                   ),
                                   color: getStatusPurple(deal.status),
                                 }}
@@ -542,7 +529,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-[#21173A]">
+                      <span className="text-[13px] font-semibold text-zinc-900 tabular-nums">
                         ${deal.value.toLocaleString()}
                       </span>
                     </div>
@@ -550,7 +537,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="flex h-[180px] items-center justify-center">
-                  <p className="text-sm text-[#8D88A0]">
+                  <p className="text-[13px] text-zinc-500">
                     No deals to display yet
                   </p>
                 </div>

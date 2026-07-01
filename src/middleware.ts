@@ -39,11 +39,17 @@ export default function middleware(request: NextRequest) {
     return redirect;
   }
 
-  // If user is authenticated and hits landing or sign-in/sign-up, redirect to dashboard
+  // If user is authenticated and hits landing or sign-in/sign-up, redirect to
+  // the requested in-app destination (e.g. an invite link) or the dashboard.
   if (pathname === "/" || pathname === "/sign-in" || pathname === "/sign-up") {
     const hasAuth = request.cookies.get("insforge-session");
     if (hasAuth) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      const redirectParam = searchParams.get("redirect");
+      const target =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : "/dashboard";
+      return NextResponse.redirect(new URL(target, request.url));
     }
   }
 

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { X, Loader2, Plus, ChevronDown, Trash2 } from "lucide-react";
 import {
   ALIGNO_PURPLE_SCALE,
-  getPurpleScaleColor,
   getStringPurpleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
@@ -23,9 +22,6 @@ export default function ContactDrawer({
   onClose,
   onSaved,
 }: ContactDrawerProps) {
-  const primaryPurple = getPurpleScaleColor(3);
-  const deepPurple = getPurpleScaleColor(5);
-  const mutedPurple = getPurpleScaleColor(1);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -253,32 +249,32 @@ export default function ContactDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 transition-opacity"
+        className="fixed inset-0 z-40 bg-black/20 transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="aligno-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-[#e7e7ea] bg-white shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)] animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E9DFFF] px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#21173A]">
+        <div className="flex items-center justify-between border-b border-[#f0f0f2] px-6 py-4">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-zinc-900">
             {loading ? "Loading..." : displayName}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#8D88A0] hover:bg-[#F7F1FF] hover:text-[#5A4B78] transition-colors"
+            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
           >
-            <X size={20} />
+            <X size={16} strokeWidth={1.8} />
           </button>
         </div>
 
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
-            <Loader2 size={24} className="animate-spin" style={{ color: primaryPurple }} />
+            <Loader2 size={24} strokeWidth={1.8} className="animate-spin text-[#6c2bd9]" />
           </div>
         ) : loadError ? (
           <div className="flex flex-1 items-center justify-center px-6 text-center">
-            <p className="text-sm text-red-600">{loadError}</p>
+            <p className="text-[13px] text-red-600">{loadError}</p>
           </div>
         ) : (
           <>
@@ -287,34 +283,32 @@ export default function ContactDrawer({
               {/* Name fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                     First name
                   </label>
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1"
-                    style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                    className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                     Last name
                   </label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1"
-                    style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                    className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Email
                 </label>
                 <input
@@ -322,14 +316,13 @@ export default function ContactDrawer({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@example.com"
-                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
-                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                  className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Phone
                 </label>
                 <input
@@ -337,14 +330,13 @@ export default function ContactDrawer({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1-555-0100"
-                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
-                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                  className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                 />
               </div>
 
               {/* Company */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Company
                 </label>
                 <input
@@ -352,14 +344,13 @@ export default function ContactDrawer({
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Acme Inc."
-                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
-                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                  className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                 />
               </div>
 
               {/* Notes */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Notes
                 </label>
                 <textarea
@@ -367,14 +358,13 @@ export default function ContactDrawer({
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Additional info from DropCard, meeting notes, etc."
                   rows={3}
-                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
-                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                  className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                 />
               </div>
 
               {/* Status */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <div className="border-t border-[#f0f0f2] pt-5">
+                <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Status
                 </label>
                 <select
@@ -382,8 +372,7 @@ export default function ContactDrawer({
                   onChange={(e) =>
                     setStatus(e.target.value as "active" | "archived")
                   }
-                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1"
-                  style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                  className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none"
                 >
                   <option value="active">Active</option>
                   <option value="archived">Archived</option>
@@ -391,32 +380,35 @@ export default function ContactDrawer({
               </div>
 
               {/* Tags */}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+              <div className="border-t border-[#f0f0f2] pt-5">
+                <label className="mb-2 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                   Tags
                 </label>
 
                 {/* Current tags */}
-                <div className="mb-3 flex flex-wrap gap-2">
+                <div className="mb-3 flex flex-wrap gap-1.5">
                   {contactTags.length === 0 && (
-                    <span className="text-sm text-gray-400">No tags</span>
+                    <span className="text-[13px] text-zinc-400">No tags</span>
                   )}
                   {contactTags.map((tag) => (
                     <span
                       key={tag.id}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-                      style={{ backgroundColor: getTagColor(tag) }}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                      style={{
+                        backgroundColor: withAlpha(getTagColor(tag), 0.1),
+                        color: getTagColor(tag),
+                      }}
                     >
                       {tag.name}
                       <button
                         onClick={() => handleRemoveTag(tag.id)}
                         disabled={tagLoading === tag.id}
-                        className="ml-0.5 rounded-full p-0.5 hover:bg-white/20 transition-colors disabled:opacity-50"
+                        className="ml-0.5 rounded-full p-0.5 hover:bg-black/5 transition-colors disabled:opacity-50"
                       >
                         {tagLoading === tag.id ? (
-                          <Loader2 size={10} className="animate-spin" />
+                          <Loader2 size={10} strokeWidth={1.8} className="animate-spin" />
                         ) : (
-                          <X size={10} />
+                          <X size={10} strokeWidth={1.8} />
                         )}
                       </button>
                     </span>
@@ -428,22 +420,21 @@ export default function ContactDrawer({
                   <button
                     type="button"
                     onClick={() => setShowTagDropdown(!showTagDropdown)}
-                    className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium text-[#6B6481] transition-colors"
-                    style={{ borderColor: withAlpha(primaryPurple, 0.24) }}
+                    className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#dcdce1] px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
                   >
-                    <Plus size={12} />
+                    <Plus size={12} strokeWidth={1.8} />
                     Add tag
-                    <ChevronDown size={12} />
+                    <ChevronDown size={12} strokeWidth={1.8} />
                   </button>
 
                   {showTagDropdown && (
-                    <div className="aligno-panel absolute left-0 top-full z-10 mt-1 w-56 rounded-lg py-1 shadow-lg">
+                    <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-lg border border-[#e7e7ea] bg-white py-1 shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
                       {availableTags.length > 0 && (
                         <div className="max-h-40 overflow-y-auto">
                           {availableTags.map((tag) => (
                             <div
                               key={tag.id}
-                              className="flex items-center justify-between px-3 py-2 hover:bg-[#FBF7FF]"
+                              className="flex items-center justify-between px-3 py-2 hover:bg-zinc-50"
                             >
                               <button
                                 onClick={() => {
@@ -451,7 +442,7 @@ export default function ContactDrawer({
                                   setShowTagDropdown(false);
                                 }}
                                 disabled={tagLoading === tag.id}
-                                className="flex flex-1 items-center gap-2 text-left text-sm text-gray-700 disabled:opacity-50"
+                                className="flex flex-1 items-center gap-2 text-left text-[13px] text-zinc-700 disabled:opacity-50"
                               >
                                 <span
                                   className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -467,10 +458,10 @@ export default function ContactDrawer({
                                   handleDeleteTag(tag.id, tag.name);
                                 }}
                                 disabled={tagLoading === tag.id}
-                                className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                                className="rounded p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
                                 title={`Delete "${tag.name}" tag`}
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={12} strokeWidth={1.8} />
                               </button>
                             </div>
                           ))}
@@ -478,7 +469,7 @@ export default function ContactDrawer({
                       )}
 
                       {availableTags.length > 0 && (
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-[#f0f0f2]" />
                       )}
 
                       {/* Create new tag */}
@@ -495,21 +486,17 @@ export default function ContactDrawer({
                               }
                             }}
                             placeholder="Create new tag..."
-                            className="flex-1 rounded border px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none"
-                            style={{ borderColor: withAlpha(mutedPurple, 0.18) }}
+                            className="flex-1 rounded-md border border-[#e7e7ea] bg-white px-2 py-1 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           />
                           <button
                             onClick={handleCreateTag}
                             disabled={
                               !newTagName.trim() || tagLoading === "new"
                             }
-                            className="rounded px-2 py-1 text-xs font-medium text-white disabled:opacity-50 transition-colors"
-                            style={{
-                              background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-                            }}
+                            className="rounded-md bg-[#6c2bd9] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:opacity-50"
                           >
                             {tagLoading === "new" ? (
-                              <Loader2 size={10} className="animate-spin" />
+                              <Loader2 size={10} strokeWidth={1.8} className="animate-spin" />
                             ) : (
                               "Add"
                             )}
@@ -523,28 +510,25 @@ export default function ContactDrawer({
             </div>
 
             {/* Footer */}
-            <div className="border-t border-[#E9DFFF] px-6 py-4">
+            <div className="border-t border-[#f0f0f2] px-6 py-4">
               {saveError && (
                 <p className="mb-3 text-xs text-red-500">{saveError}</p>
               )}
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={onClose}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#5A4B78] hover:bg-[#FBF7FF] transition-colors"
+                  className="rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={!dirty || saving}
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-50"
-                  style={{
-                    background: `linear-gradient(135deg, ${primaryPurple}, ${deepPurple})`,
-                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:opacity-50"
                 >
                   {saving ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
+                      <Loader2 size={14} strokeWidth={1.8} className="animate-spin" />
                       Saving...
                     </>
                   ) : (

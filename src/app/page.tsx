@@ -3,33 +3,29 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  CheckCircle2,
   Clock3,
   GitBranch,
   MailCheck,
+  Send,
   ShieldCheck,
-  Sparkles,
   Terminal,
   Users,
-  Workflow,
-  Zap,
 } from "lucide-react";
-import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { getSiteUrl } from "@/lib/seo/site-url";
 
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Aligno CRM | AI-Native Pipeline and Workflow Automation",
+  title: "Aligno CRM | A Simple CRM for Service Businesses",
   description:
-    "Aligno CRM helps agencies, creators, coaches, and consultants manage pipeline, follow-up, AI drafts, approvals, and workflow automation in one focused command center.",
+    "Aligno CRM helps agencies, creators, coaches, and consultants manage contacts, pipeline, and follow-up in one focused workspace.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Aligno CRM | AI-Native Pipeline and Workflow Automation",
+    title: "Aligno CRM | A Simple CRM for Service Businesses",
     description:
-      "A focused command center for pipeline management, workflow automation, and AI-assisted follow-up.",
+      "One focused place to manage contacts, track pipeline, and stay on top of follow-up.",
     url: siteUrl,
     siteName: "Aligno CRM",
     images: [
@@ -37,16 +33,16 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Aligno CRM — AI-Native Pipeline and Workflow Automation",
+        alt: "Aligno CRM — A Simple CRM for Service Businesses",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Aligno CRM | AI-Native Pipeline and Workflow Automation",
+    title: "Aligno CRM | A Simple CRM for Service Businesses",
     description:
-      "Manage deal flow, automate follow-up, and review AI-assisted workflow outputs from one CRM command center.",
+      "One focused place to manage contacts, track pipeline, and stay on top of follow-up.",
     images: ["/og-image.png"],
   },
 };
@@ -59,40 +55,40 @@ const features = [
   {
     icon: GitBranch,
     title: "See every deal in motion",
-    text: "Track leads by pipeline, stage, value, owner, and linked contact so the next move is visible without digging through notes.",
+    text: "Track leads by pipeline, stage, value, and contact so the next move is visible without digging through notes.",
   },
   {
-    icon: Workflow,
-    title: "Automate the repeatable work",
-    text: "Start workflows from CRM activity, add waits and branches, send messages, create tasks, move deals, and call webhooks.",
+    icon: Users,
+    title: "Keep contacts organized",
+    text: "Every contact, tag, note, and deal stays connected, so the full story is one click away.",
   },
   {
-    icon: Sparkles,
-    title: "Use AI with control",
-    text: "Draft messages, analyze context, route records, and pause high-risk outputs for approval before customers see them.",
+    icon: Clock3,
+    title: "Never miss a follow-up",
+    text: "Activity and next steps live on every deal, so nothing sits waiting or slips through the cracks.",
   },
   {
-    icon: Zap,
-    title: "Visual workflow builder",
-    text: "Published workflow versions with execution logs, enrollment history, and full audit trails for every automation run.",
+    icon: Send,
+    title: "Capture leads from anywhere",
+    text: "Point your forms and tools at a simple webhook and new leads land straight in your pipeline.",
   },
 ];
 
 const howItWorks = [
   {
     step: "01",
-    title: "Capture the business context",
-    text: "Contacts, tags, deals, stages, tasks, and activity logs stay connected from the first touch.",
+    title: "Capture your leads",
+    text: "Contacts, tags, deals, and notes stay connected from the first touch.",
   },
   {
     step: "02",
-    title: "Trigger structured workflows",
-    text: "Automations begin from contact creation, tag changes, deal movement, forms, and other CRM events.",
+    title: "Work your pipeline",
+    text: "Move deals through stages, update values, and keep every detail attached to the record.",
   },
   {
     step: "03",
-    title: "Review what needs judgment",
-    text: "Approval checkpoints keep AI-generated decisions and messages accountable without slowing every routine step.",
+    title: "Follow up on time",
+    text: "See what needs attention next, so every lead gets a response while it still matters.",
   },
 ];
 
@@ -106,22 +102,22 @@ const audiences = [
   {
     icon: Users,
     title: "Agencies",
-    text: "Lead intake from forms, events, referrals, or APIs with pipeline visibility across every client.",
+    text: "Lead intake from forms, events, and referrals with pipeline visibility across every client.",
   },
   {
     icon: MailCheck,
     title: "Creators & coaches",
-    text: "Nurture and sales follow-up that should not wait, powered by automated sequences.",
+    text: "Simple follow-up for the conversations that shouldn't have to wait.",
   },
   {
     icon: Clock3,
     title: "Consultants",
-    text: "Long-running sequences with waits, retries, and logs so nothing falls through the cracks.",
+    text: "A clear picture of every engagement so nothing falls through the cracks.",
   },
   {
     icon: ShieldCheck,
     title: "Service teams",
-    text: "Human review before AI-generated outputs ship, keeping quality high without slowing routine work.",
+    text: "One shared view of contacts, deals, and next steps that keeps everyone aligned.",
   },
 ];
 
@@ -138,7 +134,7 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "AI-native pipeline and workflow automation command center for agencies, creators, coaches, and consultants.",
+      "A simple pipeline and contact management CRM for agencies, creators, coaches, and consultants.",
     offers: {
       "@type": "Offer",
       availability: "https://schema.org/InStock",
@@ -148,7 +144,7 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="aligno-page-surface min-h-screen overflow-hidden">
+    <main className="min-h-screen overflow-hidden bg-[#f7f7f8]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
@@ -157,32 +153,32 @@ export default function LandingPage() {
       {/* ---------------------------------------------------------- */}
       {/*  Nav                                                        */}
       {/* ---------------------------------------------------------- */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-[#44106F]/10 bg-white/80 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-[#e7e7ea] bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6 lg:px-8">
           {/* Logo left */}
-          <Link href="/" className="flex items-center gap-2.5" aria-label="Aligno CRM home">
+          <Link href="/" className="flex items-center gap-2" aria-label="Aligno CRM home">
             <Image
               src="/aligno-crm_logo.png"
               alt=""
-              width={32}
-              height={32}
+              width={28}
+              height={28}
               priority
-              className="h-8 w-8 object-contain"
+              className="h-7 w-7 object-contain"
             />
-            <span className="text-base font-bold tracking-tight text-[#21173A]">
+            <span className="text-sm font-semibold tracking-tight text-zinc-900">
               Aligno CRM
             </span>
           </Link>
 
           {/* Nav links center */}
-          <nav className="hidden items-center gap-8 text-sm font-medium text-[#5D5474] md:flex">
-            <a href="#features" className="transition hover:text-[#44106F]">
+          <nav className="hidden items-center gap-7 text-[13px] font-medium text-zinc-600 md:flex">
+            <a href="#features" className="transition-colors hover:text-zinc-900">
               Features
             </a>
-            <a href="#how-it-works" className="transition hover:text-[#44106F]">
+            <a href="#how-it-works" className="transition-colors hover:text-zinc-900">
               How it works
             </a>
-            <a href="#who-its-for" className="transition hover:text-[#44106F]">
+            <a href="#who-its-for" className="transition-colors hover:text-zinc-900">
               Who it&apos;s for
             </a>
           </nav>
@@ -191,10 +187,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/sign-up?redirect=/dashboard"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
-              }}
+              className="rounded-lg bg-[#6c2bd9] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6]"
             >
               Create Account
             </Link>
@@ -208,66 +201,56 @@ export default function LandingPage() {
       <section className="relative px-5 pb-0 pt-32 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           {/* Badge / pill */}
-          <p className="inline-flex rounded-full border border-[#6E2ABD]/20 bg-white/72 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
-            AI-native CRM command center
+          <p className="inline-flex rounded-md border border-[#e3d5f8] bg-[#f4eefc] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c2bd9]">
+            The CRM for service businesses
           </p>
 
           {/* Big bold heading */}
-          <h1 className="mt-7 text-5xl font-bold leading-[1.05] tracking-tight text-[#21173A] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-7 text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-zinc-900 sm:text-5xl lg:text-6xl">
             Turn every lead into
             <br />
             the next right follow-up.
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-[#5D5474]">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-zinc-600">
             Aligno CRM gives service businesses one focused place to manage
-            pipeline, automate follow-up, and use AI without losing operator
-            control.
+            contacts, track pipeline, and stay on top of follow-up.
           </p>
 
           {/* Two CTA buttons side by side */}
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/sign-up?redirect=/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
-              }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#6c2bd9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5b21b6]"
             >
               Create your account
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
             </Link>
           </div>
 
           {/* Small note underneath */}
-          <p className="mt-4 text-xs text-[#7B7590]">
+          <p className="mt-4 text-xs text-zinc-400">
             Start with Aligno CRM. Pentridge Labs access is coming into one subscription.
           </p>
         </div>
 
-        {/* App screenshot with chrome bar and gradient fade */}
+        {/* App screenshot with chrome bar and fade */}
         <div className="relative mx-auto mt-14 max-w-5xl">
           {/* Chrome overlay bar */}
-          <div
-            className="relative overflow-hidden rounded-t-xl border border-b-0 shadow-2xl shadow-[#44106F]/10"
-            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
-          >
+          <div className="relative overflow-hidden rounded-t-xl border border-b-0 border-[#e7e7ea] bg-white shadow-[0_2px_4px_rgba(17,17,26,0.05),0_8px_24px_rgba(17,17,26,0.07)]">
             {/* Fake browser chrome */}
-            <div
-              className="flex items-center gap-2 px-4 py-3"
-              style={{ backgroundColor: withAlpha(getPurpleScaleColor(1), 0.06) }}
-            >
-              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
-              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
-              <span className="h-3 w-3 rounded-full bg-[#E5D6F5]" />
-              <span className="mx-auto block h-5 w-56 rounded-md bg-[#F3EAFD]" />
+            <div className="flex items-center gap-2 border-b border-[#e7e7ea] bg-[#fafafa] px-4 py-3">
+              <span className="h-3 w-3 rounded-full bg-[#e7e7ea]" />
+              <span className="h-3 w-3 rounded-full bg-[#e7e7ea]" />
+              <span className="h-3 w-3 rounded-full bg-[#e7e7ea]" />
+              <span className="mx-auto block h-5 w-56 rounded-md bg-[#f0f0f2]" />
             </div>
 
             {/* Screenshot */}
             <Image
               src="/dashboard.png"
-              alt="Aligno CRM app screenshot showing pipeline view and workflow automation"
+              alt="Aligno CRM app screenshot showing the pipeline view"
               width={1920}
               height={1080}
               className="block w-full"
@@ -275,12 +258,11 @@ export default function LandingPage() {
             />
           </div>
 
-          {/* Gradient fade at bottom */}
+          {/* Fade at bottom into page surface */}
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
             style={{
-              background:
-                "linear-gradient(to top, var(--aligno-page-surface, #FAF8FF) 0%, transparent 100%)",
+              background: "linear-gradient(to top, #f7f7f8 0%, transparent 100%)",
             }}
           />
         </div>
@@ -291,41 +273,32 @@ export default function LandingPage() {
       {/* ---------------------------------------------------------- */}
       <section className="px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
-          <div
-            className="aligno-panel overflow-hidden rounded-xl"
-            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.2) }}
-          >
+          <div className="overflow-hidden rounded-xl border border-[#e7e7ea] bg-white shadow-[0_1px_2px_rgba(17,17,26,0.05)]">
             {/* Terminal chrome bar */}
-            <div
-              className="flex items-center gap-2 border-b px-4 py-3"
-              style={{
-                borderColor: withAlpha(getPurpleScaleColor(4), 0.12),
-                backgroundColor: withAlpha(getPurpleScaleColor(1), 0.05),
-              }}
-            >
-              <Terminal className="h-4 w-4 text-[#6E2ABD]" />
-              <span className="text-xs font-semibold text-[#7B7590]">the_problem.sh</span>
+            <div className="flex items-center gap-2 border-b border-[#e7e7ea] bg-[#fafafa] px-4 py-3">
+              <Terminal className="h-4 w-4 text-[#6c2bd9]" strokeWidth={1.8} />
+              <span className="text-xs font-medium text-zinc-500">the_problem.sh</span>
             </div>
 
             <div className="space-y-4 p-6 sm:p-8">
-              <h2 className="text-2xl font-bold tracking-tight text-[#21173A] sm:text-3xl">
+              <h2 className="text-2xl font-semibold tracking-[-0.01em] text-zinc-900 sm:text-3xl">
                 Most CRMs record work after the fact.
                 <br />
                 Your revenue needs movement now.
               </h2>
 
-              <div className="mt-6 space-y-3 font-mono text-sm leading-7 text-[#5D5474]">
+              <div className="mt-6 space-y-3 font-mono text-sm leading-7 text-zinc-600">
                 <p>
-                  <span className="text-[#6E2ABD]">$</span> Leads arrive from forms, referrals,
+                  <span className="text-[#6c2bd9]">$</span> Leads arrive from forms, referrals,
                   and partner tools, then sit too long before follow-up.
                 </p>
                 <p>
-                  <span className="text-[#6E2ABD]">$</span> Pipeline updates, tags, tasks, and
-                  messages live in separate workflows that are hard to trust.
+                  <span className="text-[#6c2bd9]">$</span> Pipeline updates, tags, tasks, and
+                  notes live in separate tools that are hard to trust.
                 </p>
                 <p>
-                  <span className="text-[#6E2ABD]">$</span> AI can draft useful responses, but
-                  operators still need guardrails before anything goes out.
+                  <span className="text-[#6c2bd9]">$</span> Spreadsheets and heavyweight CRMs
+                  both get in the way of the next follow-up.
                 </p>
               </div>
             </div>
@@ -339,34 +312,25 @@ export default function LandingPage() {
       <section id="features" className="px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c2bd9]">
               Features
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
-              One operating layer for pipeline, automation, and AI-assisted follow-up.
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.01em] text-zinc-900 sm:text-3xl">
+              Everything you need to move deals forward. Nothing you don&apos;t.
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-5 sm:grid-cols-2">
-            {features.map((item, index) => (
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {features.map((item) => (
               <article
                 key={item.title}
-                className="aligno-panel rounded-xl p-7"
-                style={{ borderColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.2) }}
+                className="rounded-xl border border-[#e7e7ea] bg-white p-7 shadow-[0_1px_2px_rgba(17,17,26,0.05)] transition-[border-color,box-shadow] duration-150 hover:border-[#dcdce1] hover:shadow-[0_1px_2px_rgba(17,17,26,0.05),0_2px_8px_rgba(17,17,26,0.04)]"
               >
-                <div
-                  className="flex h-11 w-11 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.14),
-                  }}
-                >
-                  <item.icon
-                    className="h-5 w-5"
-                    style={{ color: getPurpleScaleColor((index % 4) + 2) }}
-                  />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e3d5f8] bg-[#f4eefc]">
+                  <item.icon className="h-4 w-4 text-[#6c2bd9]" strokeWidth={1.8} />
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-[#21173A]">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#5D5474]">{item.text}</p>
+                <h3 className="mt-5 text-base font-semibold text-zinc-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">{item.text}</p>
               </article>
             ))}
           </div>
@@ -376,49 +340,41 @@ export default function LandingPage() {
       {/* ---------------------------------------------------------- */}
       {/*  How it works — numbered steps with icon boxes              */}
       {/* ---------------------------------------------------------- */}
-      <section id="how-it-works" className="border-y border-[#44106F]/10 bg-white/52 px-5 py-20 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="border-y border-[#e7e7ea] bg-white px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c2bd9]">
               How it works
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.01em] text-zinc-900 sm:text-3xl">
               Built for service businesses that sell through process.
             </h2>
-            <p className="mt-4 text-base leading-7 text-[#5D5474]">
-              Pipeline stages, workflow triggers, deterministic actions, AI steps, and approval
-              history. The pieces operators need every day stay close together.
+            <p className="mt-4 text-[15px] leading-7 text-zinc-600">
+              Contacts, pipeline stages, deal values, and follow-up. The pieces
+              service businesses need every day stay close together.
             </p>
           </div>
 
-          <div className="mx-auto mt-14 grid max-w-3xl gap-6">
+          <div className="mx-auto mt-14 grid max-w-3xl gap-4">
             {howItWorks.map((item, index) => {
-              const icons = [GitBranch, Workflow, ShieldCheck];
+              const icons = [Users, GitBranch, MailCheck];
               const Icon = icons[index];
               return (
                 <div
                   key={item.step}
-                  className="flex items-start gap-5 rounded-xl border border-[#44106F]/12 bg-white/82 p-6 shadow-sm"
+                  className="flex items-start gap-5 rounded-xl border border-[#e7e7ea] bg-[#fafafa] p-6"
                 >
                   {/* Icon box on the left */}
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                    style={{
-                      backgroundColor: withAlpha(getPurpleScaleColor(index + 2), 0.14),
-                    }}
-                  >
-                    <Icon
-                      className="h-5 w-5"
-                      style={{ color: getPurpleScaleColor(index + 2) }}
-                    />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#e3d5f8] bg-[#f4eefc]">
+                    <Icon className="h-4 w-4 text-[#6c2bd9]" strokeWidth={1.8} />
                   </div>
 
                   <div>
-                    <p className="font-mono text-xs font-bold text-[#6E2ABD]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
                       Step {item.step}
                     </p>
-                    <h3 className="mt-1 text-lg font-bold text-[#21173A]">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#5D5474]">{item.text}</p>
+                    <h3 className="mt-1 text-base font-semibold text-zinc-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600">{item.text}</p>
                   </div>
                 </div>
               );
@@ -431,20 +387,16 @@ export default function LandingPage() {
       {/*  Stats row — 3 stat blocks                                  */}
       {/* ---------------------------------------------------------- */}
       <section className="px-5 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-3">
-          {stats.map((stat, index) => (
+        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-3">
+          {stats.map((stat) => (
             <div
               key={stat.label}
-              className="aligno-panel rounded-xl p-6 text-center"
-              style={{ borderColor: withAlpha(getPurpleScaleColor(index + 2), 0.2) }}
+              className="rounded-xl border border-[#e7e7ea] bg-white p-6 text-center shadow-[0_1px_2px_rgba(17,17,26,0.05)]"
             >
-              <p
-                className="text-4xl font-bold"
-                style={{ color: getPurpleScaleColor(index + 2) }}
-              >
+              <p className="text-3xl font-semibold tracking-[-0.01em] text-[#6c2bd9]">
                 {stat.value}
               </p>
-              <p className="mt-2 text-sm font-medium text-[#5D5474]">{stat.label}</p>
+              <p className="mt-2 text-sm font-medium text-zinc-600">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -456,35 +408,26 @@ export default function LandingPage() {
       <section id="who-its-for" className="px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c2bd9]">
               Who it&apos;s for
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.01em] text-zinc-900 sm:text-3xl">
               Built for teams who need follow-up to run on rails.
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-5 sm:grid-cols-2">
-            {audiences.map((item, index) => (
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {audiences.map((item) => (
               <div
                 key={item.title}
-                className="aligno-panel flex items-start gap-4 rounded-xl p-6"
-                style={{ borderColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.2) }}
+                className="flex items-start gap-4 rounded-xl border border-[#e7e7ea] bg-white p-6 shadow-[0_1px_2px_rgba(17,17,26,0.05)] transition-[border-color,box-shadow] duration-150 hover:border-[#dcdce1] hover:shadow-[0_1px_2px_rgba(17,17,26,0.05),0_2px_8px_rgba(17,17,26,0.04)]"
               >
-                <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: withAlpha(getPurpleScaleColor((index % 4) + 2), 0.14),
-                  }}
-                >
-                  <item.icon
-                    className="h-5 w-5"
-                    style={{ color: getPurpleScaleColor((index % 4) + 2) }}
-                  />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#e3d5f8] bg-[#f4eefc]">
+                  <item.icon className="h-4 w-4 text-[#6c2bd9]" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#21173A]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#5D5474]">{item.text}</p>
+                  <h3 className="text-base font-semibold text-zinc-900">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">{item.text}</p>
                 </div>
               </div>
             ))}
@@ -496,34 +439,28 @@ export default function LandingPage() {
       {/*  Signup                                                     */}
       {/* ---------------------------------------------------------- */}
       <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
-        <div
-          className="aligno-panel mx-auto max-w-4xl rounded-2xl px-6 py-14 text-center sm:px-12 sm:py-16"
-          style={{ borderColor: withAlpha(getPurpleScaleColor(5), 0.22) }}
-        >
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+        <div className="mx-auto max-w-4xl rounded-xl border border-[#e7e7ea] bg-white px-6 py-14 text-center shadow-[0_1px_2px_rgba(17,17,26,0.05)] sm:px-12 sm:py-16">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c2bd9]">
             Aligno CRM is live
           </p>
-          <h2 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl lg:text-5xl">
+          <h2 className="mx-auto max-w-3xl text-2xl font-semibold tracking-[-0.01em] text-zinc-900 sm:text-3xl">
             Create your account and start building your pipeline.
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
-            Sign up for the app, set up your CRM workspace, and begin managing contacts,
-            deals, workflows, approvals, and follow-up from one place.
+          <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-7 text-zinc-600">
+            Sign up for the app, set up your workspace, and begin managing contacts,
+            deals, and follow-up from one place.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/sign-up?redirect=/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
-              }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#6c2bd9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5b21b6]"
             >
               Create Account
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
             </Link>
             <Link
               href="/sign-in?redirect=/dashboard"
-              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/15 bg-white/80 px-6 py-3 text-sm font-semibold text-[#44106F] shadow-sm transition hover:bg-white"
+              className="inline-flex items-center justify-center rounded-lg border border-[#e7e7ea] bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
             >
               Sign In
             </Link>
@@ -534,7 +471,7 @@ export default function LandingPage() {
       {/* ---------------------------------------------------------- */}
       {/*  Footer — logo left, links right                            */}
       {/* ---------------------------------------------------------- */}
-      <footer className="border-t border-[#44106F]/10 bg-white/60">
+      <footer className="border-t border-[#e7e7ea] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 py-8 sm:flex-row sm:px-6 lg:px-8">
           {/* Logo left */}
           <Link href="/" className="flex items-center gap-2" aria-label="Aligno CRM home">
@@ -545,12 +482,12 @@ export default function LandingPage() {
               height={24}
               className="h-6 w-6 object-contain"
             />
-            <span className="text-sm font-bold text-[#21173A]">Aligno CRM</span>
+            <span className="text-sm font-semibold text-zinc-900">Aligno CRM</span>
           </Link>
 
           {/* Links right */}
-          <div className="flex items-center gap-6 text-sm text-[#7B7590]">
-            <Link href="/sign-up?redirect=/dashboard" className="transition hover:text-[#44106F]">
+          <div className="flex items-center gap-6 text-[13px] text-zinc-500">
+            <Link href="/sign-up?redirect=/dashboard" className="transition-colors hover:text-zinc-900">
               Create Account
             </Link>
             <span>&copy; {new Date().getFullYear()} Aligno</span>

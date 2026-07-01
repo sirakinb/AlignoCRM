@@ -5,10 +5,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import {
-  getPurpleScaleColor,
-  withAlpha,
-} from "@/lib/design/aligno-theme";
+import { getPurpleScaleColor } from "@/lib/design/aligno-theme";
 import type { Deal, Stage } from "@/types/crm";
 import { DealCard } from "./deal-card";
 
@@ -44,44 +41,27 @@ export function StageColumn({
 
   return (
     <div
-      className={`aligno-panel flex w-72 flex-shrink-0 flex-col overflow-hidden rounded-2xl transition-colors ${
-        isOver ? "aligno-glow" : ""
+      className={`flex w-72 flex-shrink-0 flex-col rounded-xl border transition-colors duration-150 ${
+        isOver
+          ? "border-[#dcdce1] bg-[#f4f4f5]"
+          : "border-[#ececef] bg-[#fafafa]"
       }`}
-      style={{
-        borderColor: isOver
-          ? withAlpha(accentColor, 0.34)
-          : withAlpha(accentColor, 0.18),
-      }}
     >
-      {/* Color strip */}
-      <div
-        className="h-1.5 rounded-t-2xl"
-        style={{
-          background: `linear-gradient(90deg, ${accentColor}, ${withAlpha(accentColor, 0.65)})`,
-        }}
-      />
-
       {/* Header */}
-      <div className="px-3 pt-3 pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-[#33254F]">
-              {stage.name}
-            </h3>
-            <span
-              className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-medium"
-              style={{
-                backgroundColor: withAlpha(accentColor, 0.14),
-                color: accentColor,
-              }}
-            >
-              {deals.length}
-            </span>
-          </div>
-        </div>
-        <p className="mt-0.5 text-xs font-medium" style={{ color: accentColor }}>
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: accentColor }}
+        />
+        <h3 className="truncate text-[13px] font-medium text-zinc-800">
+          {stage.name}
+        </h3>
+        <span className="text-xs text-zinc-400 tabular-nums">
+          {deals.length}
+        </span>
+        <span className="ml-auto text-xs text-zinc-400 tabular-nums">
           {formatCurrency(totalValue)}
-        </p>
+        </span>
       </div>
 
       {/* Deal cards */}
@@ -91,7 +71,7 @@ export function StageColumn({
       >
         <div
           ref={setNodeRef}
-          className="flex-1 space-y-2 px-3 pb-3 min-h-[60px]"
+          className="flex-1 space-y-2 px-2.5 pb-2.5 min-h-[60px]"
         >
           {deals.map((deal) => (
             <DealCard
@@ -105,10 +85,7 @@ export function StageColumn({
             />
           ))}
           {deals.length === 0 && (
-            <div
-              className="aligno-panel-soft flex items-center justify-center rounded-xl border-2 border-dashed py-6 text-xs text-[#8D88A0]"
-              style={{ borderColor: withAlpha(accentColor, 0.18) }}
-            >
+            <div className="flex items-center justify-center rounded-lg border border-dashed border-[#e7e7ea] py-6 text-xs text-zinc-400">
               Drop deals here
             </div>
           )}

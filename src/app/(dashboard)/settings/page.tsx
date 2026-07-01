@@ -5,7 +5,6 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
-import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import {
   Camera,
   Check,
@@ -15,7 +14,6 @@ import {
   RefreshCw,
   Trash2,
   UserPlus,
-  Webhook,
 } from "lucide-react";
 
 interface UserApiKey {
@@ -26,6 +24,10 @@ interface UserApiKey {
   createdAt: string;
   lastUsedAt: string | null;
 }
+
+// Team invites are still in progress — hide the Organization section from
+// clients for now. Flip to true to restore it.
+const SHOW_ORGANIZATION_SECTION = false;
 
 interface OrganizationMember {
   id: string;
@@ -93,8 +95,6 @@ export default function SettingsPage() {
   const [apiKeyLoading, setApiKeyLoading] = useState(true);
   const [apiKeyWorking, setApiKeyWorking] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
-  const [webhookCopied, setWebhookCopied] = useState(false);
-  const [webhookOrigin, setWebhookOrigin] = useState("");
   const [organization, setOrganization] = useState<OrganizationPayload | null>(null);
   const [organizationLoading, setOrganizationLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -107,7 +107,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let ignore = false;
-    setWebhookOrigin(window.location.origin);
 
     async function loadSettingsData() {
       try {
@@ -145,11 +144,11 @@ export default function SettingsPage() {
     return (
       <div className="mx-auto max-w-2xl px-6 py-10">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 w-32 rounded bg-gray-200" />
-          <div className="h-4 w-48 rounded bg-gray-200" />
-          <div className="mt-8 h-16 w-16 rounded-full bg-gray-200" />
-          <div className="h-10 w-full rounded bg-gray-200" />
-          <div className="h-10 w-full rounded bg-gray-200" />
+          <div className="h-8 w-32 rounded bg-zinc-200" />
+          <div className="h-4 w-48 rounded bg-zinc-200" />
+          <div className="mt-8 h-16 w-16 rounded-full bg-zinc-200" />
+          <div className="h-10 w-full rounded bg-zinc-200" />
+          <div className="h-10 w-full rounded bg-zinc-200" />
         </div>
       </div>
     );
@@ -169,18 +168,6 @@ export default function SettingsPage() {
   const avatarSrc = avatarUrl
     ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}ui=settings`
     : null;
-  const webhookUrl = webhookOrigin
-    ? `${webhookOrigin}/api/webhooks/lead`
-    : "https://<your-crm-domain>/api/webhooks/lead";
-  const webhookExample = `curl -X POST "${webhookUrl}" \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: <ALIGNO_USER_API_KEY>" \\
-  -d '{
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "phone": "+15551234567",
-    "email": "jane@example.com"
-  }'`;
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -342,21 +329,6 @@ export default function SettingsPage() {
     window.setTimeout(() => setApiKeyCopied(false), 1800);
   }
 
-  async function handleCopyWebhookUrl() {
-    const copied = await copyTextToClipboard(webhookUrl);
-    if (!copied) {
-      setMessage({
-        type: "error",
-        text: "Clipboard access was denied. Select the webhook URL and copy it manually.",
-      });
-      return;
-    }
-
-    setWebhookCopied(true);
-    setMessage({ type: "success", text: "Webhook URL copied" });
-    window.setTimeout(() => setWebhookCopied(false), 1800);
-  }
-
   async function handleRemoveMember(memberId: string, memberEmail: string) {
     if (!confirm(`Remove ${memberEmail} from the organization? They will lose access to all workspace data.`)) return;
 
@@ -427,127 +399,117 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      <p className="mt-1 text-sm text-gray-500">Manage your profile</p>
+      <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-zinc-900">Settings</h1>
+      <p className="mt-1 text-[13px] text-zinc-500">Manage your profile and workspace</p>
 
-      <div className="mt-8 space-y-8">
-        {/* Avatar */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Profile Photo
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              {avatarSrc && !avatarError ? (
-                <img
-                  src={avatarSrc}
-                  alt="Avatar"
-                  className="h-16 w-16 rounded-full object-cover"
-                  onError={() => setAvatarError(true)}
-                />
-              ) : (
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-full text-lg font-medium"
-                  style={{
-                    backgroundColor: withAlpha(getPurpleScaleColor(1), 0.16),
-                    color: getPurpleScaleColor(5),
-                  }}
-                >
-                  {initials}
-                </div>
-              )}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border bg-white shadow-sm disabled:opacity-50"
-                style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
-              >
-                {uploading ? (
-                  <Loader2
-                    size={14}
-                    className="animate-spin"
-                    style={{ color: getPurpleScaleColor(3) }}
+      <div className="mt-8 space-y-6">
+        {/* Profile */}
+        <section className="crisp-card overflow-hidden">
+          <div className="px-5 py-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Profile</h2>
+            <p className="mt-0.5 text-[13px] text-zinc-500">
+              Your name and photo, visible to teammates.
+            </p>
+          </div>
+
+          {/* Avatar */}
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                {avatarSrc && !avatarError ? (
+                  <img
+                    src={avatarSrc}
+                    alt="Avatar"
+                    className="h-16 w-16 rounded-full border border-[#e7e7ea] object-cover"
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
-                  <Camera size={14} style={{ color: getPurpleScaleColor(3) }} />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efe7fb] text-lg font-medium text-[#5b21b6]">
+                    {initials}
+                  </div>
                 )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-            </div>
-            <div className="text-sm text-gray-500">
-              <p>Click the camera icon to upload a photo.</p>
-              <p>JPG, PNG, or GIF. Max 5MB.</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#e7e7ea] bg-white shadow-[0_1px_2px_rgba(17,17,26,0.05)] hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <Loader2 size={14} strokeWidth={1.8} className="animate-spin text-zinc-500" />
+                  ) : (
+                    <Camera size={14} strokeWidth={1.8} className="text-zinc-500" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </div>
+              <div className="text-[13px] text-zinc-500">
+                <p>Click the camera icon to upload a photo.</p>
+                <p>JPG, PNG, or GIF. Max 5MB.</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Name */}
-        <form onSubmit={handleSaveName}>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Display Name
-          </label>
-          <div className="flex gap-3">
+          {/* Name */}
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
+            <form onSubmit={handleSaveName}>
+              <label htmlFor="name" className="mb-1.5 block text-xs text-zinc-500">
+                Display name
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="flex-1 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                />
+                <button
+                  type="submit"
+                  disabled={saving || !name.trim()}
+                  className="rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Email (read-only) */}
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
+            <label className="mb-1.5 block text-xs text-zinc-500">Email</label>
             <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="flex-1 rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
-              style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+              type="email"
+              value={userEmail}
+              disabled
+              className="w-full rounded-lg border border-[#e7e7ea] bg-[#fafafa] px-3 py-2 text-sm text-zinc-500"
             />
-            <button
-              type="submit"
-              disabled={saving || !name.trim()}
-              className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
-              style={{
-                background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
-              }}
-            >
-              {saving ? "Saving..." : "Save"}
-            </button>
           </div>
-        </form>
-
-        {/* Email (read-only) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            value={userEmail}
-            disabled
-            className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
-          />
-        </div>
+        </section>
 
         {/* API Key */}
-        <div>
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <section className="crisp-card overflow-hidden">
+          <div className="flex items-start justify-between gap-3 px-5 py-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                API Key
-              </label>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-sm font-semibold text-zinc-900">API key</h2>
+              <p className="mt-0.5 text-[13px] text-zinc-500">
                 Use this key to connect external tools to AlignoCRM.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex shrink-0 gap-2">
               {apiKey && (
                 <button
                   type="button"
                   onClick={handleRevokeApiKey}
                   disabled={apiKeyWorking}
-                  className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 shadow-sm disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[13px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={15} strokeWidth={1.8} />
                   Revoke
                 </button>
               )}
@@ -555,50 +517,48 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleCreateApiKey}
                 disabled={apiKeyLoading || apiKeyWorking}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
-                style={{
-                  background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
-                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50"
               >
                 {apiKeyWorking ? (
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 size={15} strokeWidth={1.8} className="animate-spin" />
                 ) : apiKey ? (
-                  <RefreshCw size={14} />
+                  <RefreshCw size={15} strokeWidth={1.8} />
                 ) : (
-                  <KeyRound size={14} />
+                  <KeyRound size={15} strokeWidth={1.8} />
                 )}
                 {apiKey ? "Regenerate" : "Create Key"}
               </button>
             </div>
           </div>
 
-          <div
-            className="rounded-lg border bg-white p-3"
-            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
-          >
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
             {apiKeyLoading ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 size={14} className="animate-spin" />
+              <div className="flex items-center gap-2 text-[13px] text-zinc-500">
+                <Loader2 size={15} strokeWidth={1.8} className="animate-spin text-zinc-500" />
                 Loading key...
               </div>
             ) : apiKey ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  <code className="min-w-0 flex-1 truncate rounded-lg border border-[#e7e7ea] bg-[#fafafa] px-3 py-2 text-sm text-zinc-700">
                     {apiKey.key ?? apiKey.maskedKey}
                   </code>
                   {apiKey.key && (
                     <button
                       type="button"
                       onClick={handleCopyApiKey}
-                      className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-50"
                     >
-                      {apiKeyCopied ? <Check size={14} /> : <Copy size={14} />}
+                      {apiKeyCopied ? (
+                        <Check size={15} strokeWidth={1.8} className="text-zinc-500" />
+                      ) : (
+                        <Copy size={15} strokeWidth={1.8} className="text-zinc-500" />
+                      )}
                       {apiKeyCopied ? "Copied" : "Copy"}
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-zinc-500">
                   {apiKey.key
                     ? "This is the only time the full key will be shown."
                     : `Created ${new Date(apiKey.createdAt).toLocaleDateString()}`}
@@ -608,94 +568,50 @@ export default function SettingsPage() {
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-[13px] text-zinc-500">
                 No API key has been created for this user.
               </p>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Lead Webhook */}
-        <div>
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Lead Webhook
-              </label>
-              <p className="mt-1 text-sm text-gray-500">
-                Send lead details here to create a contact and a pipeline lead.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopyWebhookUrl}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
-            >
-              {webhookCopied ? <Check size={14} /> : <Copy size={14} />}
-              {webhookCopied ? "Copied" : "Copy URL"}
-            </button>
-          </div>
-
-          <div
-            className="rounded-lg border bg-white p-3"
-            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
-          >
-            <div className="flex items-center gap-2">
-              <Webhook size={16} className="shrink-0 text-[#6C2BD9]" />
-              <code className="min-w-0 flex-1 truncate rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                {webhookUrl}
-              </code>
-            </div>
-            <p className="mt-3 text-xs text-gray-500">
-              Authenticate with your Settings API key using <code>x-api-key</code>.
-              Keep the key in your server-side backend or form service, not in public browser code.
-            </p>
-            <pre className="mt-3 overflow-x-auto rounded-lg bg-gray-950 p-3 text-xs leading-6 text-gray-100">
-              <code>{webhookExample}</code>
-            </pre>
-          </div>
-        </div>
-
-        {/* Organization */}
-        <div>
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Organization
-            </label>
-            <p className="mt-1 text-sm text-gray-500">
+        {/* Organization — temporarily hidden while team invites are finished.
+            Flip SHOW_ORGANIZATION_SECTION to true to bring it back. */}
+        {SHOW_ORGANIZATION_SECTION && (
+        <section className="crisp-card overflow-hidden">
+          <div className="px-5 py-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Organization</h2>
+            <p className="mt-0.5 text-[13px] text-zinc-500">
               Invite teammates into this workspace. Data is scoped to this organization.
             </p>
           </div>
 
-          <div
-            className="rounded-lg border bg-white p-4"
-            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
-          >
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
             {organizationLoading ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 size={14} className="animate-spin" />
+              <div className="flex items-center gap-2 text-[13px] text-zinc-500">
+                <Loader2 size={15} strokeWidth={1.8} className="animate-spin text-zinc-500" />
                 Loading organization...
               </div>
             ) : organization ? (
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-zinc-900">
                     {organization.organization?.name ?? "Workspace"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-zinc-500">
                     Your role: {organization.role ?? "member"}
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="divide-y divide-[#f0f0f2] rounded-lg border border-[#e7e7ea]">
                   {organization.members.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm"
+                      className="flex items-center justify-between px-3 py-2.5 text-[13px] hover:bg-zinc-50/80"
                     >
-                      <span className="truncate text-gray-700">{member.email}</span>
+                      <span className="truncate text-zinc-700">{member.email}</span>
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-[#F3EAFD] px-2 py-0.5 text-xs font-medium text-[#6C2BD9]">
+                        <span className="rounded-md bg-[#efe7fb] px-1.5 py-0.5 text-[11px] font-medium text-[#5b21b6]">
                           {member.role}
                         </span>
                         {["owner", "admin"].includes(organization.role ?? "") &&
@@ -703,13 +619,13 @@ export default function SettingsPage() {
                           <button
                             onClick={() => handleRemoveMember(member.id, member.email)}
                             disabled={removingMemberId === member.id}
-                            className="rounded p-1 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                             title={`Remove ${member.email}`}
                           >
                             {removingMemberId === member.id ? (
-                              <Loader2 size={14} className="animate-spin" />
+                              <Loader2 size={15} strokeWidth={1.8} className="animate-spin" />
                             ) : (
-                              <Trash2 size={14} />
+                              <Trash2 size={15} strokeWidth={1.8} />
                             )}
                           </button>
                         )}
@@ -726,16 +642,14 @@ export default function SettingsPage() {
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
                         placeholder="teammate@example.com"
-                        className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
-                        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+                        className="min-w-0 flex-1 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
                       />
                       <select
                         value={inviteRole}
                         onChange={(e) =>
                           setInviteRole(e.target.value === "admin" ? "admin" : "member")
                         }
-                        className="rounded-md border px-3 py-2 text-sm shadow-sm outline-none"
-                        style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+                        className="rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-700 outline-none"
                       >
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>
@@ -744,15 +658,12 @@ export default function SettingsPage() {
                     <button
                       type="submit"
                       disabled={inviteWorking || !inviteEmail.trim()}
-                      className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
-                      style={{
-                        background: `linear-gradient(135deg, ${getPurpleScaleColor(4)}, ${getPurpleScaleColor(3)})`,
-                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50"
                     >
                       {inviteWorking ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={15} strokeWidth={1.8} className="animate-spin" />
                       ) : (
-                        <UserPlus size={14} />
+                        <UserPlus size={15} strokeWidth={1.8} />
                       )}
                       Invite teammate
                     </button>
@@ -760,27 +671,30 @@ export default function SettingsPage() {
                 )}
 
                 {inviteUrl && (
-                  <div className="rounded-md bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500">Invite link</p>
-                    <code className="mt-1 block break-all text-xs text-gray-700">
+                  <div className="rounded-lg border border-[#e7e7ea] bg-[#fafafa] p-3">
+                    <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                      Invite link
+                    </p>
+                    <code className="mt-1 block break-all text-xs text-zinc-700">
                       {inviteUrl}
                     </code>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No organization loaded.</p>
+              <p className="text-[13px] text-zinc-500">No organization loaded.</p>
             )}
           </div>
-        </div>
+        </section>
+        )}
 
         {/* Status Message */}
         {message && (
           <div
-            className={`rounded-md p-3 text-sm ${
+            className={`rounded-lg border p-3 text-[13px] ${
               message.type === "success"
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-red-200 bg-red-50 text-red-700"
             }`}
           >
             {message.text}

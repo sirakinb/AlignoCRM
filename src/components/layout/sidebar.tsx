@@ -8,15 +8,16 @@ import { useAuth, useUser } from "@insforge/nextjs";
 import { useServerUser } from "@/components/auth/server-auth-context";
 import { syncServerSession } from "@/lib/auth/sync-server-session";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
-import { Home, GitBranch, Users, Zap, Settings, LogOut, BookOpen, Shield } from "lucide-react";
+import { Home, GitBranch, Users, Settings, LogOut, BookOpen } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element */
 
+// NOTE: Automations nav item is temporarily hidden while the feature matures.
+// Restore with: { label: "Automations", href: "/automations", icon: Zap }
 const navItems = [
   { label: "Home", href: "/dashboard", icon: Home },
   { label: "Pipeline", href: "/pipeline", icon: GitBranch },
   { label: "Contacts", href: "/contacts", icon: Users },
-  { label: "Automations", href: "/automations", icon: Zap },
 ] as const;
 
 interface SidebarProps {
@@ -105,25 +106,25 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   return (
     <aside
       style={{ width }}
-      className="flex h-screen flex-col border-r border-gray-200 bg-white"
+      className="flex h-screen flex-col border-r border-[#e7e7ea] bg-[#fafafa]"
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-6">
+      <div className="flex items-center gap-2 px-4 pb-4 pt-5">
         <Image
           src="/aligno-crm_logo.png"
           alt="AlignoCRM"
-          width={40}
-          height={40}
-          className="h-10 w-10 shrink-0 object-contain"
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 object-contain"
         />
-        <span className="min-w-0 truncate text-lg font-bold tracking-tight text-gray-900">
+        <span className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.01em] text-zinc-900">
           AlignoCRM
         </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3">
-        <ul className="space-y-1">
+      <nav className="flex-1 px-2.5">
+        <ul className="space-y-0.5">
           {navItems.map((item) => {
             const isActive =
               item.href === "/dashboard"
@@ -136,13 +137,17 @@ export function Sidebar({ width = 224 }: SidebarProps) {
                   href={item.href}
                   prefetch={false}
                   onClick={handleNavigation(item.href)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors ${
                     isActive
-                      ? "bg-[#F3EAFD] text-[#6C2BD9]"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-[#efe7fb] text-[#5b21b6]"
+                      : "text-zinc-600 hover:bg-black/[0.045] hover:text-zinc-900"
                   }`}
                 >
-                  <item.icon size={18} className="shrink-0" />
+                  <item.icon
+                    size={16}
+                    strokeWidth={isActive ? 2.1 : 1.8}
+                    className={`shrink-0 ${isActive ? "text-[#6c2bd9]" : "text-zinc-500"}`}
+                  />
                   <span className="truncate">{item.label}</span>
                 </Link>
               </li>
@@ -152,85 +157,70 @@ export function Sidebar({ width = 224 }: SidebarProps) {
       </nav>
 
       {/* Utility Navigation */}
-      <div className="space-y-1 px-3 pb-2">
-        {effectiveUser?.email &&
-          ["aki.b@pentridgemedia.com", "sirakinb@gmail.com"].includes(
-            effectiveUser.email.toLowerCase()
-          ) && (
-            <Link
-              href="/admin"
-              prefetch={false}
-              onClick={handleNavigation("/admin")}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                pathname.startsWith("/admin")
-                  ? "bg-[#F3EAFD] text-[#6C2BD9]"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
-            >
-              <Shield size={18} className="shrink-0" />
-              <span className="truncate">Admin</span>
-            </Link>
-          )}
+      <div className="space-y-0.5 px-2.5 pb-3">
+        <p className="px-2.5 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+          Workspace
+        </p>
         <Link
           href="/docs"
           prefetch={false}
           onClick={handleNavigation("/docs")}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors ${
             pathname.startsWith("/docs")
-              ? "bg-[#F3EAFD] text-[#6C2BD9]"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-[#efe7fb] text-[#5b21b6]"
+              : "text-zinc-600 hover:bg-black/[0.045] hover:text-zinc-900"
           }`}
         >
-          <BookOpen size={18} className="shrink-0" />
+          <BookOpen size={16} strokeWidth={1.8} className="shrink-0 text-zinc-500" />
           <span className="truncate">Docs</span>
         </Link>
         <Link
           href="/settings"
           prefetch={false}
           onClick={handleNavigation("/settings")}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-colors ${
             pathname.startsWith("/settings")
-              ? "bg-[#F3EAFD] text-[#6C2BD9]"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-[#efe7fb] text-[#5b21b6]"
+              : "text-zinc-600 hover:bg-black/[0.045] hover:text-zinc-900"
           }`}
         >
-          <Settings size={18} className="shrink-0" />
+          <Settings size={16} strokeWidth={1.8} className="shrink-0 text-zinc-500" />
           <span className="truncate">Settings</span>
         </Link>
       </div>
 
       {/* User + Logout */}
-      <div className="border-t border-gray-200 px-5 py-4">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-[#e7e7ea] px-3 py-3">
+        <div className="flex items-center gap-2.5 rounded-md px-1.5 py-1">
           {avatarSrc && !avatarFailed ? (
             <img
               src={avatarSrc}
               alt=""
-              className="h-8 w-8 shrink-0 rounded-full object-cover"
+              className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-black/5"
               onError={() => setAvatarFailed(true)}
             />
           ) : (
             <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-1 ring-black/5"
               style={{
-                backgroundColor: withAlpha(getPurpleScaleColor(1), 0.16),
-                color: getPurpleScaleColor(5),
+                backgroundColor: withAlpha(getPurpleScaleColor(1), 0.14),
+                color: getPurpleScaleColor(4),
               }}
             >
               {initials}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-gray-900">
+            <p className="truncate text-[13px] font-medium text-zinc-800">
               {displayName}
             </p>
           </div>
           <button
             onClick={handleLogout}
-            className="shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-black/[0.045] hover:text-zinc-700"
             aria-label="Log out"
           >
-            <LogOut size={16} />
+            <LogOut size={15} strokeWidth={1.8} />
           </button>
         </div>
       </div>
