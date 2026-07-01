@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   ALIGNO_PURPLE_SCALE,
   getPurpleScaleColor,
@@ -93,20 +94,6 @@ async function apiCreateDeal(input: {
 async function apiDeleteDeal(dealId: string): Promise<void> {
   const res = await fetch(`/api/deals?id=${dealId}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete deal");
-}
-
-async function apiUpdateDeal(
-  id: string,
-  fields: { title?: string; value?: number; contact_id?: string | null; status?: string }
-): Promise<Deal> {
-  const res = await fetch("/api/deals", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, ...fields }),
-  });
-  if (!res.ok) throw new Error("Failed to update deal");
-  const json = await res.json();
-  return json.deal;
 }
 
 async function apiCreatePipeline(input: {
@@ -585,178 +572,11 @@ function CreateDealModal({
 }
 
 // ---------------------------------------------------------------------------
-// Edit Deal Modal
-// ---------------------------------------------------------------------------
-
-interface EditDealModalProps {
-  deal: Deal | null;
-  onClose: () => void;
-  onUpdated: (deal: Deal) => void;
-  contacts: Contact[];
-}
-
-function EditDealModal({ deal, onClose, onUpdated, contacts }: EditDealModalProps) {
-  const [title, setTitle] = useState(deal?.title ?? "");
-  const [value, setValue] = useState(deal?.value?.toString() ?? "");
-  const [contactId, setContactId] = useState(deal?.contact_id ?? "");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (deal) {
-      setTitle(deal.title);
-      setValue(deal.value?.toString() ?? "");
-      setContactId(deal.contact_id ?? "");
-      setError(null);
-    }
-  }, [deal]);
-
-  if (!deal) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError("Deal name is required");
-      return;
-    }
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      const updated = await apiUpdateDeal(deal.id, {
-        title: title.trim(),
-        value: parseFloat(value) || 0,
-        contact_id: contactId || null,
-      });
-      onUpdated(updated);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update deal");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Edit Deal</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
-              <AlertCircle size={16} className="shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Deal Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Acme Corp - Enterprise License"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Deal Value
-            </label>
-            <div className="relative">
-              <DollarSign
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="number"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="0"
-                min="0"
-                step="100"
-                className="w-full rounded-lg border border-gray-300 pl-9 pr-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Contact
-            </label>
-            <div className="relative">
-              <User
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <select
-                value={contactId}
-                onChange={(e) => setContactId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-300 bg-white pl-9 pr-8 py-2.5 text-sm text-gray-900 focus:border-[#6C2BD9] focus:outline-none focus:ring-1 focus:ring-[#6C2BD9] transition-colors"
-              >
-                <option value="">No contact</option>
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.first_name} {c.last_name}
-                    {c.email ? ` (${c.email})` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex items-center gap-2 rounded-lg bg-[#6C2BD9] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#5b24b8] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Pipeline Page
 // ---------------------------------------------------------------------------
 
 export default function PipelinePage() {
+  const router = useRouter();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -768,10 +588,10 @@ export default function PipelinePage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreatePipelineModal, setShowCreatePipelineModal] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [moveErrors, setMoveErrors] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const contactMapRef = useRef<Map<string, Contact>>(new Map());
+  const selectedPipelineIdRef = useRef<string | null>(null);
 
   // -------------------------------------------------------------------------
   // Initial load
@@ -798,18 +618,25 @@ export default function PipelinePage() {
 
         setPipelines(pipelineList);
 
-        const firstPipelineId = pipelineList[0]?.id;
-        if (!firstPipelineId) {
+        const requestedPipelineId =
+          new URLSearchParams(window.location.search).get("pipelineId") ??
+          window.localStorage.getItem("aligno:selectedPipelineId");
+        const initialPipelineId =
+          pipelineList.find((pipeline) => pipeline.id === requestedPipelineId)?.id ??
+          pipelineList[0]?.id;
+        if (!initialPipelineId) {
           setError("No pipelines available");
           setLoading(false);
           return;
         }
 
-        setSelectedPipelineId(firstPipelineId);
+        setSelectedPipelineId(initialPipelineId);
+        selectedPipelineIdRef.current = initialPipelineId;
+        window.localStorage.setItem("aligno:selectedPipelineId", initialPipelineId);
 
         // Load stages, deals, and contacts in parallel
         const [stageList, dealList, contactList] = await Promise.all([
-          fetchStages(firstPipelineId),
+          fetchStages(initialPipelineId),
           fetchDeals(),
           fetchContacts(),
         ]);
@@ -850,6 +677,9 @@ export default function PipelinePage() {
   const handlePipelineChange = useCallback(
     async (pipelineId: string) => {
       setSelectedPipelineId(pipelineId);
+      selectedPipelineIdRef.current = pipelineId;
+      window.localStorage.setItem("aligno:selectedPipelineId", pipelineId);
+      router.replace(`/pipeline?pipelineId=${pipelineId}`, { scroll: false });
 
       try {
         const stageList = await fetchStages(pipelineId);
@@ -858,7 +688,7 @@ export default function PipelinePage() {
         console.error("Failed to load stages for pipeline:", err);
       }
     },
-    []
+    [router]
   );
 
   // -------------------------------------------------------------------------
@@ -930,21 +760,28 @@ export default function PipelinePage() {
   }, []);
 
   const handleEditDeal = useCallback((dealId: string) => {
-    const deal = deals.find((d) => d.id === dealId) ?? null;
-    setEditingDeal(deal);
-  }, [deals]);
+    const pipelineId = selectedPipelineIdRef.current ?? selectedPipelineId;
+    router.push(
+      pipelineId
+        ? `/pipeline/${dealId}?pipelineId=${pipelineId}`
+        : `/pipeline/${dealId}`
+    );
+  }, [router, selectedPipelineId]);
 
-  const handleDealUpdated = useCallback((updated: Deal) => {
-    setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
-  }, []);
+  useEffect(() => {
+    selectedPipelineIdRef.current = selectedPipelineId;
+  }, [selectedPipelineId]);
 
   const handlePipelineCreated = useCallback(
     (pipeline: Pipeline, newStages: Stage[]) => {
       setPipelines((prev) => [...prev, pipeline]);
       setSelectedPipelineId(pipeline.id);
+      selectedPipelineIdRef.current = pipeline.id;
+      window.localStorage.setItem("aligno:selectedPipelineId", pipeline.id);
+      router.replace(`/pipeline?pipelineId=${pipeline.id}`, { scroll: false });
       setStages(newStages);
     },
-    []
+    [router]
   );
 
   // -------------------------------------------------------------------------
@@ -1174,13 +1011,6 @@ export default function PipelinePage() {
         onCreated={handlePipelineCreated}
       />
 
-      {/* Edit Deal Modal */}
-      <EditDealModal
-        deal={editingDeal}
-        onClose={() => setEditingDeal(null)}
-        onUpdated={handleDealUpdated}
-        contacts={contacts}
-      />
     </div>
   );
 }

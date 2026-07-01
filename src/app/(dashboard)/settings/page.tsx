@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Trash2,
   UserPlus,
+  Webhook,
 } from "lucide-react";
 
 interface UserApiKey {
@@ -92,6 +93,8 @@ export default function SettingsPage() {
   const [apiKeyLoading, setApiKeyLoading] = useState(true);
   const [apiKeyWorking, setApiKeyWorking] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [webhookOrigin, setWebhookOrigin] = useState("");
   const [organization, setOrganization] = useState<OrganizationPayload | null>(null);
   const [organizationLoading, setOrganizationLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -104,6 +107,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let ignore = false;
+    setWebhookOrigin(window.location.origin);
 
     async function loadSettingsData() {
       try {
@@ -165,6 +169,18 @@ export default function SettingsPage() {
   const avatarSrc = avatarUrl
     ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}ui=settings`
     : null;
+  const webhookUrl = webhookOrigin
+    ? `${webhookOrigin}/api/webhooks/lead`
+    : "https://<your-crm-domain>/api/webhooks/lead";
+  const webhookExample = `curl -X POST "${webhookUrl}" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: <ALIGNO_USER_API_KEY>" \\
+  -d '{
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "phone": "+15551234567",
+    "email": "jane@example.com"
+  }'`;
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -324,6 +340,21 @@ export default function SettingsPage() {
     setApiKeyCopied(true);
     setMessage({ type: "success", text: "API key copied" });
     window.setTimeout(() => setApiKeyCopied(false), 1800);
+  }
+
+  async function handleCopyWebhookUrl() {
+    const copied = await copyTextToClipboard(webhookUrl);
+    if (!copied) {
+      setMessage({
+        type: "error",
+        text: "Clipboard access was denied. Select the webhook URL and copy it manually.",
+      });
+      return;
+    }
+
+    setWebhookCopied(true);
+    setMessage({ type: "success", text: "Webhook URL copied" });
+    window.setTimeout(() => setWebhookCopied(false), 1800);
   }
 
   async function handleRemoveMember(memberId: string, memberEmail: string) {
@@ -581,6 +612,47 @@ export default function SettingsPage() {
                 No API key has been created for this user.
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Lead Webhook */}
+        <div>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Lead Webhook
+              </label>
+              <p className="mt-1 text-sm text-gray-500">
+                Send lead details here to create a contact and a pipeline lead.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyWebhookUrl}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
+            >
+              {webhookCopied ? <Check size={14} /> : <Copy size={14} />}
+              {webhookCopied ? "Copied" : "Copy URL"}
+            </button>
+          </div>
+
+          <div
+            className="rounded-lg border bg-white p-3"
+            style={{ borderColor: withAlpha(getPurpleScaleColor(4), 0.18) }}
+          >
+            <div className="flex items-center gap-2">
+              <Webhook size={16} className="shrink-0 text-[#6C2BD9]" />
+              <code className="min-w-0 flex-1 truncate rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                {webhookUrl}
+              </code>
+            </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Authenticate with your Settings API key using <code>x-api-key</code>.
+              Keep the key in your server-side backend or form service, not in public browser code.
+            </p>
+            <pre className="mt-3 overflow-x-auto rounded-lg bg-gray-950 p-3 text-xs leading-6 text-gray-100">
+              <code>{webhookExample}</code>
+            </pre>
           </div>
         </div>
 

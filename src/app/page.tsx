@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { getPurpleScaleColor, withAlpha } from "@/lib/design/aligno-theme";
 import { getSiteUrl } from "@/lib/seo/site-url";
-import { AlignoWaitlist } from "@/components/aligno-waitlist";
 
 const siteUrl = getSiteUrl();
 
@@ -190,15 +189,15 @@ export default function LandingPage() {
 
           {/* CTA button right */}
           <div className="flex items-center gap-3">
-            <a
-              href="#waitlist"
+            <Link
+              href="/sign-up?redirect=/dashboard"
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
             >
-              Join Waitlist
-            </a>
+              Create Account
+            </Link>
           </div>
         </div>
       </header>
@@ -229,21 +228,21 @@ export default function LandingPage() {
 
           {/* Two CTA buttons side by side */}
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="#waitlist"
+            <Link
+              href="/sign-up?redirect=/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               style={{
                 background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
               }}
             >
-              Join the Waitlist
+              Create your account
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
 
           {/* Small note underneath */}
           <p className="mt-4 text-xs text-[#7B7590]">
-            Part of Pentridge Labs — one subscription for every tool.
+            Start with Aligno CRM. Pentridge Labs access is coming into one subscription.
           </p>
         </div>
 
@@ -494,10 +493,42 @@ export default function LandingPage() {
       </section>
 
       {/* ---------------------------------------------------------- */}
-      {/*  Waitlist                                                   */}
+      {/*  Signup                                                     */}
       {/* ---------------------------------------------------------- */}
-      <section id="waitlist" className="px-5 pb-24 pt-8 sm:px-6 lg:px-8 scroll-mt-24">
-        <AlignoWaitlist />
+      <section className="px-5 pb-24 pt-8 sm:px-6 lg:px-8">
+        <div
+          className="aligno-panel mx-auto max-w-4xl rounded-2xl px-6 py-14 text-center sm:px-12 sm:py-16"
+          style={{ borderColor: withAlpha(getPurpleScaleColor(5), 0.22) }}
+        >
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#6E2ABD]">
+            Aligno CRM is live
+          </p>
+          <h2 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-[#21173A] sm:text-4xl lg:text-5xl">
+            Create your account and start building your pipeline.
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5D5474]">
+            Sign up for the app, set up your CRM workspace, and begin managing contacts,
+            deals, workflows, approvals, and follow-up from one place.
+          </p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/sign-up?redirect=/dashboard"
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+              style={{
+                background: `linear-gradient(135deg, ${getPurpleScaleColor(3)}, ${getPurpleScaleColor(5)})`,
+              }}
+            >
+              Create Account
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/sign-in?redirect=/dashboard"
+              className="inline-flex items-center justify-center rounded-lg border border-[#44106F]/15 bg-white/80 px-6 py-3 text-sm font-semibold text-[#44106F] shadow-sm transition hover:bg-white"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* ---------------------------------------------------------- */}
@@ -519,9 +550,9 @@ export default function LandingPage() {
 
           {/* Links right */}
           <div className="flex items-center gap-6 text-sm text-[#7B7590]">
-            <a href="/#waitlist" className="transition hover:text-[#44106F]">
-              Waitlist
-            </a>
+            <Link href="/sign-up?redirect=/dashboard" className="transition hover:text-[#44106F]">
+              Create Account
+            </Link>
             <span>&copy; {new Date().getFullYear()} Aligno</span>
           </div>
         </div>

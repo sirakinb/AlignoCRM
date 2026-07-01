@@ -59,11 +59,21 @@ export function DealCard({
       style={cardStyle}
       {...attributes}
       {...listeners}
+      onClick={() => onEdit?.(deal.id)}
       className={`aligno-panel-soft group cursor-grab rounded-xl border p-3 active:cursor-grabbing transition-shadow ${
         isDragging
           ? "opacity-50 shadow-lg"
           : "hover:shadow-md"
       }`}
+      role={onEdit ? "button" : undefined}
+      tabIndex={onEdit ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (!onEdit) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEdit(deal.id);
+        }
+      }}
     >
       <div className="flex items-start justify-between gap-1">
         <p className="text-sm font-medium leading-tight text-[#21173A]">
@@ -80,7 +90,7 @@ export function DealCard({
               onPointerDown={(e) => e.stopPropagation()}
               className="rounded p-1 hover:bg-white/70"
               style={{ color: withAlpha(accentColor, 0.6) }}
-              title="Edit deal"
+              title="View lead information"
             >
               <Pencil size={12} />
             </button>
