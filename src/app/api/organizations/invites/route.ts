@@ -52,21 +52,37 @@ export async function POST(request: Request) {
           to: email,
           subject: `You've been invited to join ${orgName} on AlignoCRM`,
           html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-              <div style="text-align: center; margin-bottom: 32px;">
-                <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">AlignoCRM</h1>
+            <div style="background-color: #f7f7f8; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;">
+              <div style="max-width: 440px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <span style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: #17171c;">AlignoCRM</span>
+                </div>
+                <div style="background-color: #ffffff; border: 1px solid #e7e7ea; border-radius: 12px; padding: 32px 28px;">
+                  <p style="margin: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #a1a1aa;">
+                    Team invitation
+                  </p>
+                  <h1 style="margin: 10px 0 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; color: #17171c; line-height: 1.35;">
+                    Join ${orgName} on AlignoCRM
+                  </h1>
+                  <p style="margin: 14px 0 0; font-size: 14px; color: #3f3f46; line-height: 1.6;">
+                    <strong style="color: #17171c;">${inviterName}</strong> has invited you to join
+                    <strong style="color: #17171c;">${orgName}</strong> as a <strong style="color: #17171c;">${role}</strong>.
+                  </p>
+                  <div style="margin: 26px 0 0;">
+                    <a href="${inviteUrl}" style="display: block; text-align: center; background-color: #6c2bd9; color: #ffffff; font-size: 14px; font-weight: 500; padding: 11px 24px; border-radius: 8px; text-decoration: none;">
+                      Accept invite
+                    </a>
+                  </div>
+                  <p style="margin: 22px 0 0; font-size: 12px; color: #71717a; line-height: 1.6; border-top: 1px solid #f0f0f2; padding-top: 16px;">
+                    This invite expires in 14 days. If the button doesn't work, copy this link into your browser:<br />
+                    <a href="${inviteUrl}" style="color: #6c2bd9; word-break: break-all; text-decoration: none;">${inviteUrl}</a>
+                  </p>
+                </div>
+                <p style="margin: 18px 0 0; text-align: center; font-size: 12px; color: #a1a1aa; line-height: 1.5;">
+                  You received this because someone invited you to their AlignoCRM workspace.<br />
+                  If you didn't expect this email, you can safely ignore it.
+                </p>
               </div>
-              <p style="font-size: 15px; color: #374151; line-height: 1.6;">
-                <strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on AlignoCRM as a <strong>${role}</strong>.
-              </p>
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #7C3AED, #6D28D9); color: #fff; font-size: 14px; font-weight: 600; padding: 12px 32px; border-radius: 8px; text-decoration: none;">
-                  Accept Invite
-                </a>
-              </div>
-              <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
-                This invite expires in 14 days. If you didn't expect this email, you can safely ignore it.
-              </p>
             </div>
           `,
         });
