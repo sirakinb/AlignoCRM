@@ -1,6 +1,6 @@
 [auth]
 allowed_redirect_urls = ["https://crm-app-build-26.vercel.app/dashboard", "http://localhost:8003/dashboard"]
-require_email_verification = true
+require_email_verification = false
 verify_email_method = "code"
 reset_password_method = "code"
 disable_signup = false

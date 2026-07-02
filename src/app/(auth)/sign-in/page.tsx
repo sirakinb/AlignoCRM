@@ -167,7 +167,10 @@ export default function SignInPage() {
               <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
             </div>
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-xs text-zinc-500">Password</label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="password" className="block text-xs text-zinc-500">Password</label>
+                <Link href="/forgot-password" className="text-xs font-medium text-[#6c2bd9] hover:text-[#5b21b6]">Forgot password?</Link>
+              </div>
               <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••" className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
             </div>
             <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50">

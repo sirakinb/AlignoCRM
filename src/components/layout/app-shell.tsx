@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 
-const publicRoutes = ["/", "/sign-in", "/sign-up"];
+const publicRoutes = ["/", "/sign-in", "/sign-up", "/forgot-password"];
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 400;
 const DEFAULT_WIDTH = 224;
