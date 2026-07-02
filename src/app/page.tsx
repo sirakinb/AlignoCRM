@@ -16,14 +16,14 @@ import { getSiteUrl } from "@/lib/seo/site-url";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Aligno CRM | A Simple CRM for Service Businesses",
+  title: "Aligno CRM | A Lightweight CRM for Service Businesses",
   description:
     "Aligno CRM helps agencies, creators, coaches, and consultants manage contacts, pipeline, and follow-up in one focused workspace.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Aligno CRM | A Simple CRM for Service Businesses",
+    title: "Aligno CRM | A Lightweight CRM for Service Businesses",
     description:
       "One focused place to manage contacts, track pipeline, and stay on top of follow-up.",
     url: siteUrl,
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Aligno CRM — A Simple CRM for Service Businesses",
+        alt: "Aligno CRM — A Lightweight CRM for Service Businesses",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Aligno CRM | A Simple CRM for Service Businesses",
+    title: "Aligno CRM | A Lightweight CRM for Service Businesses",
     description:
       "One focused place to manage contacts, track pipeline, and stay on top of follow-up.",
     images: ["/og-image.png"],
@@ -93,7 +93,6 @@ const howItWorks = [
 ];
 
 const stats = [
-  { value: "1", label: "Subscription for every tool" },
   { value: "< 2 min", label: "Setup time" },
   { value: "Zero", label: "Leads dropped" },
 ];
@@ -134,7 +133,7 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "A simple pipeline and contact management CRM for agencies, creators, coaches, and consultants.",
+      "A lightweight pipeline and contact management CRM for agencies, creators, coaches, and consultants.",
     offers: {
       "@type": "Offer",
       availability: "https://schema.org/InStock",
@@ -228,11 +227,6 @@ export default function LandingPage() {
               <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
             </Link>
           </div>
-
-          {/* Small note underneath */}
-          <p className="mt-4 text-xs text-zinc-400">
-            Start with Aligno CRM. Pentridge Labs access is coming into one subscription.
-          </p>
         </div>
 
         {/* App screenshot with chrome bar and fade */}
@@ -387,7 +381,7 @@ export default function LandingPage() {
       {/*  Stats row — 3 stat blocks                                  */}
       {/* ---------------------------------------------------------- */}
       <section className="px-5 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2">
           {stats.map((stat) => (
             <div
               key={stat.label}

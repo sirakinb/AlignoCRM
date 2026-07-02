@@ -15,7 +15,7 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Aligno CRM | A Simple CRM for Service Businesses",
+    default: "Aligno CRM | A Lightweight CRM for Service Businesses",
     template: "%s | Aligno CRM",
   },
   description:
