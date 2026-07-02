@@ -12,6 +12,14 @@ import {
   Save,
   User,
 } from "lucide-react";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 import type { Contact, Deal, Pipeline, Stage } from "@/types/crm";
 
 interface LeadDetailPayload {
@@ -88,6 +96,10 @@ export default function LeadDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [valueInput, setValueInput] = useState("");
+  const [savingValue, setSavingValue] = useState(false);
+  const [valueSaved, setValueSaved] = useState(false);
+  const [valueError, setValueError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +113,7 @@ export default function LeadDetailPage() {
         if (cancelled) return;
         setData(payload);
         setNotes(payload.contact?.notes ?? "");
+        setValueInput(String(payload.deal.value ?? 0));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load lead");
@@ -148,6 +161,43 @@ export default function LeadDetailPage() {
       setSaving(false);
     }
   }
+
+  async function handleSaveValue() {
+    if (!data) return;
+
+    const parsed = Number(valueInput);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setValueError("Enter an amount of 0 or more.");
+      return;
+    }
+
+    setSavingValue(true);
+    setValueError(null);
+    setValueSaved(false);
+
+    try {
+      const response = await fetch(`/api/deals/${data.deal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: parsed }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Failed to update value");
+
+      setData((current) =>
+        current ? { ...current, deal: result.deal } : current
+      );
+      setValueInput(String(result.deal.value ?? 0));
+      setValueSaved(true);
+      window.setTimeout(() => setValueSaved(false), 1800);
+    } catch (err) {
+      setValueError(err instanceof Error ? err.message : "Failed to update value");
+    } finally {
+      setSavingValue(false);
+    }
+  }
+
+  const valueDirty = data ? String(data.deal.value ?? 0) !== valueInput.trim() : false;
 
   if (loading) {
     return (
@@ -204,6 +254,53 @@ export default function LeadDetailPage() {
           <span className="rounded-md bg-[#efe7fb] px-1.5 py-0.5 text-[11px] font-medium text-[#5b21b6]">
             {data.deal.status}
           </span>
+        </div>
+
+        {/* Deal value — editable */}
+        <div className="mt-6 rounded-lg border border-[#e7e7ea] bg-[#fafafa] px-4 py-3.5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                Deal value
+              </p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={valueInput}
+                    onChange={(event) => setValueInput(event.target.value)}
+                    className="w-40 rounded-lg border border-[#e7e7ea] bg-white py-2 pl-6 pr-3 text-sm font-medium tabular-nums text-zinc-900 outline-none placeholder:text-zinc-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveValue}
+                  disabled={savingValue || !valueDirty}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {savingValue ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : valueSaved ? (
+                    <Check size={14} />
+                  ) : (
+                    <Save size={14} />
+                  )}
+                  {valueSaved ? "Saved" : "Save"}
+                </button>
+              </div>
+            </div>
+            <p className="text-[13px] text-zinc-500">
+              Current: <span className="font-medium text-zinc-900 tabular-nums">{formatCurrency(data.deal.value ?? 0)}</span>
+            </p>
+          </div>
+          {valueError && (
+            <p className="mt-2 text-[13px] text-red-600">{valueError}</p>
+          )}
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2">
