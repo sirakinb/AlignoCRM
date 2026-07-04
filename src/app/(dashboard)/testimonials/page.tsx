@@ -46,6 +46,12 @@ function requestLink(token: string) {
   return `${window.location.origin}/t/${token}`;
 }
 
+// Orgs get auto-generated names like "Jane Smith's Workspace" — treat those as
+// unset so the user is asked for a real business name before sending links.
+function isPlaceholderBusinessName(name: string) {
+  return !name.trim() || /(?:'s)?\s+Workspace$/i.test(name.trim());
+}
+
 function smsTextFor(request: TestimonialRequest) {
   return `Hey ${firstNameOf(request.client_name)}! Quick favor — could you share a few words about our work together? It's 3 quick questions, takes about 2 minutes: ${requestLink(request.token)}`;
 }
@@ -74,6 +80,14 @@ export default function TestimonialsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdRequest, setCreatedRequest] = useState<TestimonialRequest | null>(null);
   const contactDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Business name shown to clients on the form; asked for inline if still the
+  // auto-generated placeholder.
+  const [businessName, setBusinessName] = useState<string | null>(null);
+  const [businessRole, setBusinessRole] = useState<string | null>(null);
+  const [businessNameInput, setBusinessNameInput] = useState("");
+  const needsBusinessName =
+    businessName !== null && isPlaceholderBusinessName(businessName);
 
   const fetchData = useCallback(async () => {
     try {
@@ -154,6 +168,21 @@ export default function TestimonialsPage() {
         console.error("Failed to load contacts:", err);
       }
     }
+
+    if (businessName === null) {
+      try {
+        const response = await fetch("/api/organizations/current", {
+          cache: "no-store",
+        });
+        const payload = await response.json();
+        if (response.ok) {
+          setBusinessName(payload.organization?.name ?? "");
+          setBusinessRole(payload.role ?? null);
+        }
+      } catch (err) {
+        console.error("Failed to load organization:", err);
+      }
+    }
   }
 
   async function handleCreateRequest() {
@@ -166,10 +195,30 @@ export default function TestimonialsPage() {
       return;
     }
 
+    if (needsBusinessName && businessNameInput.trim().length < 2) {
+      setCreateError("Enter your business name first — clients see it on the form.");
+      return;
+    }
+
     setCreating(true);
     setCreateError(null);
 
     try {
+      if (needsBusinessName) {
+        const bizResponse = await fetch("/api/organizations/current", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: businessNameInput.trim() }),
+        });
+        const bizPayload = await bizResponse.json();
+
+        if (!bizResponse.ok) {
+          throw new Error(bizPayload.error || "Failed to save business name");
+        }
+
+        setBusinessName(bizPayload.organization?.name ?? businessNameInput.trim());
+      }
+
       const response = await fetch("/api/testimonial-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -709,6 +758,30 @@ export default function TestimonialsPage() {
 
             {!createdRequest ? (
               <div className="mt-5 space-y-4">
+                {needsBusinessName && (
+                  <div className="rounded-lg border border-[#e3d5f8] bg-[#f4eefc] p-3">
+                    <label
+                      htmlFor="request-business-name"
+                      className="mb-1.5 block text-[12.5px] font-medium text-[#5b21b6]"
+                    >
+                      First — what&apos;s your business name?
+                    </label>
+                    <input
+                      id="request-business-name"
+                      value={businessNameInput}
+                      onChange={(e) => setBusinessNameInput(e.target.value)}
+                      placeholder="Pentridge Media"
+                      disabled={!["owner", "admin"].includes(businessRole ?? "")}
+                      className="w-full rounded-lg border border-[#e3d5f8] bg-white px-3 py-2 text-[13.5px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#6c2bd9] focus:outline-none disabled:bg-[#fafafa] disabled:text-zinc-500"
+                    />
+                    <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#5b21b6]/80">
+                      {["owner", "admin"].includes(businessRole ?? "")
+                        ? `Clients see it on the form — e.g. "What did ${businessNameInput.trim() || "your business"} help you with?" Saved to Settings.`
+                        : "Ask an owner or admin to set the business name in Settings first."}
+                    </p>
+                  </div>
+                )}
+
                 <div ref={contactDropdownRef} className="relative">
                   <label className="mb-1.5 block text-[12.5px] font-medium text-zinc-600">
                     Contact
@@ -824,6 +897,13 @@ export default function TestimonialsPage() {
                   <p className="text-[12.5px] text-red-600">{createError}</p>
                 )}
 
+                {businessName !== null && !needsBusinessName && (
+                  <p className="text-[11.5px] text-zinc-400">
+                    Clients will see &ldquo;{businessName}&rdquo; on the form —
+                    change it anytime in Settings.
+                  </p>
+                )}
+
                 <div className="flex justify-end gap-2 pt-1">
                   <button
                     onClick={() => setShowModal(false)}
@@ -833,7 +913,11 @@ export default function TestimonialsPage() {
                   </button>
                   <button
                     onClick={handleCreateRequest}
-                    disabled={creating}
+                    disabled={
+                      creating ||
+                      (needsBusinessName &&
+                        !["owner", "admin"].includes(businessRole ?? ""))
+                    }
                     className="flex items-center gap-1.5 rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:opacity-60"
                   >
                     {creating && <Loader2 size={14} className="animate-spin" />}
