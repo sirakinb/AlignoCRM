@@ -200,6 +200,21 @@ export async function createOrganizationForUser(
   };
 }
 
+export async function updateOrganizationName(
+  organizationId: string,
+  name: string
+) {
+  const { data, error } = await insforge.database
+    .from("organizations")
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq("id", organizationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Organization;
+}
+
 export async function getOrganizationMembers(organizationId: string) {
   const { data, error } = await insforge.database
     .from("organization_members")

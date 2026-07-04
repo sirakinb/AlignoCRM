@@ -97,6 +97,8 @@ export default function SettingsPage() {
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [organization, setOrganization] = useState<OrganizationPayload | null>(null);
   const [organizationLoading, setOrganizationLoading] = useState(true);
+  const [businessName, setBusinessName] = useState("");
+  const [savingBusinessName, setSavingBusinessName] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviteWorking, setInviteWorking] = useState(false);
@@ -121,7 +123,9 @@ export default function SettingsPage() {
           setApiKey(apiKeyData.apiKey ?? null);
         }
         if (!ignore && organizationResponse.ok) {
-          setOrganization(organizationData as OrganizationPayload);
+          const payload = organizationData as OrganizationPayload;
+          setOrganization(payload);
+          setBusinessName(payload.organization?.name ?? "");
         }
       } catch (err) {
         console.error("[Settings] Failed to load settings data:", err);
@@ -329,6 +333,46 @@ export default function SettingsPage() {
     window.setTimeout(() => setApiKeyCopied(false), 1800);
   }
 
+  async function handleSaveBusinessName(e: React.FormEvent) {
+    e.preventDefault();
+    if (!businessName.trim()) return;
+
+    setSavingBusinessName(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/organizations/current", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: businessName.trim() }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to update business name");
+      }
+
+      setOrganization((prev) =>
+        prev
+          ? {
+              ...prev,
+              organization: payload.organization
+                ? { id: payload.organization.id, name: payload.organization.name }
+                : prev.organization,
+            }
+          : prev
+      );
+      setMessage({ type: "success", text: "Business name updated" });
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to update business name",
+      });
+    } finally {
+      setSavingBusinessName(false);
+    }
+  }
+
   async function handleRemoveMember(memberId: string, memberEmail: string) {
     if (!confirm(`Remove ${memberEmail} from the organization? They will lose access to all workspace data.`)) return;
 
@@ -489,6 +533,56 @@ export default function SettingsPage() {
               disabled
               className="w-full rounded-lg border border-[#e7e7ea] bg-[#fafafa] px-3 py-2 text-sm text-zinc-500"
             />
+          </div>
+        </section>
+
+        {/* Business */}
+        <section className="crisp-card overflow-hidden">
+          <div className="px-5 py-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Business</h2>
+            <p className="mt-0.5 text-[13px] text-zinc-500">
+              How your business appears to clients — on testimonial requests and
+              anywhere else they see you.
+            </p>
+          </div>
+
+          <div className="border-t border-[#f0f0f2] px-5 py-4">
+            {organizationLoading ? (
+              <div className="flex items-center gap-2 text-[13px] text-zinc-500">
+                <Loader2 size={15} strokeWidth={1.8} className="animate-spin text-zinc-500" />
+                Loading...
+              </div>
+            ) : (
+              <form onSubmit={handleSaveBusinessName}>
+                <label htmlFor="business-name" className="mb-1.5 block text-xs text-zinc-500">
+                  Business name
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="business-name"
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Pentridge Media"
+                    disabled={!["owner", "admin"].includes(organization?.role ?? "")}
+                    className="flex-1 rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 disabled:bg-[#fafafa] disabled:text-zinc-500"
+                  />
+                  {["owner", "admin"].includes(organization?.role ?? "") && (
+                    <button
+                      type="submit"
+                      disabled={savingBusinessName || !businessName.trim()}
+                      className="rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50"
+                    >
+                      {savingBusinessName ? "Saving..." : "Save"}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-zinc-400">
+                  Clients see this on testimonial forms, e.g. &ldquo;What did{" "}
+                  {businessName.trim() || "your business"} help you with?&rdquo;
+                </p>
+              </form>
+            )}
           </div>
         </section>
 
