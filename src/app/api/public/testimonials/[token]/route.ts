@@ -5,6 +5,7 @@ import {
   getTestimonialRequestByToken,
   updateTestimonialRequestStatus,
 } from "@/lib/data/testimonials";
+import { sendTestimonialNotification } from "@/lib/messaging/testimonial-notification";
 
 // Public endpoints for the client-facing testimonial form. The share token is
 // the only credential — no auth, so responses expose nothing beyond what the
@@ -113,6 +114,15 @@ export async function POST(
           statusError
         );
       }
+    }
+
+    try {
+      await sendTestimonialNotification(testimonial, testimonialRequest);
+    } catch (notifyError) {
+      console.error(
+        "POST /api/public/testimonials/[token] notification error:",
+        notifyError
+      );
     }
 
     return NextResponse.json({ ok: true, id: testimonial.id }, { status: 201 });
