@@ -93,15 +93,20 @@ export default function SignInPage() {
     }
   }
 
-  function handleGoogle() {
+  async function handleGoogle() {
     const redirectPath = getSafeRedirectPath(
       new URLSearchParams(window.location.search).get("redirect")
     );
     setOauthLoading(true);
-    insforge.auth.signInWithOAuth({
+    setError("");
+    const { error: oauthError } = await insforge.auth.signInWithOAuth({
       provider: "google",
       redirectTo: getPostAuthRedirectUrl(redirectPath),
     });
+    if (oauthError) {
+      setError(oauthError.message || "Google sign-in failed. Please try again.");
+      setOauthLoading(false);
+    }
   }
 
   if (step === "verify") {
