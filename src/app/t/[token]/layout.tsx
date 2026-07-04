@@ -24,8 +24,8 @@ export async function generateMetadata({
       title = `Share a quick testimonial for ${businessName}`;
       description = `${request.client_name.split(/\s+/)[0]}, would you share a few words about working with ${businessName}? 3 questions, about 2 minutes.`;
     }
-  } catch {
-    // Fall back to the generic copy.
+  } catch (error) {
+    console.error("[t/[token]] generateMetadata lookup failed:", error);
   }
 
   return {

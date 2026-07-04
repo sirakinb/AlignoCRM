@@ -108,7 +108,10 @@ export async function getTestimonialRequestByToken(token: string) {
     .eq("token", token)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("[getTestimonialRequestByToken] error:", error);
+    return null;
+  }
   return data as TestimonialRequest;
 }
 
