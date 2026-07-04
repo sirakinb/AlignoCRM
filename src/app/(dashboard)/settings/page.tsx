@@ -541,8 +541,7 @@ export default function SettingsPage() {
           <div className="px-5 py-4">
             <h2 className="text-sm font-semibold text-zinc-900">Business</h2>
             <p className="mt-0.5 text-[13px] text-zinc-500">
-              How your business appears to clients — on testimonial requests and
-              anywhere else they see you.
+              How your business appears to clients.
             </p>
           </div>
 
@@ -577,10 +576,6 @@ export default function SettingsPage() {
                     </button>
                   )}
                 </div>
-                <p className="mt-1.5 text-xs text-zinc-400">
-                  Clients see this on testimonial forms, e.g. &ldquo;What did{" "}
-                  {businessName.trim() || "your business"} help you with?&rdquo;
-                </p>
               </form>
             )}
           </div>
