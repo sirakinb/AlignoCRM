@@ -244,8 +244,7 @@ export default function TestimonialFormPage() {
                       with {info.businessName}?
                     </h1>
                     <p className="mt-3 text-[13.5px] leading-relaxed text-zinc-500">
-                      Three questions, under two minutes. Your words, in your
-                      voice — we never edit meaning, only typos.
+                      Three questions, under two minutes. Your words, in your voice.
                     </p>
                     <button
                       onClick={goNext}
