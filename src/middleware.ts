@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 const insforgeMiddleware = InsforgeMiddleware({
   baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
-  publicRoutes: ["/", "/sign-in", "/sign-up", "/forgot-password", "/invite", "/robots.txt", "/sitemap.xml"],
+  publicRoutes: ["/", "/sign-in", "/sign-up", "/forgot-password", "/invite", "/t", "/robots.txt", "/sitemap.xml"],
   signInUrl: "/sign-in",
   signUpUrl: "/sign-up",
   afterSignInUrl: "/dashboard",

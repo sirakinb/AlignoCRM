@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/automations",
+  usePathname: () => "/testimonials",
   useRouter: () => ({ push: mockPush }),
 }));
 
@@ -29,7 +29,7 @@ describe("Sidebar", () => {
 
   it("renders all navigation items", () => {
     render(<Sidebar />);
-    const navLabels = ["Home", "Pipeline", "Contacts", "Automations", "Settings"];
+    const navLabels = ["Home", "Pipeline", "Contacts", "Testimonials", "Settings"];
     navLabels.forEach((label) => {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     });
@@ -37,14 +37,14 @@ describe("Sidebar", () => {
 
   it("highlights the active route", () => {
     render(<Sidebar />);
-    const automationsLink = screen.getByRole("link", { name: "Automations" });
-    expect(automationsLink.className).toContain("bg-[#F3EAFD]");
+    const testimonialsLink = screen.getByRole("link", { name: "Testimonials" });
+    expect(testimonialsLink.className).toContain("bg-[#efe7fb]");
   });
 
   it("does not highlight inactive routes", () => {
     render(<Sidebar />);
     const homeLink = screen.getByRole("link", { name: "Home" });
-    expect(homeLink.className).not.toContain("bg-[#F3EAFD]");
+    expect(homeLink.className).not.toContain("bg-[#efe7fb]");
   });
 
   it("renders the user section", () => {
@@ -67,9 +67,9 @@ describe("Sidebar", () => {
       "href",
       "/pipeline"
     );
-    expect(screen.getByRole("link", { name: "Automations" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Testimonials" })).toHaveAttribute(
       "href",
-      "/automations"
+      "/testimonials"
     );
   });
 });

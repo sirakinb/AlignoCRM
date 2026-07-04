@@ -125,6 +125,42 @@ export interface App {
   updated_at: string;
 }
 
+export type TestimonialRequestStatus = "pending" | "completed" | "archived";
+
+export interface TestimonialRequest {
+  id: string;
+  workspace_id: string;
+  organization_id?: string | null;
+  contact_id: string | null;
+  client_name: string;
+  client_company: string;
+  token: string;
+  status: TestimonialRequestStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TestimonialStatus = "new" | "approved" | "hidden";
+
+export interface Testimonial {
+  id: string;
+  workspace_id: string;
+  organization_id?: string | null;
+  request_id: string | null;
+  contact_id: string | null;
+  name: string;
+  role: string;
+  company: string;
+  problem: string;
+  solution: string;
+  result: string;
+  permission: boolean;
+  status: TestimonialStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 // Input types for creating/updating entities
 export type CreateContactInput = Pick<
   Contact,
@@ -185,6 +221,34 @@ export type CreateAppInput = Pick<App, "workspace_id" | "name" | "slug"> &
 export type UpdateAppInput = Partial<
   Pick<App, "name" | "slug" | "description" | "url" | "icon_url" | "insforge_project_url" | "insforge_appkey" | "status">
 >;
+
+export type CreateTestimonialRequestInput = Pick<
+  TestimonialRequest,
+  "workspace_id" | "client_name" | "token"
+> &
+  Partial<
+    Pick<
+      TestimonialRequest,
+      "organization_id" | "contact_id" | "client_company" | "status" | "created_by"
+    >
+  >;
+
+export type CreateTestimonialInput = Pick<
+  Testimonial,
+  "workspace_id" | "name" | "problem" | "solution" | "result"
+> &
+  Partial<
+    Pick<
+      Testimonial,
+      | "organization_id"
+      | "request_id"
+      | "contact_id"
+      | "role"
+      | "company"
+      | "permission"
+      | "status"
+    >
+  >;
 
 export type CreateActivityLogInput = Pick<
   ActivityLog,
