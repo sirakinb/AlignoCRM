@@ -81,6 +81,20 @@ export async function PATCH(
       updates.status = body.status as DealStatus;
     }
 
+    if (body.contact_id !== undefined) {
+      if (body.contact_id === null || body.contact_id === "") {
+        updates.contact_id = null;
+      } else if (typeof body.contact_id === "string") {
+        const contact = await getContact(body.contact_id);
+        if (contact.workspace_id !== tenant.workspaceId) {
+          return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+        }
+        updates.contact_id = contact.id;
+      } else {
+        return NextResponse.json({ error: "Invalid contact" }, { status: 400 });
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }

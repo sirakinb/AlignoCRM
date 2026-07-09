@@ -6,10 +6,12 @@ import {
   ArrowLeft,
   BriefcaseBusiness,
   Check,
+  Link2,
   Loader2,
   Mail,
   Phone,
   Save,
+  Unlink,
   User,
 } from "lucide-react";
 
@@ -37,6 +39,17 @@ async function fetchLeadDetail(id: string): Promise<LeadDetailPayload> {
   }
 
   return response.json();
+}
+
+async function fetchContacts(): Promise<Contact[]> {
+  const response = await fetch("/api/contacts", { cache: "no-store" });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to load contacts");
+  }
+
+  const data = await response.json();
+  return (data.contacts ?? []) as Contact[];
 }
 
 async function saveContactNotes(contactId: string, contact: Contact, notes: string) {
@@ -91,6 +104,7 @@ export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [data, setData] = useState<LeadDetailPayload | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -100,6 +114,10 @@ export default function LeadDetailPage() {
   const [savingValue, setSavingValue] = useState(false);
   const [valueSaved, setValueSaved] = useState(false);
   const [valueError, setValueError] = useState<string | null>(null);
+  const [linkContactId, setLinkContactId] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
+  const [linkSaved, setLinkSaved] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,11 +127,16 @@ export default function LeadDetailPage() {
       setError(null);
 
       try {
-        const payload = await fetchLeadDetail(params.id);
+        const [payload, contactList] = await Promise.all([
+          fetchLeadDetail(params.id),
+          fetchContacts(),
+        ]);
         if (cancelled) return;
         setData(payload);
+        setContacts(contactList);
         setNotes(payload.contact?.notes ?? "");
         setValueInput(String(payload.deal.value ?? 0));
+        setLinkContactId(payload.contact?.id ?? "");
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load lead");
@@ -197,7 +220,48 @@ export default function LeadDetailPage() {
     }
   }
 
+  async function handleSaveContactLink() {
+    if (!data) return;
+
+    setSavingLink(true);
+    setLinkError(null);
+    setLinkSaved(false);
+
+    try {
+      const response = await fetch(`/api/deals/${data.deal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: linkContactId || null }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Failed to link contact");
+
+      const linkedContact =
+        contacts.find((contact) => contact.id === (result.deal.contact_id ?? "")) ??
+        null;
+
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              deal: result.deal,
+              contact: linkedContact,
+            }
+          : current
+      );
+      setNotes(linkedContact?.notes ?? "");
+      setLinkContactId(result.deal.contact_id ?? "");
+      setLinkSaved(true);
+      window.setTimeout(() => setLinkSaved(false), 1800);
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : "Failed to link contact");
+    } finally {
+      setSavingLink(false);
+    }
+  }
+
   const valueDirty = data ? String(data.deal.value ?? 0) !== valueInput.trim() : false;
+  const linkDirty = data ? (data.deal.contact_id ?? "") !== linkContactId : false;
 
   if (loading) {
     return (
@@ -381,10 +445,56 @@ export default function LeadDetailPage() {
             <div>
               <dt className="text-xs text-zinc-500">CRM contact</dt>
               <dd className="mt-1 text-[13px] font-medium text-zinc-900">
-                {data.contact ? "Created" : "Not linked"}
+                {data.contact
+                  ? `${data.contact.first_name} ${data.contact.last_name}`.trim()
+                  : "Not linked"}
               </dd>
             </div>
           </dl>
+          <div className="mt-5 border-t border-[#e7e7ea] pt-5">
+            <label
+              htmlFor="lead-contact-link"
+              className="block text-xs font-medium text-zinc-500"
+            >
+              Link to contact
+            </label>
+            <select
+              id="lead-contact-link"
+              value={linkContactId}
+              onChange={(event) => {
+                setLinkContactId(event.target.value);
+                setLinkSaved(false);
+                setLinkError(null);
+              }}
+              className="mt-2 w-full appearance-none rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-[13px] text-zinc-900 outline-none transition-colors"
+            >
+              <option value="">No linked contact</option>
+              {contacts.map((contact) => (
+                <option key={contact.id} value={contact.id}>
+                  {contact.first_name} {contact.last_name}
+                  {contact.email ? ` (${contact.email})` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleSaveContactLink}
+              disabled={savingLink || !linkDirty}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#6c2bd9] px-3 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingLink ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : linkContactId ? (
+                <Link2 size={15} />
+              ) : (
+                <Unlink size={15} />
+              )}
+              {linkSaved ? "Saved" : linkContactId ? "Save contact link" : "Unlink contact"}
+            </button>
+            {linkError && (
+              <p className="mt-2 text-[13px] text-red-600">{linkError}</p>
+            )}
+          </div>
         </aside>
       </div>
     </div>
