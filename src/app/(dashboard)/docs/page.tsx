@@ -1,5 +1,52 @@
 import { BookOpen, KeyRound, Send, ShieldCheck, Webhook } from "lucide-react";
 
+const exportEndpoints = [
+  {
+    name: "Export Contacts",
+    method: "GET",
+    path: "/api/export/contacts",
+    notes: "Returns all CRM contacts visible to the API key's workspace or organization.",
+    request: `curl "https://<alignocrm-domain>/api/export/contacts" \\
+  -H "x-api-key: <ALIGNO_USER_API_KEY>"`,
+    response: `{
+  "generatedAt": "2026-07-09T01:00:00.000Z",
+  "count": 1,
+  "contacts": [
+    {
+      "id": "contact-uuid",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "email": "jane@example.com",
+      "phone": "+15551234567",
+      "company": null,
+      "notes": "Interested in onboarding.",
+      "status": "active"
+    }
+  ]
+}`,
+  },
+  {
+    name: "Export Pipeline",
+    method: "GET",
+    path: "/api/export/pipeline",
+    notes: "Returns pipelines with their stages and deals. Add ?pipelineId=<id> to export one pipeline.",
+    request: `curl "https://<alignocrm-domain>/api/export/pipeline" \\
+  -H "Authorization: Bearer <ALIGNO_USER_API_KEY>"`,
+    response: `{
+  "generatedAt": "2026-07-09T01:00:00.000Z",
+  "count": 1,
+  "pipelines": [
+    {
+      "id": "pipeline-uuid",
+      "name": "Sales Pipeline",
+      "stages": [{ "id": "stage-uuid", "name": "Lead" }],
+      "deals": [{ "id": "deal-uuid", "title": "Jane Doe", "contact_id": "contact-uuid" }]
+    }
+  ]
+}`,
+  },
+];
+
 const webhookFields = [
   {
     field: "name",
@@ -131,8 +178,8 @@ export default function DocsPage() {
           },
           {
             icon: Send,
-            title: "Current Endpoint",
-            text: "POST /api/contacts creates a CRM contact and returns the new contact ID.",
+            title: "Read and Write",
+            text: "Create contacts and leads, or export contacts and pipeline records into agent workspaces.",
           },
         ].map((item) => (
           <div key={item.title} className="crisp-card p-5">
@@ -157,6 +204,64 @@ export default function DocsPage() {
           <code className="rounded-lg bg-zinc-950 px-4 py-3 text-[13px] text-zinc-100">
             Authorization: Bearer &lt;ALIGNO_USER_API_KEY&gt;
           </code>
+        </div>
+      </section>
+
+      <section className="crisp-card mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Export Data
+            </h2>
+            <p className="mt-1.5 text-[13px] text-zinc-600">
+              Pull CRM records into an agent workspace or another server-side
+              integration. Keep API keys out of browser clients.
+            </p>
+          </div>
+          <div className="rounded-md bg-[#efe7fb] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[#5b21b6]">
+            GET /api/export/*
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          {exportEndpoints.map((endpoint) => (
+            <div
+              key={endpoint.path}
+              className="rounded-lg border border-[#e7e7ea] bg-white p-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">
+                    {endpoint.name}
+                  </h3>
+                  <p className="mt-1.5 text-[13px] leading-6 text-zinc-600">
+                    {endpoint.notes}
+                  </p>
+                </div>
+                <div className="rounded-md bg-[#fafafa] px-2 py-1 font-mono text-[11px] font-medium text-zinc-700">
+                  {endpoint.method} {endpoint.path}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-zinc-900">
+                    Example Request
+                  </h4>
+                  <pre className="overflow-x-auto rounded-lg bg-zinc-950 p-4 text-xs leading-6 text-zinc-100">
+                    <code>{endpoint.request}</code>
+                  </pre>
+                </div>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-zinc-900">
+                    Success Response
+                  </h4>
+                  <pre className="overflow-x-auto rounded-lg bg-zinc-950 p-4 text-xs leading-6 text-zinc-100">
+                    <code>{endpoint.response}</code>
+                  </pre>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
