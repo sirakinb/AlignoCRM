@@ -83,6 +83,9 @@ export async function deleteContact(id: string) {
   // Delete related records that may block deletion
   await insforge.database.from("contact_tags").delete().eq("contact_id", id);
   await insforge.database.from("message_logs").delete().eq("contact_id", id);
+  await insforge.database.from("activity_logs").delete().eq("contact_id", id);
+  await insforge.database.from("cal_booking_events").delete().eq("contact_id", id);
+  await insforge.database.from("testimonial_requests").delete().eq("contact_id", id);
   await insforge.database.from("business_events").delete().eq("record_id", id).eq("record_type", "contact");
 
   // Clean up workflow enrollments and their cascading records
@@ -109,8 +112,10 @@ export async function deleteContact(id: string) {
     await insforge.database.from("workflow_enrollments").delete().eq("record_id", id).eq("record_type", "contact");
   }
 
-  // Set null on deals referencing this contact (in case ON DELETE SET NULL isn't working)
+  // Keep these records but unlink them from the deleted contact
   await insforge.database.from("deals").update({ contact_id: null }).eq("contact_id", id);
+  await insforge.database.from("tasks").update({ contact_id: null }).eq("contact_id", id);
+  await insforge.database.from("testimonials").update({ contact_id: null }).eq("contact_id", id);
 
   const { error } = await insforge.database
     .from("contacts")
