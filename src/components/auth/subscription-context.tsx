@@ -66,13 +66,13 @@ export function SubscriptionProvider({
   const [loading, setLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
-    let email = user?.email?.toLowerCase();
+    let email = user?.email?.trim().toLowerCase();
 
     // Fallback: if server user isn't available yet, try the client SDK session
     if (!email) {
       try {
         const session = await insforge.auth.getCurrentSession();
-        email = session.data?.session?.user?.email?.toLowerCase() ?? undefined;
+        email = session.data?.session?.user?.email?.trim().toLowerCase() ?? undefined;
       } catch {
         // SDK not ready yet
       }
@@ -99,7 +99,8 @@ export function SubscriptionProvider({
       });
 
       if (!res.ok) {
-        setState(NO_SUB);
+        // Hub error: keep an already-entitled session working, never grant a new unlock
+        setState((prev) => (prev.has_subscription ? prev : NO_SUB));
         setLoading(false);
         return;
       }
@@ -113,7 +114,8 @@ export function SubscriptionProvider({
         current_period_end: data.current_period_end ?? null,
       });
     } catch {
-      setState(NO_SUB);
+      // Network error: keep an already-entitled session working, never grant a new unlock
+      setState((prev) => (prev.has_subscription ? prev : NO_SUB));
     } finally {
       setLoading(false);
     }
@@ -121,6 +123,13 @@ export function SubscriptionProvider({
 
   useEffect(() => {
     checkSubscription();
+  }, [checkSubscription]);
+
+  // Re-check entitlement when the tab regains focus
+  useEffect(() => {
+    const onFocus = () => checkSubscription();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [checkSubscription]);
 
   // Retry: if first check found no email, try again after a short delay (SDK may need time)
