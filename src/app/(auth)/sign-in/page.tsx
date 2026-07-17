@@ -14,6 +14,7 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [step, setStep] = useState<"form" | "verify">("form");
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [verifyCode, setVerifyCode] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -161,12 +162,26 @@ export default function SignInPage() {
             {oauthLoading ? "Redirecting..." : "Continue with Google"}
           </button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#f0f0f2]" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-zinc-400">or</span></div>
-          </div>
+          {!showEmailForm && (
+            <button
+              onClick={() => setShowEmailForm(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#6c2bd9] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6]"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px] font-semibold">
+                P
+              </span>
+              Continue with Pentridge
+            </button>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {showEmailForm && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#f0f0f2]" /></div>
+                <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-zinc-400">or</span></div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block text-xs text-zinc-500">Email</label>
               <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
@@ -178,15 +193,24 @@ export default function SignInPage() {
               </div>
               <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••" className="w-full rounded-lg border border-[#e7e7ea] bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
             </div>
-            <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50">
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+                <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#6c2bd9] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6] disabled:opacity-50">
+                  {loading ? "Signing in..." : "Sign In"}
+                </button>
+              </form>
+            </>
+          )}
         </div>
 
         <p className="mt-6 text-center text-[13px] text-zinc-500">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="font-medium text-[#6c2bd9] hover:text-[#5b21b6]">Sign up</Link>
+          <a
+            href="https://pentridgemedia.com/labs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[#6c2bd9] hover:text-[#5b21b6]"
+          >
+            Sign up
+          </a>
         </p>
       </div>
     </div>
