@@ -188,24 +188,13 @@ export default function LandingPage() {
           </nav>
 
           {/* CTA button right */}
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-3">
             <Link
               href="/sign-in?redirect=/dashboard"
               className="rounded-lg bg-[#6c2bd9] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#5b21b6]"
             >
               Log In
             </Link>
-            <p className="text-[11px] text-zinc-500">
-              Don&apos;t have an account yet?{" "}
-              <a
-                href="https://pentridgemedia.com/labs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-[#6c2bd9] transition-colors hover:text-[#5b21b6]"
-              >
-                Sign up here
-              </a>
-            </p>
           </div>
         </div>
       </header>
@@ -510,14 +499,6 @@ export default function LandingPage() {
 
           {/* Links right */}
           <div className="flex items-center gap-6 text-[13px] text-zinc-500">
-            <a
-              href="https://pentridgemedia.com/labs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-zinc-900"
-            >
-              Sign Up
-            </a>
             <span>&copy; {new Date().getFullYear()} Aligno</span>
           </div>
         </div>
