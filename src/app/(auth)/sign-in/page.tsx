@@ -167,8 +167,8 @@ export default function SignInPage() {
               onClick={() => setShowEmailForm(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#6c2bd9] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#5b21b6]"
             >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px] font-semibold">
-                P
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white">
+                <Image src="/pentridge-p.png" alt="" width={12} height={12} className="h-3 w-3 object-contain" />
               </span>
               Continue with Pentridge
             </button>
