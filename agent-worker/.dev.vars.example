@@ -1,0 +1,14 @@
+# Copy to .dev.vars for local development (never commit .dev.vars)
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+ALIGNO_API_KEY=same_value_as_the_crm_env_ALIGNO_API_KEY
+ALIGNO_BASE_URL=http://localhost:8003
+# Phase C — Composio hosted MCP (Gmail/Drive). Create a server config at
+# https://mcp.composio.dev with the gmail + googledrive toolkits, generate a
+# per-user URL, and paste it here along with your Composio API key:
+# COMPOSIO_MCP_URL=https://backend.composio.dev/v3/mcp/<server_id>?user_id=<user_id>
+# COMPOSIO_API_KEY=ck_...
+# Optional hardening (recommended before any deploy):
+# ALLOWED_ORIGINS=https://app.example.com          # CORS allowlist (comma-separated); defaults to localhost dev origins
+# AGENT_AUTH_TOKEN=some_long_random_value          # if set, /agui + /realtime/* require Authorization: Bearer <token>
+#                                                  # (set NEXT_PUBLIC_AGENT_TOKEN to the same value in the app env)

@@ -54,3 +54,7 @@ playwright-report/
 .roo
 .trae
 .windsurf
+
+# Agent worker secrets
+agent-worker/.dev.vars
+agent-worker/.wrangler/

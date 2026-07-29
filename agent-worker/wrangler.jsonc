@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aligno-agent-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "dev": {
+    "port": 8788
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "CONNECTIONS", "class_name": "ConnectionsAgent" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ConnectionsAgent"] }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "threadId": "thread_sample",
+  "runId": "run_sample_1",
+  "state": {},
+  "messages": [
+    {
+      "id": "msg_user_1",
+      "role": "user",
+      "content": "Research this lead's company on the web and draft a short follow-up email."
+    }
+  ],
+  "tools": [],
+  "context": [
+    {
+      "description": "The CRM contact currently open in the dashboard (JSON)",
+      "value": "{\"id\":\"contact_fake_1\",\"first_name\":\"Jordan\",\"last_name\":\"Reyes\",\"email\":\"jordan@anthropic.com\",\"phone\":\"+1-555-0142\",\"company\":\"Anthropic\",\"notes\":\"Met at SaaStr 2026; interested in onboarding automation.\",\"status\":\"active\"}"
+    }
+  ],
+  "forwardedProps": {}
+}
