@@ -73,7 +73,11 @@ describe("tags data layer", () => {
 
       const result = await createTag(input);
 
-      expect(mockInsert).toHaveBeenCalledWith(input);
+      // createTag now generates a client-side uuid for the id
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        ...input,
+      });
       expect(result).toEqual(created);
     });
   });

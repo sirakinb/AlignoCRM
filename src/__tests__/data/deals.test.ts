@@ -86,7 +86,12 @@ describe("deals data layer", () => {
 
       const result = await createDeal(input);
 
-      expect(mockInsert).toHaveBeenCalledWith(input);
+      // createDeal now generates a client-side uuid and mirrors title into name
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        name: input.title,
+        ...input,
+      });
       expect(result).toEqual(created);
     });
   });
@@ -101,8 +106,13 @@ describe("deals data layer", () => {
       };
       // First call: getDeal
       mockSingle.mockResolvedValueOnce({ data: existingDeal, error: null });
-      // Second call: update stage
-      const updatedDeal = { ...existingDeal, stage_id: "s-2" };
+      // Second call: getStage (moveDealStage derives deal status from stage.name)
+      mockSingle.mockResolvedValueOnce({
+        data: { id: "s-2", name: "Qualified", position: 1 },
+        error: null,
+      });
+      // Third call: update stage
+      const updatedDeal = { ...existingDeal, stage_id: "s-2", status: "open" };
       mockSingle.mockResolvedValueOnce({ data: updatedDeal, error: null });
 
       const result = await moveDealStage("d-1", "s-2", "user-1");

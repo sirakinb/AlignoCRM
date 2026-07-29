@@ -99,7 +99,11 @@ describe("contacts data layer", () => {
       const result = await createContact(input);
 
       expect(insforge.database.from).toHaveBeenCalledWith("contacts");
-      expect(mockInsert).toHaveBeenCalledWith(input);
+      // createContact now generates a client-side uuid for the id
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        ...input,
+      });
       expect(mockSelect).toHaveBeenCalled();
       expect(mockSingle).toHaveBeenCalled();
       expect(result).toEqual(created);

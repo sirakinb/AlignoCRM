@@ -81,7 +81,11 @@ describe("pipelines data layer", () => {
 
       const result = await createPipeline(input);
 
-      expect(mockInsert).toHaveBeenCalledWith(input);
+      // createPipeline now generates a client-side uuid for the id
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        ...input,
+      });
       expect(result).toEqual(created);
     });
   });
@@ -100,8 +104,15 @@ describe("pipelines data layer", () => {
       const result = await createStage(input);
 
       expect(insforge.database.from).toHaveBeenCalledWith("stages");
-      expect(mockInsert).toHaveBeenCalledWith(input);
-      expect(result).toEqual(created);
+      // createStage now generates a client-side uuid and normalizes the color
+      // from the purple scale based on position (overriding the input color)
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        ...input,
+        color: expect.any(String),
+      });
+      // The returned stage is normalized with the purple-scale color
+      expect(result).toEqual({ ...created, color: expect.any(String) });
     });
   });
 });

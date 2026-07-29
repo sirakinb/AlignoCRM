@@ -14,6 +14,7 @@ function makeChain() {
   self.update = vi.fn(chainMethod);
   self.delete = vi.fn(chainMethod);
   self.eq = vi.fn(chainMethod);
+  self.in = vi.fn(chainMethod);
   self.order = vi.fn(chainMethod);
   self.limit = vi.fn(chainMethod);
   self.single = vi.fn(() => {

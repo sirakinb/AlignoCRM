@@ -3,6 +3,8 @@
  * Lets tests control what the DB returns without hitting a real database.
  */
 
+import { vi } from "vitest";
+
 type MockResult = { data: unknown; error: unknown };
 
 /**

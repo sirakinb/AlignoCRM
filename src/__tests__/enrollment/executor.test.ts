@@ -132,9 +132,11 @@ describe("executor", () => {
       expect(mockCreateExecutionStep).toHaveBeenCalledWith(
         expect.objectContaining({
           outcome: StepOutcome.Completed,
+          // add_tag now performs the real tag insert and reports tag details
           provider_response: expect.objectContaining({
-            mock: true,
             action: "add_tag",
+            tagId: "t-1",
+            tagName: "VIP",
           }),
         })
       );
