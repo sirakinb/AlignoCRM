@@ -8,6 +8,7 @@ import {
 } from "@/lib/design/aligno-theme";
 import type { Deal, Pipeline, Stage, Contact } from "@/types/crm";
 import { Loader2, BarChart3, TrendingUp, Users, DollarSign, ChevronDown } from "lucide-react";
+import { AgentTrigger } from "@/components/agent/agent-trigger";
 
 /* ── API helpers ── */
 async function fetchDeals(): Promise<Deal[]> {
@@ -255,26 +256,29 @@ export default function DashboardPage() {
               : "Overview across all pipelines"}
           </p>
         </div>
-        {pipelines.length > 1 && (
-          <div className="relative">
-            <select
-              value={selectedPipelineId}
-              onChange={(e) => setSelectedPipelineId(e.target.value)}
-              className="appearance-none rounded-lg border border-[#e7e7ea] bg-white pl-3.5 pr-9 py-2 text-[13px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(17,17,26,0.05)] transition-colors hover:bg-zinc-50 focus:border-[#6c2bd9] focus:outline-none"
-            >
-              <option value={ALL_PIPELINES}>All Pipelines</option>
-              {pipelines.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <AgentTrigger />
+          {pipelines.length > 1 && (
+            <div className="relative">
+              <select
+                value={selectedPipelineId}
+                onChange={(e) => setSelectedPipelineId(e.target.value)}
+                className="appearance-none rounded-lg border border-[#e7e7ea] bg-white pl-3.5 pr-9 py-2 text-[13px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(17,17,26,0.05)] transition-colors hover:bg-zinc-50 focus:border-[#6c2bd9] focus:outline-none"
+              >
+                <option value={ALL_PIPELINES}>All Pipelines</option>
+                {pipelines.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI Cards */}

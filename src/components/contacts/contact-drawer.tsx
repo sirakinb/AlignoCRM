@@ -8,6 +8,7 @@ import {
   withAlpha,
 } from "@/lib/design/aligno-theme";
 import type { Contact, Tag } from "@/types/crm";
+import { AgentContactPanel } from "@/components/agent/agent-contact-panel";
 
 interface ContactDrawerProps {
   contactId: string;
@@ -507,6 +508,9 @@ export default function ContactDrawer({
                   )}
                 </div>
               </div>
+
+              {/* Agent */}
+              <AgentContactPanel contact={contact} />
             </div>
 
             {/* Footer */}

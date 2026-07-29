@@ -4,6 +4,7 @@ import { ServerAuthProvider } from "@/components/auth/server-auth-context";
 import { AppShell } from "@/components/layout/app-shell";
 import { SubscriptionProvider } from "@/components/auth/subscription-context";
 import { SubscriptionGate } from "@/components/auth/subscription-gate";
+import { AgentProvider } from "@/components/agent/agent-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,9 @@ export default async function DashboardLayout({
     <ServerAuthProvider user={serverUser}>
       <SubscriptionProvider>
         <SubscriptionGate>
-          <AppShell>{children}</AppShell>
+          <AgentProvider>
+            <AppShell>{children}</AppShell>
+          </AgentProvider>
         </SubscriptionGate>
       </SubscriptionProvider>
     </ServerAuthProvider>
