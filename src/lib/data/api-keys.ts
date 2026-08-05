@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "crypto";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 
 export interface ApiKeyRecord {
   id: string;

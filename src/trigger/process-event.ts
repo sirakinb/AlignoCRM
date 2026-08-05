@@ -1,5 +1,5 @@
 import { task } from "@trigger.dev/sdk";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { matchEventToWorkflows } from "@/lib/workflows/trigger-matcher";
 import { markEventProcessed } from "@/lib/events/emitter";
 import type { BusinessEvent } from "@/types/events";

@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { createOrganizationInvite } from "@/lib/data/organizations";
+import { escapeHtml } from "@/lib/html";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -40,8 +41,12 @@ export async function POST(request: Request) {
     });
 
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invite/${token}`;
+    // Raw values for the plain-text subject; escaped values for HTML body (IR-5).
     const orgName = tenant.organization?.name ?? "AlignoCRM";
-    const inviterName = user.email;
+    const orgNameHtml = escapeHtml(orgName);
+    const inviterNameHtml = escapeHtml(user.email);
+    const roleHtml = escapeHtml(role);
+    const inviteUrlHtml = escapeHtml(inviteUrl);
 
     // Send invite email via Resend
     if (process.env.RESEND_API_KEY) {
@@ -62,20 +67,20 @@ export async function POST(request: Request) {
                     Team invitation
                   </p>
                   <h1 style="margin: 10px 0 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; color: #17171c; line-height: 1.35;">
-                    Join ${orgName} on AlignoCRM
+                    Join ${orgNameHtml} on AlignoCRM
                   </h1>
                   <p style="margin: 14px 0 0; font-size: 14px; color: #3f3f46; line-height: 1.6;">
-                    <strong style="color: #17171c;">${inviterName}</strong> has invited you to join
-                    <strong style="color: #17171c;">${orgName}</strong> as a <strong style="color: #17171c;">${role}</strong>.
+                    <strong style="color: #17171c;">${inviterNameHtml}</strong> has invited you to join
+                    <strong style="color: #17171c;">${orgNameHtml}</strong> as a <strong style="color: #17171c;">${roleHtml}</strong>.
                   </p>
                   <div style="margin: 26px 0 0;">
-                    <a href="${inviteUrl}" style="display: block; text-align: center; background-color: #6c2bd9; color: #ffffff; font-size: 14px; font-weight: 500; padding: 11px 24px; border-radius: 8px; text-decoration: none;">
+                    <a href="${inviteUrlHtml}" style="display: block; text-align: center; background-color: #6c2bd9; color: #ffffff; font-size: 14px; font-weight: 500; padding: 11px 24px; border-radius: 8px; text-decoration: none;">
                       Accept invite
                     </a>
                   </div>
                   <p style="margin: 22px 0 0; font-size: 12px; color: #71717a; line-height: 1.6; border-top: 1px solid #f0f0f2; padding-top: 16px;">
                     This invite expires in 14 days. If the button doesn't work, copy this link into your browser:<br />
-                    <a href="${inviteUrl}" style="color: #6c2bd9; word-break: break-all; text-decoration: none;">${inviteUrl}</a>
+                    <a href="${inviteUrlHtml}" style="color: #6c2bd9; word-break: break-all; text-decoration: none;">${inviteUrlHtml}</a>
                   </p>
                 </div>
                 <p style="margin: 18px 0 0; text-align: center; font-size: 12px; color: #a1a1aa; line-height: 1.5;">

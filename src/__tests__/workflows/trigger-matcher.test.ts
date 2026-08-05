@@ -10,7 +10,7 @@ const mockInsforgeFrom = vi.fn();
 const mockCreateEnrollment = vi.fn();
 const mockAdvanceWorkflow = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (...args: unknown[]) => mockInsforgeFrom(...args),

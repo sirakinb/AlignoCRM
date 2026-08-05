@@ -1,6 +1,6 @@
 "use server";
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type {
   Contact,
   CreateContactInput,

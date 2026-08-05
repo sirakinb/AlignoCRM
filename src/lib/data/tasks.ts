@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { Task, CreateTaskInput, UpdateTaskInput } from "@/types/crm";
 import { emitEvent } from "@/lib/events/emitter";
 import { BusinessEventType } from "@/types/events";

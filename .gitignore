@@ -58,3 +58,6 @@ playwright-report/
 # Agent worker secrets
 agent-worker/.dev.vars
 agent-worker/.wrangler/
+
+# local backend probe (reads .env.local; never commit)
+scripts/rls-check.mjs

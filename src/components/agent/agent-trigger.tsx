@@ -1,12 +1,15 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useOptionalAgentContext } from "@/components/agent/agent-provider";
+import {
+  AGENT_ENABLED,
+  useOptionalAgentContext,
+} from "@/components/agent/agent-provider";
 
 /** Small command-bar trigger for dashboard page headers. */
 export function AgentTrigger() {
   const agentContext = useOptionalAgentContext();
-  if (!agentContext) return null;
+  if (!AGENT_ENABLED || !agentContext) return null;
 
   return (
     <button

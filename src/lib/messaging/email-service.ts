@@ -1,6 +1,7 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { Resend } from "resend";
 import type { MessageLog, SendEmailInput } from "@/types/messaging";
+import { findSuppression } from "./suppressions";
 
 export interface EmailSendResult {
   id: string;
@@ -37,8 +38,12 @@ export class ResendEmailProvider implements EmailProvider {
     subject: string;
     body: string;
   }): Promise<EmailSendResult> {
+    const from = process.env.EMAIL_FROM;
+    if (!from) {
+      throw new Error("EMAIL_FROM environment variable is not set");
+    }
     const { data, error } = await this.getClient().emails.send({
-      from: process.env.EMAIL_FROM ?? "aki.b@pentridgemedia.com",
+      from,
       to: input.to,
       subject: input.subject,
       html: input.body,
@@ -62,6 +67,32 @@ export async function sendEmail(
   workspaceId: string,
   input: SendEmailInput
 ): Promise<MessageLog> {
+  // Suppression gate — this is a second send path (the workflow engine), so it
+  // must enforce suppression too or REQ-SEC-19 is false. Automated workflow
+  // email is blocked on ANY email suppression reason (unsubscribe / complaint /
+  // bounce): none of them should keep receiving automated sends.
+  const suppression = await findSuppression(workspaceId, "email", input.to);
+  if (suppression) {
+    const { data: blocked, error: blockErr } = await insforge.database
+      .from("message_logs")
+      .insert({
+        workspace_id: workspaceId,
+        template_id: input.templateId ?? null,
+        contact_id: input.contactId,
+        channel: "email",
+        to_address: input.to,
+        subject: input.subject,
+        body: input.body,
+        status: "failed",
+        provider_response: { error: `suppressed:${suppression.reason}` },
+        enrollment_id: input.enrollmentId ?? null,
+      })
+      .select()
+      .single();
+    if (blockErr) throw blockErr;
+    return blocked as MessageLog;
+  }
+
   // Create initial log entry with pending status
   const { data: logEntry, error: insertError } = await insforge.database
     .from("message_logs")

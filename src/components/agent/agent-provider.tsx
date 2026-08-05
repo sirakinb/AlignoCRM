@@ -26,6 +26,12 @@ export interface AgentContextValue {
   startVoice: () => Promise<void>;
 }
 
+// The embedded agent only renders where a worker URL is explicitly configured.
+// Unset (e.g. production today, where the worker isn't deployed) → no command
+// bar, no Cmd+K, no trigger — so prod never shows a feature that would no-op.
+// Build-time NEXT_PUBLIC_* constant, so this dead-code-eliminates in the bundle.
+export const AGENT_ENABLED = Boolean(process.env.NEXT_PUBLIC_AGENT_URL);
+
 const AgentContext = createContext<AgentContextValue | null>(null);
 
 export function useOptionalAgentContext(): AgentContextValue | null {
@@ -50,6 +56,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const close = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
+    if (!AGENT_ENABLED) return;
     function handleKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -99,7 +106,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   return (
     <AgentContext.Provider value={value}>
       {children}
-      <AgentCommandBar />
+      {AGENT_ENABLED && <AgentCommandBar />}
     </AgentContext.Provider>
   );
 }

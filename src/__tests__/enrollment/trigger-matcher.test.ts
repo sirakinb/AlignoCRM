@@ -36,7 +36,7 @@ function makeChain() {
 
 const mockFrom = vi.fn((_table: string) => makeChain());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (table: string) => mockFrom(table),
@@ -55,7 +55,7 @@ vi.mock("@/lib/workflows/executor", () => ({
   advanceWorkflow: vi.fn(),
 }));
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   matchEventToWorkflows,
   enrollRecord,

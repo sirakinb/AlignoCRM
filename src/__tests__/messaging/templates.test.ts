@@ -25,7 +25,7 @@ mockDelete.mockReturnValue(chainable());
 mockEq.mockReturnValue(chainable());
 mockOrder.mockReturnValue(chainable());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: vi.fn(() => chainable()),
@@ -33,7 +33,7 @@ vi.mock("@/lib/insforge/client", () => ({
   },
 }));
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   getTemplates,
   getTemplate,
@@ -84,10 +84,11 @@ describe("templates data layer", () => {
       const template = { id: "t-1", name: "Welcome" };
       mockSingle.mockResolvedValueOnce({ data: template, error: null });
 
-      const result = await getTemplate("t-1");
+      const result = await getTemplate("t-1", "ws-1");
 
       expect(insforge.database.from).toHaveBeenCalledWith("message_templates");
       expect(mockEq).toHaveBeenCalledWith("id", "t-1");
+      expect(mockEq).toHaveBeenCalledWith("workspace_id", "ws-1");
       expect(result).toEqual(template);
     });
   });
@@ -117,7 +118,9 @@ describe("templates data layer", () => {
       const updated = { id: "t-1", name: "Updated Template" };
       mockSingle.mockResolvedValueOnce({ data: updated, error: null });
 
-      const result = await updateTemplate("t-1", { name: "Updated Template" });
+      const result = await updateTemplate("t-1", "ws-1", {
+        name: "Updated Template",
+      });
 
       expect(insforge.database.from).toHaveBeenCalledWith("message_templates");
       expect(mockUpdate).toHaveBeenCalledWith(
@@ -127,24 +130,29 @@ describe("templates data layer", () => {
         })
       );
       expect(mockEq).toHaveBeenCalledWith("id", "t-1");
+      expect(mockEq).toHaveBeenCalledWith("workspace_id", "ws-1");
       expect(result).toEqual(updated);
     });
   });
 
   describe("deleteTemplate", () => {
-    it("deletes a template by id", async () => {
-      mockEq.mockResolvedValueOnce({ error: null });
+    it("deletes a template by id and workspace", async () => {
+      // delete chains .eq("id").eq("workspace_id"); the second eq is awaited.
+      mockEq.mockReturnValueOnce(chainable()).mockResolvedValueOnce({ error: null });
 
-      await deleteTemplate("t-1");
+      await deleteTemplate("t-1", "ws-1");
 
       expect(insforge.database.from).toHaveBeenCalledWith("message_templates");
       expect(mockDelete).toHaveBeenCalled();
       expect(mockEq).toHaveBeenCalledWith("id", "t-1");
+      expect(mockEq).toHaveBeenCalledWith("workspace_id", "ws-1");
     });
 
     it("throws on error", async () => {
-      mockEq.mockResolvedValueOnce({ error: new Error("Delete failed") });
-      await expect(deleteTemplate("t-1")).rejects.toThrow("Delete failed");
+      mockEq
+        .mockReturnValueOnce(chainable())
+        .mockResolvedValueOnce({ error: new Error("Delete failed") });
+      await expect(deleteTemplate("t-1", "ws-1")).rejects.toThrow("Delete failed");
     });
   });
 });

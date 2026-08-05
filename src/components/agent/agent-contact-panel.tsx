@@ -3,7 +3,10 @@
 import { useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import type { Contact } from "@/types/crm";
-import { useOptionalAgentContext } from "@/components/agent/agent-provider";
+import {
+  AGENT_ENABLED,
+  useOptionalAgentContext,
+} from "@/components/agent/agent-provider";
 import { AgentActivityFeed } from "@/components/agent/activity-feed";
 import { AgentResultPanel } from "@/components/agent/result-panel";
 
@@ -22,7 +25,7 @@ export function AgentContactPanel({ contact }: { contact: Contact | null }) {
     return () => setActiveContact(null);
   }, [contact, setActiveContact]);
 
-  if (!agentContext) return null;
+  if (!AGENT_ENABLED || !agentContext) return null;
   const { agent, open } = agentContext;
 
   const hasRunState =

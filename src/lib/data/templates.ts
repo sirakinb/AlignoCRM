@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type {
   MessageTemplate,
   CreateTemplateInput,
@@ -16,11 +16,15 @@ export async function getTemplates(workspaceId: string) {
   return data as MessageTemplate[];
 }
 
-export async function getTemplate(id: string) {
+// by-id reads/writes are fetch-by-id-AND-workspace, never fetch-then-compare
+// (REQ-SEC-15.2). The server client bypasses RLS, so this workspace filter is
+// the actual tenant boundary once these are wired to /api/templates/[id].
+export async function getTemplate(id: string, workspaceId: string) {
   const { data, error } = await insforge.database
     .from("message_templates")
     .select()
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .single();
 
   if (error) throw error;
@@ -38,11 +42,16 @@ export async function createTemplate(input: CreateTemplateInput) {
   return data as MessageTemplate;
 }
 
-export async function updateTemplate(id: string, input: UpdateTemplateInput) {
+export async function updateTemplate(
+  id: string,
+  workspaceId: string,
+  input: UpdateTemplateInput
+) {
   const { data, error } = await insforge.database
     .from("message_templates")
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .select()
     .single();
 
@@ -50,11 +59,12 @@ export async function updateTemplate(id: string, input: UpdateTemplateInput) {
   return data as MessageTemplate;
 }
 
-export async function deleteTemplate(id: string) {
+export async function deleteTemplate(id: string, workspaceId: string) {
   const { error } = await insforge.database
     .from("message_templates")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("workspace_id", workspaceId);
 
   if (error) throw error;
 }

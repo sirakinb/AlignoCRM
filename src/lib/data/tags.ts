@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { Tag, ContactTag, CreateTagInput } from "@/types/crm";
 import { emitEvent } from "@/lib/events/emitter";
 import { BusinessEventType } from "@/types/events";

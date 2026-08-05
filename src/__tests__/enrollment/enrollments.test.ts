@@ -32,7 +32,7 @@ function makeChain() {
 
 const mockFrom = vi.fn((_table: string) => makeChain());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (table: string) => mockFrom(table),

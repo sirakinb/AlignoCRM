@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { AiOutput, LogAiOutputInput } from "@/types/ai";
 
 export async function logAiOutput(input: LogAiOutputInput): Promise<AiOutput> {

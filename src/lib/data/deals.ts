@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { Deal, CreateDealInput, UpdateDealInput } from "@/types/crm";
 import { createActivityLog } from "./activity-logs";
 import { getStage } from "./pipelines";

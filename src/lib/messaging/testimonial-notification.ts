@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { getSiteUrl } from "@/lib/seo/site-url";
 import type { Testimonial, TestimonialRequest } from "@/types/crm";
 

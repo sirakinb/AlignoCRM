@@ -5,7 +5,7 @@ import {
 } from "@/lib/api/internal-auth";
 import { getResumableEnrollments, claimEnrollmentForResume, updateEnrollment } from "@/lib/data/enrollments";
 import { advanceWorkflow } from "@/lib/workflows/executor";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { EnrollmentStatus } from "@/types/enrollment";
 
 export async function POST(request: Request) {
