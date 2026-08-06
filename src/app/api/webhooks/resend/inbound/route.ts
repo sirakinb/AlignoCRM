@@ -30,6 +30,49 @@ interface InboundEmail {
   attachments?: unknown;
   message_id?: unknown;
   messageId?: unknown;
+  // The email.received webhook carries METADATA ONLY — Resend omits body,
+  // headers, and attachments to stay under serverless payload limits. The parsed
+  // body is fetched separately from the Received-emails API via this id.
+  email_id?: unknown;
+  id?: unknown;
+}
+
+/**
+ * Fetch the parsed body for an inbound email from Resend's Received-emails API.
+ * The webhook payload is metadata-only, so without this the stored message body
+ * is always empty. Best-effort: on any failure we return nulls and still store
+ * the message (subject + routing survive) rather than dropping the inbound mail.
+ */
+async function fetchInboundBody(
+  emailId: string
+): Promise<{ html: string | null; text: string | null; headers: unknown } | null> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.error("[webhook:resend-inbound] RESEND_API_KEY not set; cannot fetch body");
+    return null;
+  }
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`https://api.resend.com/emails/inbound/${encodeURIComponent(emailId)}`, {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      console.warn("[webhook:resend-inbound] body fetch failed", { status: res.status });
+      return null;
+    }
+    const full = (await res.json()) as { html?: unknown; text?: unknown; headers?: unknown };
+    return {
+      html: typeof full.html === "string" ? full.html : null,
+      text: typeof full.text === "string" ? full.text : null,
+      headers: full.headers,
+    };
+  } catch (err) {
+    console.warn("[webhook:resend-inbound] body fetch threw", redactProviderError(err));
+    return null;
+  }
 }
 
 /**
@@ -81,18 +124,24 @@ export async function POST(request: Request): Promise<Response> {
       return new Response("ok", { status: 200 }); // unknown token → drop (P2-13)
     }
 
+    // Idempotency: event id is the svix-id. (A resent inbound also carries the
+    // same Message-ID, deduped by the per-workspace unique index as a backstop.)
+    // Claimed BEFORE the body fetch so a webhook retry never re-fetches.
+    const first = await claimWebhookEvent("resend", verified.eventId, "email.inbound");
+    if (!first) return new Response("ok", { status: 200 });
+
+    // The webhook is metadata-only; fetch the parsed body from the API.
+    const emailId = asString(data?.email_id) ?? asString(data?.id);
+    const fetched = emailId ? await fetchInboundBody(emailId) : null;
+    const headersSource = fetched?.headers ?? data?.headers;
+
     const messageId =
       sanitizeHeaderValue(
-        headerValue(data?.headers, "message-id") ??
+        headerValue(headersSource, "message-id") ??
           asString(data?.message_id) ??
           asString(data?.messageId),
         HEADER_LIMITS.messageId
       );
-
-    // Idempotency: event id is the svix-id. (A resent inbound also carries the
-    // same Message-ID, deduped by the per-workspace unique index as a backstop.)
-    const first = await claimWebhookEvent("resend", verified.eventId, "email.inbound");
-    if (!first) return new Response("ok", { status: 200 });
 
     const fromAddress = sanitizeHeaderValue(firstAddress(data?.from), HEADER_LIMITS.address);
     const subject = sanitizeHeaderValue(asString(data?.subject), HEADER_LIMITS.subject);
@@ -109,9 +158,11 @@ export async function POST(request: Request): Promise<Response> {
     // Cap the INPUT before sanitizing (not the output) so truncation can never
     // cut mid-tag and reintroduce unbalanced markup (Security #7). Sanitize on
     // write; strip quotes for the text view; full sanitized HTML kept.
-    const rawHtml = (asString(data?.html) ?? "").slice(0, MAX_HTML_BYTES);
+    // Prefer the fetched body; fall back to any inline fields for forward-compat
+    // if Resend ever starts including them in the webhook.
+    const rawHtml = ((fetched?.html ?? asString(data?.html)) ?? "").slice(0, MAX_HTML_BYTES);
     const bodyHtml = sanitizeInboundHtml(rawHtml) || null;
-    const rawText = asString(data?.text) ?? "";
+    const rawText = (fetched?.text ?? asString(data?.text)) ?? "";
     const bodyText = stripQuotedReply(rawText).slice(0, MAX_TEXT_BYTES) || null;
 
     const attachments = Array.isArray(data?.attachments) ? data.attachments : [];

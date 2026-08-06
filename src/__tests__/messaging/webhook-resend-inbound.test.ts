@@ -170,4 +170,69 @@ describe("POST /api/webhooks/resend/inbound", () => {
     expect(res.status).toBe(200);
     expect(store.insertInboundMessage).not.toHaveBeenCalled();
   });
+
+  // Resend's email.received webhook is metadata-only — the body must be fetched
+  // from the Received-emails API via data.email_id. Without this the stored body
+  // is always empty (found in a live prod test 2026-08-05).
+  it("fetches the body from the API when the webhook is metadata-only", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          html: "<p>Fetched body</p>",
+          text: "Fetched body",
+          headers: [{ name: "Message-ID", value: "<fetched@mail>" }],
+        }),
+        { status: 200 }
+      )
+    );
+    const res = await POST(
+      signedRequest({
+        data: {
+          to: ["r+TOK123@reply.alignocrm.com"],
+          from: "alice@example.com",
+          subject: "Re: hi",
+          email_id: "eml_123",
+          attachments: [],
+        },
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/emails/inbound/eml_123"),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer re_test" }),
+      })
+    );
+    const arg = store.insertInboundMessage.mock.calls[0][0];
+    expect(arg.bodyText).toBe("Fetched body");
+    expect(arg.bodyHtml).toContain("Fetched body");
+    expect(arg.emailMessageId).toBe("<fetched@mail>");
+    fetchMock.mockRestore();
+    delete process.env.RESEND_API_KEY;
+  });
+
+  it("still stores the message (subject/routing survive) if the body fetch fails", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(new Response("nope", { status: 500 }));
+    const res = await POST(
+      signedRequest({
+        data: {
+          to: ["r+TOK123@reply.alignocrm.com"],
+          from: "alice@example.com",
+          subject: "Re: hi",
+          email_id: "eml_err",
+          message_id: "<wh@mail>",
+          attachments: [],
+        },
+      })
+    );
+    expect(res.status).toBe(200);
+    const arg = store.insertInboundMessage.mock.calls[0][0];
+    expect(arg.bodyText).toBeNull();
+    expect(arg.bodyHtml).toBeNull();
+    expect(arg.emailMessageId).toBe("<wh@mail>"); // falls back to webhook message_id
+    fetchMock.mockRestore();
+    delete process.env.RESEND_API_KEY;
+  });
 });
