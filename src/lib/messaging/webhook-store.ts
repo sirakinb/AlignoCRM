@@ -267,18 +267,12 @@ export async function createInboundSmsContact(
     .single();
 
   // Concurrent first-inbound race: two callers both saw "no match" and tried to
-  // create. With the partial unique index on (workspace_id, phone) the loser's
-  // insert conflicts — re-select the winner instead of surfacing a 500 or
-  // creating a duplicate (same pattern as ensureConversation).
-  //
-  // IMPORTANT: this fallback is NOT an independent defense — it fires only when
-  // the DB raises a unique violation, which requires uq_contacts_ws_phone to
-  // exist. That index is currently DEFERRED on prod (duplicate phone groups
-  // block its build — see migrations/20260805120000_messaging-center.sql), so
-  // until it is created, two inbound SMS from the same brand-new number racing
-  // here will BOTH insert and create duplicate contacts. Data-integrity risk
-  // only (no leak/authz impact). Real fix: dedupe the existing groups, then
-  // build the index.
+  // create. The partial unique index uq_contacts_ws_phone on (workspace_id,
+  // phone) makes the loser's insert conflict — we re-select the winner instead
+  // of surfacing a 500 or creating a duplicate (same pattern as
+  // ensureConversation). This fallback depends on that index existing to raise
+  // the unique violation; it is live on prod (see
+  // migrations/20260805120000_messaging-center.sql).
   if (error) {
     const { data: existing } = await insforge.database
       .from("contacts")
