@@ -92,3 +92,31 @@ export function normalizeSendableE164(raw: string | null | undefined): string {
 
   return parsed.number;
 }
+
+/**
+ * The common ways a US/NANP number could already be stored in a legacy contact
+ * row, derived from its E.164 form. Lets inbound-SMS contact matching use a
+ * single indexed `.in("phone", candidates)` query instead of scanning every
+ * contact and normalizing in JS on each unrecognized message (a CPU/spend
+ * amplifier). English/NANP v1: covers E.164, 11- and 10-digit, and the usual
+ * dash/paren/dot/space formats. Non-matching legacy formats fall through to a
+ * new auto-created contact — acceptable and documented for v1.
+ */
+export function phoneMatchCandidates(e164: string): string[] {
+  const set = new Set<string>([e164]);
+  const digits = e164.replace(/[^\d]/g, ""); // e.g. 13105551234
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const ten = digits.slice(1); // 3105551234
+    const a = ten.slice(0, 3);
+    const b = ten.slice(3, 6);
+    const c = ten.slice(6);
+    set.add(digits); // 13105551234
+    set.add(ten); // 3105551234
+    set.add(`(${a}) ${b}-${c}`); // (310) 555-1234
+    set.add(`${a}-${b}-${c}`); // 310-555-1234
+    set.add(`${a}.${b}.${c}`); // 310.555.1234
+    set.add(`${a} ${b} ${c}`); // 310 555 1234
+    set.add(`+1 (${a}) ${b}-${c}`); // +1 (310) 555-1234
+  }
+  return [...set];
+}

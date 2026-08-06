@@ -9,6 +9,9 @@ import { getConversationEmailProvider } from "./conversation-email";
 import { getSmsProvider } from "./sms-service";
 import { normalizeSendableE164 } from "./phone";
 import { findSuppression } from "./suppressions";
+import { escapeHtml } from "@/lib/html";
+import { signUnsubToken } from "./token";
+import { messagingPublicBaseUrl } from "./urls";
 
 const EMAIL_DOMAIN = process.env.MESSAGING_EMAIL_DOMAIN ?? "send.alignocrm.com";
 const REPLY_DOMAIN = process.env.MESSAGING_REPLY_DOMAIN ?? "reply.alignocrm.com";
@@ -52,6 +55,13 @@ export interface SendConversationMessageInput {
    * timeline write/bump. The conversation still exists as a reply-token holder.
    */
   campaignId?: string | null;
+  /**
+   * When true (email only), `body` is already sanitized, rendered HTML — used it
+   * as-is instead of escaping it as plain text. The campaign test-send passes
+   * this so the operator previews the real email, not its escaped source. The
+   * caller MUST have sanitized it (sanitizeOutboundHtml) first.
+   */
+  bodyIsHtml?: boolean;
 }
 
 /**
@@ -82,13 +92,31 @@ export async function sendConversationMessage(
     toAddress = rawAddress.trim();
   }
 
+  // Body rendering. For a 1:1 conversation email the composer sends PLAIN TEXT,
+  // so escape it into HTML (so "profit < cost" and newlines survive) and keep the
+  // raw as body_text for the plain-text fallback (REQ-SEC-11 outbound clause).
+  // Campaign email bodies are pre-rendered HTML that Phase 4 sanitizes at its own
+  // boundary, so they pass through unchanged.
+  const preRendered = isCampaign || !!input.bodyIsHtml;
+  const emailText = channel === "email" && !preRendered ? input.body : null;
+  const emailHtml =
+    channel === "email"
+      ? preRendered
+        ? input.body
+        : escapeHtml(input.body).replace(/\n/g, "<br>")
+      : null;
+
   // ── Suppression gate (the asymmetry, made explicit) ───────────────────────
   const hit = await findSuppression(workspaceId, channel, toAddress);
   if (hit) {
     const blocks =
       channel === "sms"
         ? true // SMS STOP blocks everything, always
-        : hit.reason === "bounce" || isCampaign; // email: bounce blocks all; unsub/complaint block campaigns
+        // email: bounce (undeliverable) and manual (operator's explicit block)
+        // hard-block every path incl. 1:1 (§1.5, matches the UI's disabled
+        // composer in conversations.ts); unsubscribe/complaint block campaigns
+        // only and are warn-allow on 1:1.
+        : hit.reason === "bounce" || hit.reason === "manual" || isCampaign;
     if (blocks) {
       // Record the refusal so there's an audit trail — never silently vanish.
       await insforge.database.from("messages").insert({
@@ -100,8 +128,8 @@ export async function sendConversationMessage(
         direction: "outbound",
         status: "failed",
         subject: input.subject ?? null,
-        body_text: channel === "sms" ? input.body : null,
-        body_html: channel === "email" ? input.body : null,
+        body_text: channel === "sms" ? input.body : emailText,
+        body_html: emailHtml,
         to_address: toAddress,
         error: `suppressed:${hit.reason}`,
       });
@@ -128,8 +156,8 @@ export async function sendConversationMessage(
       direction: "outbound",
       status: "queued",
       subject: channel === "email" ? (input.subject ?? null) : null,
-      body_text: channel === "sms" ? input.body : null,
-      body_html: channel === "email" ? input.body : null,
+      body_text: channel === "sms" ? input.body : emailText,
+      body_html: emailHtml,
       to_address: toAddress,
     })
     .select()
@@ -146,11 +174,11 @@ export async function sendConversationMessage(
       const threading = await lastInboundEmailId(conversation.id);
 
       const result = await getConversationEmailProvider().send({
-        from: `${fromName} <${fromLocal}@${EMAIL_DOMAIN}>`,
+        from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
         to: toAddress,
         replyTo: `r+${conversation.reply_token}@${REPLY_DOMAIN}`,
         subject: input.subject ?? conversation.subject ?? "(no subject)",
-        html: input.body,
+        html: emailHtml ?? "",
         inReplyTo: threading,
         references: threading,
       });
@@ -173,7 +201,7 @@ export async function sendConversationMessage(
 
   // ── Bump the conversation (1:1 only; campaigns never touch the timeline) ───
   if (!isCampaign) {
-    await bumpConversation(conversation.id, {
+    await bumpConversation(workspaceId, conversation.id, {
       channel,
       preview: previewOf(channel, input.subject, input.body),
       subject: channel === "email" ? (input.subject ?? conversation.subject) : conversation.subject,
@@ -186,6 +214,134 @@ export async function sendConversationMessage(
     .eq("id", message.id)
     .single();
   return (fresh ?? message) as Message;
+}
+
+// ── campaign send (existing materialized rows) ────────────────────────────────
+
+/** A materialized campaign `messages` row, ready to hand to a provider. */
+export interface CampaignMessageRow {
+  id: string;
+  workspace_id: string;
+  contact_id: string;
+  channel: MessageChannel;
+  subject: string | null;
+  body_text: string | null;
+  body_html: string | null;
+  to_address: string | null;
+  campaign_id: string | null;
+}
+
+/**
+ * Send ONE already-materialized campaign row (Phase 4 bulk path). Unlike
+ * `sendConversationMessage`, this does not insert a row — the processor already
+ * created the `queued` row at materialization; here we send it and settle its
+ * status. The suppression gate still runs (defense in depth, REQ-SEC-19: the
+ * campaign path also inherits the block), and campaign email carries the RFC 8058
+ * unsubscribe headers + a per-conversation Reply-To so replies route back
+ * (P4-20, P4-23). Returns the terminal status; never throws for a per-recipient
+ * failure — one bad recipient must not abort the chunk.
+ */
+export async function sendCampaignMessageRow(
+  row: CampaignMessageRow
+): Promise<"sent" | "failed"> {
+  const workspaceId = row.workspace_id;
+  const to = row.to_address;
+  if (!to) {
+    await markFailed(row.id, "no_address");
+    return "failed";
+  }
+
+  // Belt-and-suspenders suppression check (materialize already dropped these).
+  // For a campaign, ANY suppression on the channel is a hard block.
+  const hit = await findSuppression(workspaceId, row.channel, to);
+  if (hit) {
+    await markFailed(row.id, `suppressed:${hit.reason}`);
+    return "failed";
+  }
+
+  try {
+    if (row.channel === "email") {
+      const config = await loadChannelConfig(workspaceId, "email");
+      const fromName = sanitizeFromName(config.from_name);
+      const fromLocal = sanitizeFromLocalPart(config.from_local_part);
+      // Find-or-create the token-holder conversation for reply routing (P4-19b):
+      // no message write, no last_message_* bump — ensureConversation only ever
+      // creates the row, never touches an existing one's timeline fields.
+      const conversation = await ensureConversation(workspaceId, row.contact_id);
+      const unsubHeaders = campaignUnsubHeaders(workspaceId, to, row.campaign_id);
+
+      const result = await getConversationEmailProvider().send({
+        from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
+        to,
+        replyTo: `r+${conversation.reply_token}@${REPLY_DOMAIN}`,
+        subject: row.subject ?? "(no subject)",
+        html: row.body_html ?? "",
+        extraHeaders: unsubHeaders,
+      });
+      await markSent(row.id, "resend", result.id);
+    } else {
+      const result = await getSmsProvider().send({
+        to,
+        body: row.body_text ?? "",
+      });
+      await markSent(row.id, "twilio", result.id);
+    }
+    return "sent";
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    await markFailed(row.id, detail);
+    return "failed";
+  }
+}
+
+/**
+ * Build the RFC 8058 one-click unsubscribe headers for a campaign email. The
+ * token is per-recipient, HMAC-signed (REQ-SEC-08); the URL is pinned to the
+ * public base. Returns {} when no base URL is configured (so a misconfigured
+ * env degrades to "no header" rather than a broken relative link).
+ */
+export function campaignUnsubHeaders(
+  workspaceId: string,
+  address: string,
+  campaignId: string | null
+): Record<string, string> {
+  const base = messagingPublicBaseUrl() ?? "";
+  if (!base) return {};
+  const token = signUnsubToken({
+    workspaceId,
+    channel: "email",
+    address: address.trim().toLowerCase(),
+    campaignId: campaignId ?? undefined,
+  });
+  const url = `${base.replace(/\/$/, "")}/api/unsubscribe/${token}`;
+  return {
+    "List-Unsubscribe": `<${url}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
+/** The per-recipient unsubscribe URL for the email footer link (P4-23). */
+export function campaignUnsubUrl(
+  workspaceId: string,
+  address: string,
+  campaignId: string | null
+): string | null {
+  const base = messagingPublicBaseUrl() ?? "";
+  if (!base) return null;
+  const token = signUnsubToken({
+    workspaceId,
+    channel: "email",
+    address: address.trim().toLowerCase(),
+    campaignId: campaignId ?? undefined,
+  });
+  return `${base.replace(/\/$/, "")}/api/unsubscribe/${token}`;
+}
+
+async function markFailed(messageId: string, error: string): Promise<void> {
+  await insforge.database
+    .from("messages")
+    .update({ status: "failed", error })
+    .eq("id", messageId);
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -293,6 +449,7 @@ async function markSent(
 }
 
 async function bumpConversation(
+  workspaceId: string,
   conversationId: string,
   input: { channel: MessageChannel; preview: string; subject: string | null }
 ): Promise<void> {
@@ -306,7 +463,8 @@ async function bumpConversation(
       subject: input.subject,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", conversationId);
+    .eq("id", conversationId)
+    .eq("workspace_id", workspaceId); // defense-in-depth (REQ-SEC-15.4)
 }
 
 /**

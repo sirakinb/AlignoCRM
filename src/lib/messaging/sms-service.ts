@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { twilioStatusCallbackUrl } from "./urls";
 
 export interface SmsSendResult {
   id: string; // Twilio Message SID
@@ -38,9 +39,10 @@ export class TwilioSmsProvider implements SmsProvider {
       throw new Error("TWILIO_MESSAGING_SERVICE_SID is not set");
     }
 
-    const statusCallback = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status`
-      : undefined;
+    // MUST come from MESSAGING_PUBLIC_BASE_URL — the same base twilio/status
+    // validates the signature against. Any other source (e.g. NEXT_PUBLIC_APP_URL)
+    // drifts and makes every status callback 403 (HIGH finding).
+    const statusCallback = twilioStatusCallbackUrl() ?? undefined;
 
     const msg = await this.getClient().messages.create({
       to: input.to,

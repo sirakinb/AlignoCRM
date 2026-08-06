@@ -90,6 +90,51 @@ export interface Conversation {
   updated_at: string;
 }
 
+// ── Campaigns (bulk email/SMS) ──────────────────────────────────────────────
+
+export interface CampaignAudienceShape {
+  tagIds?: string[];
+  statuses?: string[];
+  all?: boolean;
+}
+
+export type CampaignStatus = "draft" | "sending" | "sent" | "failed";
+
+export interface Campaign {
+  id: string;
+  workspace_id: string;
+  organization_id: string | null;
+  channel: MessageChannel;
+  name: string;
+  subject: string | null;
+  body: string;
+  template_id: string | null;
+  audience: CampaignAudienceShape;
+  status: CampaignStatus;
+  scheduled_at: string | null;
+  total_count: number;
+  sent_count: number;
+  delivered_count: number;
+  failed_count: number;
+  suppressed_count: number;
+  no_address_count: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignRecipient {
+  message_id: string;
+  contact_id: string;
+  contact_name: string;
+  address: string | null;
+  status: string;
+  error: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+}
+
 export interface Message {
   id: string;
   workspace_id: string;

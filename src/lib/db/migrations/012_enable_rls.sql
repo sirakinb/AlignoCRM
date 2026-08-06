@@ -43,13 +43,38 @@
 -- the safety net for the day someone adds a per-user read path, so that path
 -- starts tenant-scoped instead of open.
 
--- HOW TO APPLY. Two InsForge CLI gotchas, both hit during the branch rehearsal:
---   * `insforge db query` rejects transaction control — no BEGIN/COMMIT here.
---     Apply via `insforge db migrations up`, which wraps the file in its own
---     transaction, so atomicity is preserved without the explicit statements.
---   * `insforge db query` parses a leading `--` comment as a CLI flag. If you
---     do run this through `db query`, pass an argument separator:
---     `insforge db query -- "$(cat 010_enable_rls.sql)"`.
+-- HOW TO APPLY — this exact command, verified on the rehearsal branch:
+--
+--   npx @insforge/cli db query -- "$(cat src/lib/db/migrations/012_enable_rls.sql)"
+--
+-- Do NOT use `db migrations up`. The CLI's migration directory is the repo-root
+-- `migrations/`, which it does not share with `src/lib/db/migrations/`, so it
+-- cannot see this file at all — and `up --all` would apply whatever else is
+-- pending in root `migrations/` (currently the unapplied messaging migration),
+-- which is not what a targeted RLS apply should touch.
+--
+-- Two CLI gotchas behind the shape of that command, both hit for real during
+-- the rehearsal:
+--   * `db query` rejects SQL transaction control ("Transaction control
+--     statements are not allowed"), so there is no BEGIN;/COMMIT; in this file.
+--     The `BEGIN`s that remain are PL/pgSQL DO-block delimiters, which are fine.
+--   * `db query` parses a leading `--` comment as a CLI flag, hence the `--`
+--     argument separator. Without it you get `error: unknown option '-- 012…'`
+--     and NOTHING is applied — while the command still looks like it ran.
+--     Always confirm against pg_class, never against the exit code.
+--
+-- Atomicity: Postgres wraps a multi-statement simple query in an implicit
+-- transaction, so a failure partway rolls the whole thing back. Even if that
+-- did not hold, the statement order is fail-safe by construction — RLS is
+-- ENABLEd before any grant is REVOKEd, so a partial application lands strictly
+-- more restrictive, never more open.
+--
+-- Idempotent: re-running is safe and expected (CREATE OR REPLACE, IF NOT
+-- EXISTS, ALTER … ENABLE, REVOKE/GRANT are all repeat-safe). It was applied
+-- three times over the rehearsal. Note that applying by `db query` means this
+-- migration is NOT recorded in the CLI's migration tracker, so
+-- `db migrations list` will not show it — re-runnability is what makes that
+-- bookkeeping gap tolerable. Verify state from the catalog, not the tracker.
 
 -- ---------------------------------------------------------------------------
 -- 1. Harden the policy helpers.
@@ -232,24 +257,32 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 --   WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity;
 --   -- expect: zero rows
 --
--- Then, from a shell with the REAL anon key (a JWT, not ik_...):
+-- Then, from a shell with the REAL anon key (`anon_…` on this project — NOT an
+-- ik_ token, which holds BYPASSRLS and would false-pass):
 --   curl -s -H "Authorization: Bearer $ANON_KEY" \
 --     "$INSFORGE_URL/api/database/records/contacts?select=*&limit=1"
---   -- expect: empty array or a permission error, never a real row
+--   -- expect: a permission error (42501). Never a real row.
 --
--- ROLLBACK (restores the pre-migration state exactly):
---   BEGIN;
---   -- re-grant, then disable. Order matters: never leave a window where RLS
---   -- is off and grants are already back.
+-- ROLLBACK — restores the pre-migration state.
+-- NOTE: no BEGIN;/COMMIT; here either, for the same reason as above. `db query`
+-- rejects them, and you do not want to discover that mid-rollback. Paste the
+-- DO block on its own, the same way you applied the migration.
+--
 --   DO $$ DECLARE t TEXT; BEGIN
 --     FOR t IN SELECT c.relname FROM pg_class c
 --       JOIN pg_namespace n ON n.oid=c.relnamespace
---       WHERE n.nspname='public' AND c.relkind='r' AND c.relname<>'link_clicks'
+--       WHERE n.nspname='public' AND c.relkind IN ('r','v','m','f','p')
+--         AND c.relname<>'link_clicks'
 --     LOOP
+--       -- Re-grant BEFORE disabling: never leave a window where RLS is off and
+--       -- the grants are already back.
+--       EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO anon, authenticated', t);
 --       EXECUTE format('ALTER TABLE public.%I NO FORCE ROW LEVEL SECURITY', t);
 --       EXECUTE format('ALTER TABLE public.%I DISABLE ROW LEVEL SECURITY', t);
---       EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO anon, authenticated', t);
 --     END LOOP;
 --   END $$;
---   COMMIT;
+--
+-- (Views/matviews accept GRANT but not ALTER … ROW LEVEL SECURITY; there are
+-- none in `public` today, so the loop is table-only in practice. If any exist
+-- when you roll back, split the GRANT and the ALTER into separate loops.)
 -- ---------------------------------------------------------------------------

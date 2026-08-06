@@ -1,5 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { normalizeE164, normalizeSendableE164, PhoneError } from "@/lib/messaging/phone";
+import {
+  normalizeE164,
+  normalizeSendableE164,
+  phoneMatchCandidates,
+  PhoneError,
+} from "@/lib/messaging/phone";
+
+describe("phoneMatchCandidates (inbound-SMS matching, no scan)", () => {
+  it("generates the common stored formats for a US E.164", () => {
+    const c = phoneMatchCandidates("+13105551234");
+    expect(c).toContain("+13105551234");
+    expect(c).toContain("13105551234");
+    expect(c).toContain("3105551234");
+    expect(c).toContain("(310) 555-1234");
+    expect(c).toContain("310-555-1234");
+    expect(c).toContain("310.555.1234");
+    // deduped
+    expect(new Set(c).size).toBe(c.length);
+  });
+
+  it("returns just the E.164 for a non-NANP number", () => {
+    expect(phoneMatchCandidates("+442071838750")).toEqual(["+442071838750"]);
+  });
+});
 
 describe("normalizeE164", () => {
   it("normalizes US numbers in various formats to E.164", () => {

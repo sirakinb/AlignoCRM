@@ -1,10 +1,18 @@
 # Remediation plan — IR-1 (session forgery) and IR-2 (database exposure)
 
-**Owner:** secfix agent. **Status:** design + partial local implementation.
+**Owner:** secfix agent. **Status: REMEDIATED — coordinated redeploy completed 2026-08-05.** One bounded residual remains (§5.4).
 **Baseline:** branch `feat/agent-layer`, live project `AlignoCRM` (`https://uvf4r7ds.us-east.insforge.app`), inspected 2026-08-05.
-**Nothing in this document has been applied to the live database.** Every live-side step is listed in §6 awaiting the user's sign-off.
 
-> **Update 2026-08-05, post-rotation.** The admin key has been rotated by the team lead with user authorization (`insforge secrets rotate api-key --grace-hours 168`). The leaked key keeps working until **2026-08-12 02:51**, so production is not broken during the window. Local `.env.local` now carries the real anon key and the new admin key. **RLS is now the remaining data-exposure fix** — see §3.1.
+> **Read this before the body.** Much of what follows is written in the future tense because it was drafted as a plan. It has since been executed. Current state:
+>
+> - **Admin key rotated** (`--grace-hours 168`), real `anon_` key installed, new `ik_` key server-only in Vercel, CLI re-linked.
+> - **`012_enable_rls.sql` applied to production** — 30 tables with RLS; anon key 401, server key 200, auth intact.
+> - **New build live** — the bundle chunk carrying the burned key 404s; no `ik_` token in any bundle.
+> - **Verified end-to-end**, zero downtime, user confirmed the live app works after login.
+>
+> **The one open item:** the burned `ik_53d34…` key remains valid inside its protected grace row until **2026-08-12 06:51 UTC** and **cannot be expired early** — every CLI path is refused by a reserved-secret guard. It is `project_admin`, so **RLS does not bound it**. See §5.4 for the mechanism, the corrected risk framing, and the `lastUsedAt` monitoring control.
+>
+> Still outstanding and user-gated: rotate `api_keys` rows and `JWT_SECRET`/`RESEND_API_KEY`/`SMTP_PASSWORD`; resolve the 18 orphan `organization_id IS NULL` rows (§3); breach-notification assessment (§6).
 
 ---
 
@@ -151,7 +159,7 @@ Import rewrite: 47 server-side modules moved from `@/lib/insforge/client` to `@/
 
 ## 3. RLS enablement, keyed to the live schema
 
-Migration written (not applied): `src/lib/db/migrations/012_enable_rls.sql`.
+Migration: `src/lib/db/migrations/012_enable_rls.sql` — **applied to production 2026-08-05** after passing the branch rehearsal (§3.2).
 
 ### 3.1 Why this is now the critical path
 
@@ -226,7 +234,7 @@ Note the denial is `42501`, not an empty result set. That is the `REVOKE` in ste
 
 ### Two CLI gotchas found in rehearsal, now documented in the migration header
 
-1. `insforge db query` **rejects transaction control** — `BEGIN;`/`COMMIT;` produce `Error: Transaction control statements are not allowed.` The explicit transaction has been removed from the migration; `db migrations up` wraps the file in its own, so atomicity is preserved.
+1. `insforge db query` **rejects transaction control** — `BEGIN;`/`COMMIT;` produce `Error: Transaction control statements are not allowed.` The explicit transaction has been removed from the migration. **Correction to an earlier draft of this document:** it claimed the fix was to "apply via `db migrations up`, which wraps the file in its own transaction." That guidance was wrong and unverified — see §5.3.
 2. `insforge db query` **parses a leading `--` SQL comment as a CLI flag** (`error: unknown option '-- 012_enable_rls.sql …'`). Pass an argument separator: `insforge db query -- "$(cat …)"`. This one fails loudly, but it initially looked like the migration had applied when it had not — always re-check `pg_class.relrowsecurity` rather than trusting the command's exit.
 
 ### Caveat this rehearsal makes concrete
@@ -295,8 +303,9 @@ Steps 1-4 are live-credential and live-database operations requiring the user's 
 | 3 | **Deploy the app-side split** and confirm in production. This is migration 009's own precondition, honoured. Ship it with step 6, or ship it first and apply RLS immediately after — do not leave a redeployed prod sitting on the public anon key with RLS off (§3.1). | dashboard loads, contacts/deals/tasks read and write, sign-in and invite accept work | Vercel instant rollback to the prior deployment |
 | 4 | **Rotate every `api_keys` row**, plus `JWT_SECRET` / `RESEND_API_KEY` / `SMTP_PASSWORD` (rotate-recommended — `/api/secrets` exposed names but no values, so this is precautionary rather than confirmed-compromised). Rotating `JWT_SECRET` invalidates every live session; schedule it. | old per-workspace keys rejected by `/api/agent/*` | re-issue; these are app-generated |
 | 5 | **Resolve the orphan rows** (§3) per the user's decision. | `SELECT count(*) … WHERE organization_id IS NULL` → 0 on all seven tables | run inside a transaction; snapshot the affected rows to a temp table first |
-| 6 | **Apply `012_enable_rls.sql`.** The branch rehearsal is **done and passed** (§3.2) — `--mode full`, real data, app verified against it. Apply via `insforge db migrations up`, not `db query`. | the migration's VERIFY block: zero tables with RLS off, and the `anon_` key denied on `contacts`. Rehearsal precedent: `42501`, not empty | the rollback block in the migration's trailing comment (re-grant, then `NO FORCE` / `DISABLE`) |
+| 6 | **Apply `012_enable_rls.sql`** with the exact command in §5.3 (`db query --`, *not* `db migrations up`). Rehearsal done and passed (§3.2) — `--mode full`, real data, app verified against it. | the migration's VERIFY block: zero tables with RLS off, and the `anon_` key denied on `contacts`. Rehearsal precedent: `42501`, not empty | the rollback block in the migration's trailing comment (re-grant, then `NO FORCE` / `DISABLE`) |
 | 7 | **Re-run the original IR-2 exploit** with the new anon key and no session. | `.select()` on `contacts`, `deals`, `organization_members`, `api_keys` → empty or permission error, never a real row | — |
+| 8 | **Burned key — BLOCKED, cannot be expired early** (§5.4). Every CLI path is refused by the reserved-secret guard. Do **not** reach for `secrets rotate` as a workaround; it rotates the *current* key and breaks production. Accept the 2026-08-12 06:51Z auto-expiry, and monitor `lastUsedAt` daily in the meantime. | after 8/12: burned key 401s on `/api/auth/users`, current key still 200. Until then: `lastUsedAt` does not advance beyond a recorded team probe | n/a — nothing to roll back |
 
 Two ordering rules worth stating explicitly, both learned from §0:
 
@@ -320,6 +329,98 @@ GROUP BY 1, 2 ORDER BY 1, 2;
 
 Run it: after every migration, after anyone creates a table in the InsForge dashboard, and at each phase gate. A table created through the dashboard or table API may be created as role `postgres` and **will** inherit `anon=arwd, authenticated=arwd` from `postgres`'s default ACL, which no migration we can run is able to prevent — `project_admin` is not a member of `postgres`. Detection is the control. Remediate a hit with `REVOKE ALL ON public.<table> FROM anon, authenticated;` plus `ENABLE`/`FORCE ROW LEVEL SECURITY`.
 
+## 5.3 The exact apply command — and a correction
+
+**Use this. It is what actually ran, three times, on the rehearsal branch:**
+
+```bash
+npx @insforge/cli db query -- "$(cat src/lib/db/migrations/012_enable_rls.sql)"
+```
+
+**Correction to earlier drafts of this document.** §3.2 and the step table previously said "apply via `insforge db migrations up`, not `db query`." **That was wrong, and I did not verify it.** I wrote it while removing the `BEGIN;`/`COMMIT;` that `db query` had rejected, reasoning that the migration runner would supply its own transaction — a plausible-sounding inference presented as fact. The rehearsal never used `db migrations up`; every apply went through `db query --`.
+
+Two independent reasons `db migrations up` is the wrong instrument here:
+
+1. **It cannot see the file.** The CLI's migration directory is the repo-root `migrations/`. This migration lives in `src/lib/db/migrations/`, which the CLI does not read, so `up --all` would not find it.
+2. **It would apply the wrong things.** Root `migrations/` holds the unapplied `20260805120000_messaging-center.sql`. `up --all` would push the messaging migration to production — whose RLS block is unrehearsed and which is not part of this redeploy.
+
+Moving 012 into root `migrations/` to make it trackable would trade a documentation gap for a much worse one: any later `up --all` becomes a loaded gun. Not worth it for a single targeted apply.
+
+**Why `db query` is safe here, concretely:**
+
+- **No transaction control in the file.** Verified: no bare `BEGIN;`/`COMMIT;`/`ROLLBACK;`. The three remaining `BEGIN`s are PL/pgSQL DO-block delimiters, which `db query` accepts.
+- **Atomic.** Postgres wraps a multi-statement simple query in an implicit transaction, so a mid-way failure rolls the whole thing back.
+- **Fail-safe even if that didn't hold.** Statement order is RLS-`ENABLE` first, `REVOKE` second. A partial application therefore lands *more* restrictive, never more open. There is no ordering in this file that could leave grants restored while RLS is off.
+- **Idempotent.** `CREATE OR REPLACE`, `IF NOT EXISTS`, `ALTER … ENABLE`, `REVOKE`/`GRANT` are all repeat-safe; it was applied three times during the rehearsal with identical end state.
+
+**The one real cost:** applying via `db query` means 012 is **not recorded in the CLI's migration tracker**, so `db migrations list` will not show it. Idempotency is what makes that tolerable — re-running costs nothing. Verify state from `pg_class`, never from the tracker.
+
+**Verify immediately after:**
+
+```bash
+# expect zero rows
+npx @insforge/cli db query "SELECT relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND NOT c.relrowsecurity"
+
+# expect exactly: link_clicks -> anon: INSERT, link_clicks -> authenticated: INSERT
+npx @insforge/cli db query "SELECT table_name, grantee, string_agg(privilege_type,',') FROM information_schema.role_table_grants WHERE table_schema='public' AND grantee IN ('anon','authenticated') GROUP BY 1,2 ORDER BY 1,2"
+```
+
+Then the anon-key probe with the `anon_` key (never `ik_`), expecting `42501`.
+
+**Rollback** has the same constraint and the trailing block in the migration has been corrected accordingly — it previously carried `BEGIN;`/`COMMIT;`, which would have failed exactly when someone needed it under pressure.
+
+## 5.4 The burned grace key — cannot be expired early
+
+**Do NOT use `secrets rotate api-key --grace-hours 0`.** `rotate` takes `api-key`/`anon-key` — the *role*, not a key value — so it rotates whatever is currently active. With production on the new key, that mints a third key, graces the live one for zero hours, and takes production down. There is no `secrets revoke`.
+
+**The actual mechanism:** a graced key is not a hidden slot. It is an ordinary, independently addressable secret row. Observed on the live project:
+
+| Secret row | Value prefix | Length | isActive | expiresAt |
+|---|---|---|---|---|
+| `API_KEY` | `ik_2dd24…` | 67 | true | null |
+| `API_KEY_OLD_1785912699759` | `ik_53d34…` | 35 | true | 2026-08-12T06:51:39.755Z |
+
+`API_KEY_OLD_1785912699759` **is** the burned key — value prefix and length match exactly, and its `expiresAt` is precisely 168.0 hours after the rotation's `updatedAt`, matching `--grace-hours 168`. Rotation renames the outgoing key to `API_KEY_OLD_<epoch_ms>`, stamps an expiry on it, and writes the new key into `API_KEY`.
+
+### The row is reserved — every CLI expiry path is blocked
+
+Being addressable is not the same as being mutable. **All three commands were tried on the live project and all three were refused server-side:**
+
+| Attempt | Result |
+|---|---|
+| `secrets update API_KEY_OLD_1785912699759 --active false` | `Cannot update reserved secret` |
+| `secrets update API_KEY_OLD_1785912699759 --expires <date>` | `Cannot update reserved secret` |
+| `secrets delete API_KEY_OLD_1785912699759` | `Cannot delete reserved secret` |
+
+The row carries `isReserved: true`, and that flag is a server-enforced mutation guard. **The burned grace key cannot be force-expired through the CLI at all.** This reads as intentional design: the grace window exists to make rotation safely reversible, so the outgoing key is deliberately not killable early.
+
+The `isReserved: true` was visible in the very first `secrets list` output used to identify the row. It was read as descriptive metadata and its significance as a mutation guard was missed — the earlier confidence boundary flagged `--active` as inferred rather than demonstrated, which is what caught it, but the evidence was already on screen.
+
+**A second rotation does not help either** — the grace row name is timestamped, so a further rotation creates a *new* `API_KEY_OLD_<ts>` row rather than reusing the slot. Nothing evicts the existing one; it sits until its own 8/12 expiry while production is forced through another Vercel + CLI key migration for no benefit.
+
+**Remaining paths, none confirmed:** the InsForge dashboard (unverified — it may or may not bypass the reserved guard), or InsForge support. Nothing in the CLI docs describes revoking a reserved secret. One untried CLI permutation exists — `secrets update … --reserved false` to strip the guard, then `--active false` — but that is itself an update to a reserved secret and will almost certainly hit the same check; it is also deliberately fighting a platform safety mechanism, which is worth a moment's thought rather than a reflex.
+
+### Correct the residual-risk framing: RLS does not bound this
+
+The burned key is `project_admin`, and `project_admin` has `rolbypassrls = true` (verified directly on `pg_roles`). **RLS therefore provides exactly zero protection against it.** Anyone holding that key retains full read/write on every table, plus the auth user list and the secrets inventory, until it expires at **2026-08-12 06:51 UTC**. Describing the residual as bounded because prod is "RLS-protected" would be wrong — RLS protects against the *anon* key, which is a different threat.
+
+What genuinely bounds the residual: the key is no longer being newly distributed (the bundle chunk carrying it now 404s), nothing legitimate uses it, and the window is finite and short.
+
+### Compensating control while the window runs: watch `lastUsedAt`
+
+The grace row exposes `lastUsedAt`, and it updates on use — observed moving from `2026-08-05T06:51:39.734Z` (the rotation moment) to `2026-08-05T17:11:09.451Z` after the team's own verification probe. That makes it a working **detection signal for whether anyone is actually exercising the burned key**.
+
+```bash
+npx @insforge/cli secrets list --json \
+  | node -pe "JSON.parse(require('fs').readFileSync(0,'utf8')).secrets.find(s=>s.key==='API_KEY_OLD_1785912699759').lastUsedAt"
+```
+
+**Baseline: `2026-08-05T17:11:09.451Z`.** Check daily until 8/12. Any advance not attributable to a known team probe means the key is being used by someone else — escalate to InsForge support for emergency revocation rather than waiting out the window. Caveat: our own verification probes move this value, so record each one, or the signal turns into noise.
+
+### Recommendation
+
+Accepting the auto-expiry is reasonable **given the monitoring above**, not on its own. The exposure is full-admin and unmitigated by RLS, so it should be watched rather than filed away. Worth also filing the gap with InsForge — "no way to revoke a compromised grace key early" is a legitimate feature request, and `npx @insforge/cli feedback --type feature-request --component cli` is the documented channel.
+
 ## 5.2 Redeploy runbook notes
 
 Four things that are not obvious from the step table and are easy to get wrong.
@@ -340,21 +441,21 @@ Four things that are not obvious from the step table and are easy to get wrong.
 - `src/lib/insforge/server.ts` — new server-only admin client, lazy, with an anon-JWT guard.
 - 47 server modules re-pointed to it; the 6 `"use client"` modules left on the browser client. Import-path-only.
 - `src/__tests__/auth/session.test.ts` — 10 tests including the IR-1 forged-cookie case.
-- `src/lib/db/migrations/012_enable_rls.sql` — written, **not applied**.
+- `src/lib/db/migrations/012_enable_rls.sql` — rehearsed on a branch, then **applied to production**.
 - `src/lib/insforge/client.ts` — reciprocal guard rejecting an `ik_` value in the browser anon slot.
 - Verification, re-run against the rotated keys: typecheck clean; 259/259 tests pass; `next build` succeeds; both guards exercised directly. **Browser bundle audit: the new admin key is absent, the old leaked key is absent, and only the `anon_` key appears (5 chunks — the auth pages and providers).**
 
 **No credential was rotated, expired, or written by me.** `.insforge/project.json` was read only. `.env.local` was edited mid-task by me and reverted; it was subsequently updated by the team lead as part of rotation, and I have only read it since.
 
-### Operational snag worth fixing before 2026-08-12
+### Operational snag — RESOLVED
 
-`.insforge/project.json` still contains the **old** `ik_53d34…` key (35 chars). That is the file the InsForge CLI authenticates with, so every `npx @insforge/cli db query` / migration command is currently running on the leaked key and will start failing the moment the grace window closes. Re-link (`npx @insforge/cli link`) so the CLI picks up the new key — otherwise step 6 of the rollout breaks at exactly the wrong time. It also means a copy of the burned key is still sitting on disk.
+`.insforge/project.json` had been left holding the **old** `ik_53d34…` key, which is what the CLI authenticates with — so every `db query` and migration command was running on the leaked key and would have started failing the moment the grace window closed, including the production apply. The CLI has since been **re-linked** and now carries the new key (confirmed: `project.json`'s `api_key` matches the current `API_KEY` secret, `ik_2dd24…`).
 
 ### Requires the user's decision or credentials
 
-1. ~~Rotate the project API key~~ — **DONE 2026-08-05**, 7-day grace. Remaining: install the new keys in Vercel, and re-link the CLI so `.insforge/project.json` stops carrying the burned key before the grace closes.
+1. ~~Rotate the project API key; install new keys in Vercel; re-link the CLI~~ — **ALL DONE 2026-08-05.** The burned key's early expiry is blocked by the reserved-secret guard and auto-closes 2026-08-12 06:51Z; monitor `lastUsedAt` until then (§5.4).
 2. **Rotate `api_keys` rows**; rotate `JWT_SECRET` / `RESEND_API_KEY` / `SMTP_PASSWORD` as a precaution — `/api/secrets` exposed names but no values, so this is prudence, not confirmed compromise. Rotating `JWT_SECRET` signs every user out, so schedule it.
 3. **Decide the fate of the 18 orphan rows** across seven tables (§3) — assign to an organization, or delete.
-4. **Approve applying `012_enable_rls.sql`**, ideally via an InsForge backend branch first. This is now the critical path: the anon key still reads `contacts` (§3.1).
-5. **Breach-notification assessment.** The admin key was in a public bundle: three users' email addresses via `/api/auth/users`, plus all `contacts` (31 rows) and `deals` (17 rows) — third-party personal data. Whether this triggers a notification obligation is the user's call, not ours, but it must be put in front of them. Note the exposure window does not close until the grace period expires on 2026-08-12.
+4. ~~Approve applying `012_enable_rls.sql`~~ — **DONE.** Rehearsed on a full-mode branch, then applied to production; anon key now 401s where it previously read `contacts`.
+5. **Breach-notification assessment — still open, and the highest-value remaining decision.** The admin key was in a public bundle: three users' email addresses via `/api/auth/users`, plus all `contacts` (31 rows) and `deals` (17 rows) — third-party personal data. Whether this triggers a notification obligation is the user's call, not ours. Note the exposure window does not fully close until the grace key expires on 2026-08-12.
 6. **Add `server-only`** as a dependency and import it in `server.ts` (§2).

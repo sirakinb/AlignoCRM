@@ -9,6 +9,12 @@ export interface ConversationEmailInput {
   /** Message-IDs to thread against (last inbound), if any. */
   inReplyTo?: string | null;
   references?: string | null;
+  /**
+   * Extra RFC 5322 headers (campaign path only): List-Unsubscribe and
+   * List-Unsubscribe-Post for RFC 8058 one-click. 1:1 sends never set these
+   * (P4-24). Values MUST already be CR/LF-safe.
+   */
+  extraHeaders?: Record<string, string>;
 }
 
 export interface ConversationEmailResult {
@@ -41,7 +47,7 @@ export class ResendConversationEmailProvider
   }
 
   async send(input: ConversationEmailInput): Promise<ConversationEmailResult> {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...(input.extraHeaders ?? {}) };
     if (input.inReplyTo) headers["In-Reply-To"] = input.inReplyTo;
     if (input.references) headers["References"] = input.references;
 

@@ -88,7 +88,13 @@ CREATE TABLE IF NOT EXISTS messages (
   provider_response JSONB,
   error TEXT,
   email_message_id TEXT,          -- RFC 5322 Message-ID for threading
-  sender_verified BOOLEAN NOT NULL DEFAULT false, -- inbound: signature verified (REQ-SEC-07)
+  -- REQ-SEC-07: for INBOUND email, true iff the From address matched the
+  -- conversation's contact (the reply token only routes, it does not authenticate).
+  -- Outbound rows never set this, so the default MUST be true — an outbound
+  -- message is authored by the workspace and is not "unverified". Inbound writes
+  -- it explicitly (webhook-store.insertInboundMessage), so the default only ever
+  -- governs outbound/other rows.
+  sender_verified BOOLEAN NOT NULL DEFAULT true,
   sent_at TIMESTAMPTZ,
   delivered_at TIMESTAMPTZ,
   opened_at TIMESTAMPTZ,          -- Resend "opened" (A-8: recorded, UI later)
@@ -113,6 +119,23 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_messages_ws_provider_id
 -- Rate-limit query support: count of outbound rows per workspace in a window.
 CREATE INDEX IF NOT EXISTS idx_messages_ws_dir_created
   ON messages(workspace_id, direction, created_at);
+-- Campaign bulk-send chunk claim (Phase 4 Gate-4 #4/#2). A dedicated claim
+-- marker, NOT provider_id (overloading provider_id was fragile and coupled the
+-- claim to the webhook-idempotency index). claimed_at lets the processor
+-- self-heal: a chunk whose claimer crashed mid-send is reclaimed once its claim
+-- goes stale (~10 min), so rows never wedge as claimed-but-unsent forever.
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS claim_token TEXT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_messages_campaign_claim
+  ON messages(campaign_id, status, claim_token);
+-- Backstop against a concurrent double-materialize (Phase 4 Gate/QA HIGH #1):
+-- even if two /send calls both reach the insert, a contact can be materialized
+-- at most once per campaign. Partial so it never touches 1:1 conversation rows
+-- (campaign_id NULL).
+-- ⚠️ PRE-APPLY REHEARSAL: build will fail if a campaign already holds duplicate
+-- (campaign_id, contact_id) rows; dedupe first on live data.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_messages_campaign_contact
+  ON messages(campaign_id, contact_id) WHERE campaign_id IS NOT NULL;
 
 -- ── suppressions ────────────────────────────────────────────────────────────
 -- Opt-out / bounce / complaint list. Enforced in the transport layer on every
@@ -174,6 +197,23 @@ CREATE TABLE IF NOT EXISTS messaging_rate_counters (
   count INT NOT NULL DEFAULT 0,
   PRIMARY KEY (bucket_key, window_start)
 );
+
+-- ── contacts dedup guard for concurrent inbound-SMS auto-create (finding #14) ──
+-- Two concurrent first-inbound messages from the same unknown number both see
+-- "no match" and both try to create a contact. createInboundSmsContact()'s
+-- insert-conflict re-select is the PRIMARY guard, but it only works if a unique
+-- constraint actually rejects the second insert — hence this partial index.
+-- Because inbound auto-created rows are written in E.164, the raw-phone index
+-- dedupes them (both writes use the identical string).
+--
+-- ⚠️ PRE-APPLY REHEARSAL REQUIRED. `contacts` is a LIVE table that may already
+-- hold duplicate (workspace_id, phone) rows and many NULL phones. This index is
+-- partial (WHERE phone IS NOT NULL) to ignore the NULLs, but it will FAIL to
+-- build if existing duplicates remain. Before applying to production: rehearse on
+-- a branch, run a dedupe pass on existing (workspace_id, phone) duplicates, THEN
+-- create the index. Do NOT assume this applies cleanly to live.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_contacts_ws_phone
+  ON contacts(workspace_id, phone) WHERE phone IS NOT NULL;
 
 -- ── organization_id backfill triggers (same pattern as every other table) ────
 DROP TRIGGER IF EXISTS trg_conversations_set_org ON conversations;
