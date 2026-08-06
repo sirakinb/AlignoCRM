@@ -212,8 +212,13 @@ CREATE TABLE IF NOT EXISTS messaging_rate_counters (
 -- build if existing duplicates remain. Before applying to production: rehearse on
 -- a branch, run a dedupe pass on existing (workspace_id, phone) duplicates, THEN
 -- create the index. Do NOT assume this applies cleanly to live.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_contacts_ws_phone
-  ON contacts(workspace_id, phone) WHERE phone IS NOT NULL;
+-- DEFERRED at go-live 2026-08-05: prod `contacts` has 4 duplicate
+-- (workspace_id, phone) groups, so this index can't build yet. The code-level
+-- re-select guard in webhook-store.createInboundSmsContact is the primary
+-- concurrency defense and stands without this backstop. Follow-up: dedupe the 4
+-- groups, then create the index:
+--   CREATE UNIQUE INDEX IF NOT EXISTS uq_contacts_ws_phone
+--     ON contacts(workspace_id, phone) WHERE phone IS NOT NULL;
 
 -- ── organization_id backfill triggers (same pattern as every other table) ────
 DROP TRIGGER IF EXISTS trg_conversations_set_org ON conversations;
