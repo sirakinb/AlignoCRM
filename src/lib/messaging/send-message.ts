@@ -176,7 +176,7 @@ export async function sendConversationMessage(
       const result = await getConversationEmailProvider().send({
         from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
         to: toAddress,
-        replyTo: `r+${conversation.reply_token}@${REPLY_DOMAIN}`,
+        replyTo: formatReplyTo(fromName, conversation.reply_token),
         subject: input.subject ?? conversation.subject ?? "(no subject)",
         html: emailHtml ?? "",
         inReplyTo: threading,
@@ -273,7 +273,7 @@ export async function sendCampaignMessageRow(
       const result = await getConversationEmailProvider().send({
         from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
         to,
-        replyTo: `r+${conversation.reply_token}@${REPLY_DOMAIN}`,
+        replyTo: formatReplyTo(fromName, conversation.reply_token),
         subject: row.subject ?? "(no subject)",
         html: row.body_html ?? "",
         extraHeaders: unsubHeaders,
@@ -472,6 +472,17 @@ async function bumpConversation(
  * and the address-structural characters `<>";` that could smuggle a second
  * address, then trims to a sane length. Falls back to "Aligno" (REQ-SEC-22).
  */
+/**
+ * Reply-To with a friendly display name so recipients see the sender name
+ * ("Pentridge Media") in their mail client instead of the raw routing token.
+ * The token still travels in the address for inbound routing. `fromName` is
+ * already sanitized (no newlines or <>";), so it is safe inside the quoted
+ * display phrase — no header injection.
+ */
+function formatReplyTo(fromName: string, replyToken: string): string {
+  return `"${fromName}" <r+${replyToken}@${REPLY_DOMAIN}>`;
+}
+
 function sanitizeFromName(raw: string | undefined): string {
   const cleaned = (raw ?? "")
     .replace(/[\r\n]+/g, " ")

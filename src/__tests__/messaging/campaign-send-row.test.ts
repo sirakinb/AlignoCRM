@@ -92,7 +92,9 @@ describe("sendCampaignMessageRow — email compliance headers (P4-23)", () => {
     const sent = emailSends[0];
     expect(sent.extraHeaders["List-Unsubscribe"]).toMatch(/^<https:\/\/app\.example\/api\/unsubscribe\//);
     expect(sent.extraHeaders["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
-    expect(sent.replyTo).toContain("r+TOKEN123@");
+    // Reply-To carries a friendly display name so recipients see the sender
+    // name, not the raw routing token; the token still routes inbound replies.
+    expect(sent.replyTo).toBe('"Aligno" <r+TOKEN123@reply.alignocrm.com>');
     // Display name is QUOTED (Gate-4 #3) so a comma/colon in from_name can't
     // smuggle a second address.
     expect(sent.from).toBe('"Aligno" <team@send.alignocrm.com>');
