@@ -213,10 +213,13 @@ CREATE TABLE IF NOT EXISTS messaging_rate_counters (
 -- a branch, run a dedupe pass on existing (workspace_id, phone) duplicates, THEN
 -- create the index. Do NOT assume this applies cleanly to live.
 -- DEFERRED at go-live 2026-08-05: prod `contacts` has 4 duplicate
--- (workspace_id, phone) groups, so this index can't build yet. The code-level
--- re-select guard in webhook-store.createInboundSmsContact is the primary
--- concurrency defense and stands without this backstop. Follow-up: dedupe the 4
--- groups, then create the index:
+-- (workspace_id, phone) groups, so this index can't build yet.
+-- CAVEAT: the re-select guard in webhook-store.createInboundSmsContact is NOT an
+-- independent replacement for this index — it only fires on the unique violation
+-- this index would raise. Until the index exists, a concurrent first-inbound SMS
+-- from the same new number can create duplicate contacts (data-integrity risk,
+-- no security/authz impact). Follow-up: dedupe the 4 groups, then create the
+-- index (this is a destructive contact merge — get explicit sign-off first):
 --   CREATE UNIQUE INDEX IF NOT EXISTS uq_contacts_ws_phone
 --     ON contacts(workspace_id, phone) WHERE phone IS NOT NULL;
 
