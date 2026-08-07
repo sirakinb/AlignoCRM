@@ -216,8 +216,9 @@
         <li class="done">A2P 10DLC TrustHub submit + status refresh + TrustHub webhook</li>
         <li class="done">Toll-free verification submit / refresh / UI</li>
         <li class="done">EIN not stored; only SIDs + non-sensitive business fields</li>
-        <li class="todo">Live Twilio account dry-run (brand fees / TFV review are real money + time)</li>
-        <li class="todo">Point TrustHub callbacks at <code>…/api/webhooks/twilio/trusthub</code></li>
+        <li class="done">Live dry-run (2026-08-07): toll-free <code>+1 877-838-8671</code> registered as workspace default in <code>workspace_phone_numbers</code>; Messaging Service inbound already points at production</li>
+        <li class="done">Toll-free verification submitted (Pentridge Media LLC) — Twilio status <code>IN_REVIEW</code>, tracked as <code>PENDING_REVIEW</code> in <code>workspace_tollfree_verifications</code></li>
+        <li class="note">Outbound SMS to US numbers stays blocked by carriers until the TFV is approved (typically a few business days) — refresh status from Settings → SMS setup</li>
       </ul>
     </article>
 
