@@ -7,6 +7,10 @@ import type {
 } from "@/types/messaging";
 import { getConversationEmailProvider } from "./conversation-email";
 import { getSmsProvider } from "./sms-service";
+import { getDefaultEmailConnection } from "./email-connections";
+import { ensureWorkspaceReplyAlias } from "./reply-alias";
+import { getEmailProviderForConnection } from "./email-providers";
+import { getDefaultWorkspacePhoneNumber } from "./phone-numbers";
 import { normalizeSendableE164 } from "./phone";
 import { findSuppression } from "./suppressions";
 import { escapeHtml } from "@/lib/html";
@@ -168,25 +172,28 @@ export async function sendConversationMessage(
   // ── Send via provider ─────────────────────────────────────────────────────
   try {
     if (channel === "email") {
-      const config = await loadChannelConfig(workspaceId, "email");
-      const fromName = sanitizeFromName(config.from_name);
-      const fromLocal = sanitizeFromLocalPart(config.from_local_part);
+      const { provider, providerKey, from, replyTo } = await resolveEmailProvider(
+        workspaceId,
+        conversation.reply_token
+      );
       const threading = await lastInboundEmailId(conversation.id);
 
-      const result = await getConversationEmailProvider().send({
-        from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
+      const result = await provider.send({
+        from,
         to: toAddress,
-        replyTo: formatReplyTo(fromName, conversation.reply_token),
+        replyTo,
         subject: input.subject ?? conversation.subject ?? "(no subject)",
         html: emailHtml ?? "",
         inReplyTo: threading,
         references: threading,
       });
-      await markSent(message.id, "resend", result.id);
+      await markSent(message.id, providerKey, result.id);
     } else {
+      const fromNumber = await resolveSmsFromNumber(workspaceId);
       const result = await getSmsProvider().send({
         to: toAddress,
         body: input.body,
+        from: fromNumber,
       });
       await markSent(message.id, "twilio", result.id);
     }
@@ -261,28 +268,28 @@ export async function sendCampaignMessageRow(
 
   try {
     if (row.channel === "email") {
-      const config = await loadChannelConfig(workspaceId, "email");
-      const fromName = sanitizeFromName(config.from_name);
-      const fromLocal = sanitizeFromLocalPart(config.from_local_part);
-      // Find-or-create the token-holder conversation for reply routing (P4-19b):
-      // no message write, no last_message_* bump — ensureConversation only ever
-      // creates the row, never touches an existing one's timeline fields.
       const conversation = await ensureConversation(workspaceId, row.contact_id);
+      const { provider, providerKey, from, replyTo } = await resolveEmailProvider(
+        workspaceId,
+        conversation.reply_token
+      );
       const unsubHeaders = campaignUnsubHeaders(workspaceId, to, row.campaign_id);
 
-      const result = await getConversationEmailProvider().send({
-        from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
+      const result = await provider.send({
+        from,
         to,
-        replyTo: formatReplyTo(fromName, conversation.reply_token),
+        replyTo,
         subject: row.subject ?? "(no subject)",
         html: row.body_html ?? "",
         extraHeaders: unsubHeaders,
       });
-      await markSent(row.id, "resend", result.id);
+      await markSent(row.id, providerKey, result.id);
     } else {
+      const fromNumber = await resolveSmsFromNumber(workspaceId);
       const result = await getSmsProvider().send({
         to,
         body: row.body_text ?? "",
+        from: fromNumber,
       });
       await markSent(row.id, "twilio", result.id);
     }
@@ -434,7 +441,7 @@ async function lastInboundEmailId(
 
 async function markSent(
   messageId: string,
-  provider: "resend" | "twilio",
+  provider: "resend" | "twilio" | "google" | "microsoft",
   providerId: string
 ): Promise<void> {
   await insforge.database
@@ -475,12 +482,55 @@ async function bumpConversation(
 /**
  * Reply-To with a friendly display name so recipients see the sender name
  * ("Pentridge Media") in their mail client instead of the raw routing token.
- * The token still travels in the address for inbound routing. `fromName` is
+ * When the workspace has a pretty alias, the address is human-readable too
+ * (pentridge-media@…) and inbound routes by alias + sender; otherwise the
+ * legacy r+<token> form routes by conversations.reply_token. `fromName` is
  * already sanitized (no newlines or <>";), so it is safe inside the quoted
  * display phrase — no header injection.
  */
-function formatReplyTo(fromName: string, replyToken: string): string {
-  return `"${fromName}" <r+${replyToken}@${REPLY_DOMAIN}>`;
+function formatReplyTo(fromName: string, replyToken: string, alias: string | null): string {
+  const localPart = alias ?? `r+${replyToken}`;
+  return `"${fromName}" <${localPart}@${REPLY_DOMAIN}>`;
+}
+
+/** Workspace default purchased number, or null to fall back to Messaging Service. */
+async function resolveSmsFromNumber(workspaceId: string): Promise<string | null> {
+  const number = await getDefaultWorkspacePhoneNumber(workspaceId);
+  return number?.phone_number ?? null;
+}
+
+async function resolveEmailProvider(
+  workspaceId: string,
+  replyToken: string
+): Promise<{
+  provider: import("./conversation-email").ConversationEmailProvider;
+  providerKey: "resend" | "google" | "microsoft";
+  from: string;
+  replyTo: string;
+}> {
+  const connection = await getDefaultEmailConnection(workspaceId);
+  if (connection && connection.status === "active") {
+    const fromName = sanitizeFromName(connection.display_name ?? undefined);
+    const from = `"${fromName}" <${connection.email}>`;
+    const alias = await ensureWorkspaceReplyAlias(workspaceId, fromName);
+    return {
+      provider: getEmailProviderForConnection(connection),
+      providerKey: connection.provider === "google" ? "google" : "microsoft",
+      from,
+      replyTo: formatReplyTo(fromName, replyToken, alias),
+    };
+  }
+
+  const config = await loadChannelConfig(workspaceId, "email");
+  const fromName = sanitizeFromName(config.from_name);
+  const fromLocal = sanitizeFromLocalPart(config.from_local_part);
+  const alias = await ensureWorkspaceReplyAlias(workspaceId, fromName);
+  return {
+    provider: getConversationEmailProvider(),
+    providerKey: "resend",
+    from: `"${fromName}" <${fromLocal}@${EMAIL_DOMAIN}>`,
+    replyTo: formatReplyTo(fromName, replyToken, alias),
+  };
 }
 
 function sanitizeFromName(raw: string | undefined): string {

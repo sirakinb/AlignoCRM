@@ -5,7 +5,11 @@ import {
   getContactEmail,
   insertInboundMessage,
   bumpConversationInbound,
+  findContactByEmail,
+  createInboundEmailContact,
 } from "@/lib/messaging/webhook-store";
+import { findWorkspaceByEmailAlias } from "@/lib/messaging/reply-alias";
+import { ensureConversation } from "@/lib/messaging/send-message";
 import { sanitizeInboundHtml } from "@/lib/messaging/sanitize-html";
 import { stripQuotedReply } from "@/lib/messaging/quote-strip";
 import { sanitizeHeaderValue, HEADER_LIMITS } from "@/lib/messaging/header-safety";
@@ -110,25 +114,79 @@ export async function POST(request: Request): Promise<Response> {
     const data = event?.data ?? (verified.event as InboundEmail);
 
     const recipients = extractAddresses(data?.to);
+    const fromAddress = sanitizeHeaderValue(firstAddress(data?.from), HEADER_LIMITS.address);
+
+    // Routing, two forms of reply address:
+    //   r+<token>@…  → conversation directly via conversations.reply_token (legacy)
+    //   <alias>@…    → workspace via alias, contact via sender, then the
+    //                  (workspace, contact) conversation (pretty addresses)
     const token = firstReplyToken(recipients);
-    if (!token) {
-      console.info("[webhook:resend-inbound] no r+token recipient", {
-        to: recipients.map(redactAddress),
-      });
-      return new Response("ok", { status: 200 }); // malformed/absent token → drop (P2-13)
-    }
+    const aliasLocal = token ? null : firstAliasLocalPart(recipients);
 
-    const conversation = await findConversationByReplyToken(token);
-    if (!conversation) {
-      console.info("[webhook:resend-inbound] unknown reply token");
-      return new Response("ok", { status: 200 }); // unknown token → drop (P2-13)
-    }
+    let conversation: {
+      id: string;
+      workspace_id: string;
+      contact_id: string;
+      unread_count: number;
+    } | null = null;
+    let senderVerified = false;
+    let toAddress: string;
 
-    // Idempotency: event id is the svix-id. (A resent inbound also carries the
-    // same Message-ID, deduped by the per-workspace unique index as a backstop.)
-    // Claimed BEFORE the body fetch so a webhook retry never re-fetches.
-    const first = await claimWebhookEvent("resend", verified.eventId, "email.inbound");
-    if (!first) return new Response("ok", { status: 200 });
+    if (token) {
+      conversation = await findConversationByReplyToken(token);
+      if (!conversation) {
+        console.info("[webhook:resend-inbound] unknown reply token");
+        return new Response("ok", { status: 200 }); // unknown token → drop (P2-13)
+      }
+      toAddress = `r+${token}@${REPLY_DOMAIN}`;
+
+      // Idempotency: event id is the svix-id. (A resent inbound also carries the
+      // same Message-ID, deduped by the per-workspace unique index as a backstop.)
+      // Claimed BEFORE the body fetch so a webhook retry never re-fetches.
+      const first = await claimWebhookEvent("resend", verified.eventId, "email.inbound");
+      if (!first) return new Response("ok", { status: 200 });
+
+      // Sender verification: the reply token only ROUTES, it does not AUTHENTICATE
+      // (it travels in Reply-To on every outbound mail). Compare From to the
+      // contact's email; on mismatch store the message but flag it (REQ-SEC-07).
+      const contactEmail = await getContactEmail(conversation.workspace_id, conversation.contact_id);
+      senderVerified =
+        !!fromAddress &&
+        !!contactEmail &&
+        fromAddress.trim().toLowerCase() === contactEmail.trim().toLowerCase();
+    } else {
+      if (!aliasLocal || !fromAddress) {
+        console.info("[webhook:resend-inbound] no routable recipient", {
+          to: recipients.map(redactAddress),
+        });
+        return new Response("ok", { status: 200 }); // malformed/absent → drop (P2-13)
+      }
+      const workspaceId = await findWorkspaceByEmailAlias(aliasLocal);
+      if (!workspaceId) {
+        console.info("[webhook:resend-inbound] unknown alias");
+        return new Response("ok", { status: 200 }); // unknown alias → drop, never bounce
+      }
+      toAddress = `${aliasLocal}@${REPLY_DOMAIN}`;
+
+      const first = await claimWebhookEvent("resend", verified.eventId, "email.inbound");
+      if (!first) return new Response("ok", { status: 200 });
+
+      let contact: { id: string } | null = await findContactByEmail(workspaceId, fromAddress);
+      if (!contact) {
+        // Same auto-create policy + rate limit as mailbox sync: unknown senders
+        // become contacts, capped per workspace so alias spam can't flood the CRM.
+        const { limit, windowMs } = RATE_LIMITS.emailAutoCreatePerWorkspace;
+        if (!(await checkRateLimit(`email-autocreate:${workspaceId}`, limit, windowMs))) {
+          console.warn("[webhook:resend-inbound] auto-create rate limited");
+          return new Response("ok", { status: 200 });
+        }
+        contact = await createInboundEmailContact(workspaceId, fromAddress);
+      }
+      conversation = await ensureConversation(workspaceId, contact.id);
+      // Contact was resolved (or created) FROM the sender address, so the
+      // sender matches by construction.
+      senderVerified = true;
+    }
 
     // The webhook is metadata-only; fetch the parsed body from the API.
     const emailId = asString(data?.email_id) ?? asString(data?.id);
@@ -143,17 +201,7 @@ export async function POST(request: Request): Promise<Response> {
         HEADER_LIMITS.messageId
       );
 
-    const fromAddress = sanitizeHeaderValue(firstAddress(data?.from), HEADER_LIMITS.address);
     const subject = sanitizeHeaderValue(asString(data?.subject), HEADER_LIMITS.subject);
-
-    // Sender verification: the reply token only ROUTES, it does not AUTHENTICATE
-    // (it travels in Reply-To on every outbound mail). Compare From to the
-    // contact's email; on mismatch store the message but flag it (REQ-SEC-07).
-    const contactEmail = await getContactEmail(conversation.workspace_id, conversation.contact_id);
-    const senderVerified =
-      !!fromAddress &&
-      !!contactEmail &&
-      fromAddress.trim().toLowerCase() === contactEmail.trim().toLowerCase();
 
     // Cap the INPUT before sanitizing (not the output) so truncation can never
     // cut mid-tag and reintroduce unbalanced markup (Security #7). Sanitize on
@@ -179,7 +227,7 @@ export async function POST(request: Request): Promise<Response> {
       bodyText,
       bodyHtml,
       fromAddress,
-      toAddress: `r+${token}@${REPLY_DOMAIN}`,
+      toAddress,
       provider: "resend",
       providerId: messageId,
       emailMessageId: messageId,
@@ -240,6 +288,23 @@ function firstReplyToken(recipients: string[]): string | null {
   for (const r of recipients) {
     const m = REPLY_TOKEN_RE.exec(r.trim());
     if (m) return m[1];
+  }
+  return null;
+}
+
+// Workspace alias addresses (pretty Reply-To): lowercase slug local part on our
+// reply domain. Anchored to the domain for the same reason as REPLY_TOKEN_RE;
+// the charset excludes "+", so r+<token> addresses can never match here.
+const ALIAS_ADDR_RE = new RegExp(
+  `^([a-z0-9][a-z0-9-]{1,62})@${REPLY_DOMAIN.replace(/[.\\]/g, "\\$&")}$`,
+  "i"
+);
+
+/** Find the first recipient of the form <alias>@<reply-domain> and return the alias. */
+function firstAliasLocalPart(recipients: string[]): string | null {
+  for (const r of recipients) {
+    const m = ALIAS_ADDR_RE.exec(r.trim());
+    if (m) return m[1].toLowerCase();
   }
   return null;
 }

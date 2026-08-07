@@ -134,7 +134,7 @@ export interface InboundMessageRow {
   bodyHtml: string | null;
   fromAddress: string | null;
   toAddress: string | null;
-  provider: "resend" | "twilio";
+  provider: "resend" | "twilio" | "google" | "microsoft";
   providerId: string | null;
   emailMessageId: string | null;
   subject: string | null;
@@ -202,11 +202,25 @@ export interface OwnedSmsChannel {
 
 /**
  * Resolve the workspace that owns the Twilio number the SMS was sent TO
- * (REQ-SEC-03). The number is stored in workspace_channels.config.phone_number.
+ * (REQ-SEC-03). Prefers purchased workspace_phone_numbers, then falls back to
+ * workspace_channels.config.phone_number for backward compatibility.
  */
 export async function findSmsWorkspaceByNumber(
   toNumber: string
 ): Promise<OwnedSmsChannel | null> {
+  const { data: purchased } = await insforge.database
+    .from("workspace_phone_numbers")
+    .select("workspace_id")
+    .eq("phone_number", toNumber)
+    .eq("status", "active")
+    .limit(1);
+  if (purchased?.[0]) {
+    return {
+      workspace_id: (purchased[0] as { workspace_id: string }).workspace_id,
+      config: { phone_number: toNumber },
+    };
+  }
+
   const { data } = await insforge.database
     .from("workspace_channels")
     .select("workspace_id, config")
@@ -286,6 +300,68 @@ export async function createInboundSmsContact(
   const created = data as { id: string };
 
   const tagId = await findOrCreateTag(workspaceId, "source:sms-inbound");
+  await insforge.database
+    .from("contact_tags")
+    .insert({ contact_id: created.id, tag_id: tagId });
+
+  return created;
+}
+
+/**
+ * Match a contact by email WITHIN the given workspace (case-insensitive via
+ * lowercased stored/lookup value). Used by connected-mailbox inbound sync.
+ */
+export async function findContactByEmail(
+  workspaceId: string,
+  email: string
+): Promise<MatchedContact | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const { data } = await insforge.database
+    .from("contacts")
+    .select("id, email")
+    .eq("workspace_id", workspaceId)
+    .ilike("email", normalized)
+    .limit(1);
+  return (data?.[0] as MatchedContact | undefined) ?? null;
+}
+
+/**
+ * Auto-create an email-only contact for an unknown inbound mailbox sender,
+ * tagged `source:email-inbound`. Mirrors createInboundSmsContact.
+ */
+export async function createInboundEmailContact(
+  workspaceId: string,
+  email: string
+): Promise<{ id: string }> {
+  const contactId = randomUUID();
+  const normalized = email.trim().toLowerCase();
+  const { data, error } = await insforge.database
+    .from("contacts")
+    .insert({
+      id: contactId,
+      workspace_id: workspaceId,
+      first_name: "",
+      last_name: "",
+      email: normalized,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    const { data: existing } = await insforge.database
+      .from("contacts")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("email", normalized)
+      .limit(1);
+    if (existing?.[0]) return existing[0] as { id: string };
+    throw error;
+  }
+  const created = data as { id: string };
+
+  const tagId = await findOrCreateTag(workspaceId, "source:email-inbound");
   await insforge.database
     .from("contact_tags")
     .insert({ contact_id: created.id, tag_id: tagId });

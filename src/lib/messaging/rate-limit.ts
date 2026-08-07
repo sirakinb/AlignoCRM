@@ -68,6 +68,14 @@ export const RATE_LIMITS = {
   campaignSendPerHour: { limit: 5, windowMs: 60 * 60_000 },
   /** Public unsubscribe endpoint, per IP, per minute (REQ-SEC-17). */
   unsubscribePerIp: { limit: 30, windowMs: 60_000 },
+  /** OAuth start/callback endpoints, per IP, per minute. */
+  oauthPerIp: { limit: 20, windowMs: 60_000 },
+  /** Inbound mailbox sync contact auto-creation, per workspace. */
+  emailAutoCreatePerWorkspace: { limit: 50, windowMs: 60 * 60_000 },
+  /** Per-connection mailbox sync API budget (Gmail/Outlook polling). */
+  emailSyncPerConnection: { limit: 30, windowMs: 60_000 },
+  /** Phone number search / purchase / release / compliance submit. */
+  phoneNumberMutations: { limit: 20, windowMs: 60_000 },
 } as const;
 
 /** Hard recipient caps for a campaign send (REQ-SEC-17). */

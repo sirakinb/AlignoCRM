@@ -71,7 +71,7 @@ export type ConversationMessageStatus =
   | "bounced"
   | "received";
 
-export type MessageProvider = "resend" | "twilio";
+export type MessageProvider = "resend" | "twilio" | "google" | "microsoft";
 
 export interface Conversation {
   id: string;

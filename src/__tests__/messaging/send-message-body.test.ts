@@ -66,6 +66,7 @@ describe("sendConversationMessage — 1:1 email body rendering (MEDIUM #1)", () 
       { data: { id: "k1", workspace_id: "ws-1", email: "bob@x.com", phone: null, first_name: "Bob", last_name: "Lee" } }, // loadContact
       { data: [{ id: "c1", reply_token: "tok", subject: null }] }, // ensureConversation select
       { data: { id: "m1" } }, // queued messages insert → select().single()
+      { data: [] }, // getDefaultEmailConnection (no active default)
       { data: [{ config: { from_name: "Aki", from_local_part: "team" } }] }, // loadChannelConfig
       { data: [] }, // lastInboundEmailId
       { error: null }, // markSent update

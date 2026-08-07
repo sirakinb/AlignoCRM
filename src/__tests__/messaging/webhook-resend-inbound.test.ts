@@ -1,24 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Webhook } from "svix";
 
-const { store, claimWebhookEvent, checkRateLimit } = vi.hoisted(() => ({
-  store: {
-    findConversationByReplyToken: vi.fn(),
-    getContactEmail: vi.fn(),
-    insertInboundMessage: vi.fn(),
-    bumpConversationInbound: vi.fn(),
-  },
-  claimWebhookEvent: vi.fn(),
-  checkRateLimit: vi.fn(),
-}));
+const { store, claimWebhookEvent, checkRateLimit, findWorkspaceByEmailAlias, ensureConversation } =
+  vi.hoisted(() => ({
+    store: {
+      findConversationByReplyToken: vi.fn(),
+      getContactEmail: vi.fn(),
+      insertInboundMessage: vi.fn(),
+      bumpConversationInbound: vi.fn(),
+      findContactByEmail: vi.fn(),
+      createInboundEmailContact: vi.fn(),
+    },
+    claimWebhookEvent: vi.fn(),
+    checkRateLimit: vi.fn(),
+    findWorkspaceByEmailAlias: vi.fn(),
+    ensureConversation: vi.fn(),
+  }));
 
 vi.mock("@/lib/messaging/webhook-store", () => store);
 vi.mock("@/lib/messaging/webhook-events", () => ({ claimWebhookEvent }));
+vi.mock("@/lib/messaging/reply-alias", () => ({ findWorkspaceByEmailAlias }));
+vi.mock("@/lib/messaging/send-message", () => ({ ensureConversation }));
 vi.mock("@/lib/messaging/rate-limit", () => ({
   checkRateLimit,
   RATE_LIMITS: {
     webhookPerRoute: { limit: 600, windowMs: 60_000 },
     smsAutoCreatePerWorkspace: { limit: 50, windowMs: 3_600_000 },
+    emailAutoCreatePerWorkspace: { limit: 50, windowMs: 3_600_000 },
   },
 }));
 
@@ -210,6 +218,97 @@ describe("POST /api/webhooks/resend/inbound", () => {
     expect(arg.emailMessageId).toBe("<fetched@mail>");
     fetchMock.mockRestore();
     delete process.env.RESEND_API_KEY;
+  });
+
+  // ── Pretty alias routing (alias@reply-domain instead of r+token) ──────────
+
+  it("routes an alias recipient via workspace + sender to the contact's conversation", async () => {
+    findWorkspaceByEmailAlias.mockResolvedValue("ws-9");
+    store.findContactByEmail.mockResolvedValue({ id: "ct-9" });
+    ensureConversation.mockResolvedValue({
+      id: "c-9",
+      workspace_id: "ws-9",
+      contact_id: "ct-9",
+      unread_count: 0,
+    });
+
+    const res = await POST(
+      signedRequest(inboundEvent({ to: ["pentridge-media@reply.alignocrm.com"] }))
+    );
+    expect(res.status).toBe(200);
+    expect(findWorkspaceByEmailAlias).toHaveBeenCalledWith("pentridge-media");
+    expect(store.findContactByEmail).toHaveBeenCalledWith("ws-9", "alice@example.com");
+    expect(ensureConversation).toHaveBeenCalledWith("ws-9", "ct-9");
+    expect(store.findConversationByReplyToken).not.toHaveBeenCalled();
+    expect(store.insertInboundMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: "ws-9",
+        conversationId: "c-9",
+        contactId: "ct-9",
+        toAddress: "pentridge-media@reply.alignocrm.com",
+        senderVerified: true,
+      })
+    );
+  });
+
+  it("auto-creates a contact for an unknown alias sender (rate limited)", async () => {
+    findWorkspaceByEmailAlias.mockResolvedValue("ws-9");
+    store.findContactByEmail.mockResolvedValue(null);
+    store.createInboundEmailContact.mockResolvedValue({ id: "ct-new" });
+    ensureConversation.mockResolvedValue({
+      id: "c-new",
+      workspace_id: "ws-9",
+      contact_id: "ct-new",
+      unread_count: 0,
+    });
+
+    const res = await POST(
+      signedRequest(inboundEvent({ to: ["pentridge-media@reply.alignocrm.com"] }))
+    );
+    expect(res.status).toBe(200);
+    expect(store.createInboundEmailContact).toHaveBeenCalledWith("ws-9", "alice@example.com");
+    expect(store.insertInboundMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ contactId: "ct-new" })
+    );
+  });
+
+  it("drops (200) when auto-create is rate limited on the alias path", async () => {
+    findWorkspaceByEmailAlias.mockResolvedValue("ws-9");
+    store.findContactByEmail.mockResolvedValue(null);
+    checkRateLimit.mockImplementation(async (key: string) => !key.startsWith("email-autocreate:"));
+
+    const res = await POST(
+      signedRequest(inboundEvent({ to: ["pentridge-media@reply.alignocrm.com"] }))
+    );
+    expect(res.status).toBe(200);
+    expect(store.createInboundEmailContact).not.toHaveBeenCalled();
+    expect(store.insertInboundMessage).not.toHaveBeenCalled();
+  });
+
+  it("unknown alias → 200 drop, no claim, no writes", async () => {
+    findWorkspaceByEmailAlias.mockResolvedValue(null);
+    const res = await POST(signedRequest(inboundEvent({ to: ["nobody@reply.alignocrm.com"] })));
+    expect(res.status).toBe(200);
+    expect(claimWebhookEvent).not.toHaveBeenCalled();
+    expect(store.insertInboundMessage).not.toHaveBeenCalled();
+  });
+
+  it("ignores an alias addressed to a foreign domain", async () => {
+    const res = await POST(signedRequest(inboundEvent({ to: ["pentridge-media@evil.com"] })));
+    expect(res.status).toBe(200);
+    expect(findWorkspaceByEmailAlias).not.toHaveBeenCalled();
+    expect(store.insertInboundMessage).not.toHaveBeenCalled();
+  });
+
+  it("prefers the r+token path when both address forms are present", async () => {
+    const res = await POST(
+      signedRequest(
+        inboundEvent({ to: ["r+TOK123@reply.alignocrm.com", "pentridge-media@reply.alignocrm.com"] })
+      )
+    );
+    expect(res.status).toBe(200);
+    expect(store.findConversationByReplyToken).toHaveBeenCalledWith("TOK123");
+    expect(findWorkspaceByEmailAlias).not.toHaveBeenCalled();
   });
 
   it("still stores the message (subject/routing survive) if the body fetch fails", async () => {
