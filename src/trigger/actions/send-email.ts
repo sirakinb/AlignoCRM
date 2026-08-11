@@ -32,7 +32,10 @@ export const executeSendEmail = task({
     };
 
     const { text: subject } = interpolateTemplate(nodeConfig.subject, context);
-    const { text: body } = interpolateTemplate(nodeConfig.body, context);
+    // body is rendered as HTML email — escape merge values (REQ-SEC-12).
+    const { text: body } = interpolateTemplate(nodeConfig.body, context, {
+      mode: "html",
+    });
     const { text: toInterpolated } = interpolateTemplate(nodeConfig.to, context);
     const to = toInterpolated || contact.email;
 

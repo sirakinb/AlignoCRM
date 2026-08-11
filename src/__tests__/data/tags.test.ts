@@ -22,7 +22,7 @@ mockDelete.mockReturnValue(chainable());
 mockEq.mockReturnValue(chainable());
 mockOrder.mockReturnValue(chainable());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: vi.fn(() => chainable()),
@@ -34,7 +34,7 @@ vi.mock("@/lib/events/emitter", () => ({
   emitEvent: vi.fn().mockResolvedValue({ id: "evt-1" }),
 }));
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   getTags,
   createTag,
@@ -73,7 +73,11 @@ describe("tags data layer", () => {
 
       const result = await createTag(input);
 
-      expect(mockInsert).toHaveBeenCalledWith(input);
+      // createTag now generates a client-side uuid for the id
+      expect(mockInsert).toHaveBeenCalledWith({
+        id: expect.any(String),
+        ...input,
+      });
       expect(result).toEqual(created);
     });
   });

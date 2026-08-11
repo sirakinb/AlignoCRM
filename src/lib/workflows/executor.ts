@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { WorkflowNode, WorkflowEdge, ConditionConfig, ConditionRule, SendEmailConfig, WaitConfig, AddTagConfig, RemoveTagConfig, MoveDealStageConfig } from "@/types/workflow";
 import { NodeType } from "@/types/workflow";
 import type { WorkflowVersion } from "@/types/workflow";
@@ -47,7 +47,10 @@ export async function executeStep(
           },
         };
         const { text: subject } = interpolateTemplate(emailConfig.subject, context);
-        const { text: body } = interpolateTemplate(emailConfig.body, context);
+        // body is rendered as HTML email — escape merge values (REQ-SEC-12).
+        const { text: body } = interpolateTemplate(emailConfig.body, context, {
+          mode: "html",
+        });
         const { text: toInterpolated } = interpolateTemplate(emailConfig.to, context);
         const to = toInterpolated || contact.email;
 

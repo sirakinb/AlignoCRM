@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { getPurpleScaleColor } from "@/lib/design/aligno-theme";
 import type {
   Pipeline,

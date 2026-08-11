@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { BusinessEvent } from "@/types/events";
 import type { Workflow, WorkflowVersion } from "@/types/workflow";
 import { WorkflowStatus } from "@/types/workflow";

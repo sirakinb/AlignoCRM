@@ -1,6 +1,6 @@
 "use server";
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { createEnrollment } from "@/lib/data/enrollments";
 import { advanceWorkflow } from "@/lib/workflows/executor";
 import type { WorkflowVersion } from "@/types/workflow";

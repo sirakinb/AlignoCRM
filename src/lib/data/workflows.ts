@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { validateWorkflow } from "@/lib/workflows/validation";
 import type {
   Workflow,

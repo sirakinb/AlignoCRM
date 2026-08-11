@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Loader2, Plus, ChevronDown, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, Loader2, Plus, ChevronDown, Trash2, MessageSquare } from "lucide-react";
 import {
   ALIGNO_PURPLE_SCALE,
   getStringPurpleColor,
   withAlpha,
 } from "@/lib/design/aligno-theme";
 import type { Contact, Tag } from "@/types/crm";
+import { AgentContactPanel } from "@/components/agent/agent-contact-panel";
 
 interface ContactDrawerProps {
   contactId: string;
@@ -22,6 +24,7 @@ export default function ContactDrawer({
   onClose,
   onSaved,
 }: ContactDrawerProps) {
+  const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -507,6 +510,9 @@ export default function ContactDrawer({
                   )}
                 </div>
               </div>
+
+              {/* Agent */}
+              <AgentContactPanel contact={contact} />
             </div>
 
             {/* Footer */}
@@ -514,7 +520,15 @@ export default function ContactDrawer({
               {saveError && (
                 <p className="mb-3 text-xs text-red-500">{saveError}</p>
               )}
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  onClick={() => router.push(`/conversations?contact=${contactId}`)}
+                  className="flex items-center gap-1.5 rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                >
+                  <MessageSquare size={14} strokeWidth={1.8} />
+                  Message
+                </button>
+                <div className="flex items-center gap-3">
                 <button
                   onClick={onClose}
                   className="rounded-lg border border-[#e7e7ea] bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
@@ -535,6 +549,7 @@ export default function ContactDrawer({
                     "Save"
                   )}
                 </button>
+                </div>
               </div>
             </div>
           </>

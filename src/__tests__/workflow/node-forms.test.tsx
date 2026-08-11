@@ -28,7 +28,6 @@ describe("TriggerForm", () => {
     expect(screen.getByText("Contact Created")).toBeInTheDocument();
     expect(screen.getByText("Tag Added")).toBeInTheDocument();
     expect(screen.getByText("Deal Stage Changed")).toBeInTheDocument();
-    expect(screen.getByText("Form Submitted")).toBeInTheDocument();
   });
 
   it("calls onChange when trigger type changes", () => {

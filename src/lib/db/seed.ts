@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { ALIGNO_PURPLE_SCALE } from "@/lib/design/aligno-theme";
 
 export async function seed() {

@@ -1,6 +1,6 @@
 import { task } from "@trigger.dev/sdk";
 import { moveDealStage } from "@/lib/data/deals";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { MoveDealStageConfig } from "@/types/workflow";
 
 export const executeMoveDealStage = task({

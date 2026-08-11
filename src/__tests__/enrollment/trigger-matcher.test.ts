@@ -14,6 +14,7 @@ function makeChain() {
   self.update = vi.fn(chainMethod);
   self.delete = vi.fn(chainMethod);
   self.eq = vi.fn(chainMethod);
+  self.in = vi.fn(chainMethod);
   self.order = vi.fn(chainMethod);
   self.limit = vi.fn(chainMethod);
   self.single = vi.fn(() => {
@@ -35,7 +36,7 @@ function makeChain() {
 
 const mockFrom = vi.fn((_table: string) => makeChain());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (table: string) => mockFrom(table),
@@ -54,7 +55,7 @@ vi.mock("@/lib/workflows/executor", () => ({
   advanceWorkflow: vi.fn(),
 }));
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   matchEventToWorkflows,
   enrollRecord,

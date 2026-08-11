@@ -7,6 +7,7 @@ import {
 } from "@/lib/data/tags";
 import {
   getInternalApiAuthContext,
+  requireTenantContextFromRequest,
   unauthorizedInternalApiResponse,
 } from "@/lib/api/internal-auth";
 import {
@@ -59,7 +60,7 @@ async function getOrCreateSourceTag(
 
 export async function GET(request: Request) {
   try {
-    const tenant = await requireTenantContext();
+    const tenant = await requireTenantContextFromRequest(request);
 
     const contacts = await getContacts(tenant.workspaceId);
     return NextResponse.json({ contacts });

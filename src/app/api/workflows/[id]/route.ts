@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
 import { getWorkflow, updateWorkflow } from "@/lib/data/workflows";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 
 export async function GET(
   _request: Request,

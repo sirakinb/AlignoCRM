@@ -32,7 +32,7 @@ function makeChain() {
 
 const mockFrom = vi.fn((_table: string) => makeChain());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (table: string) => mockFrom(table),
@@ -132,9 +132,11 @@ describe("executor", () => {
       expect(mockCreateExecutionStep).toHaveBeenCalledWith(
         expect.objectContaining({
           outcome: StepOutcome.Completed,
+          // add_tag now performs the real tag insert and reports tag details
           provider_response: expect.objectContaining({
-            mock: true,
             action: "add_tag",
+            tagId: "t-1",
+            tagName: "VIP",
           }),
         })
       );

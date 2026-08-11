@@ -16,6 +16,9 @@ import {
   LogOut,
   BookOpen,
   MessageSquareQuote,
+  MessagesSquare,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element */
@@ -26,6 +29,9 @@ const navItems = [
   { label: "Home", href: "/dashboard", icon: Home },
   { label: "Pipeline", href: "/pipeline", icon: GitBranch },
   { label: "Contacts", href: "/contacts", icon: Users },
+  { label: "Conversations", href: "/conversations", icon: MessagesSquare },
+  { label: "Email", href: "/email", icon: Mail },
+  { label: "SMS", href: "/sms", icon: MessageSquare },
   { label: "Testimonials", href: "/testimonials", icon: MessageSquareQuote },
 ] as const;
 
@@ -40,6 +46,7 @@ export function Sidebar({ width = 224 }: SidebarProps) {
   const { user } = useUser();
   const { user: serverUser, refreshUser } = useServerUser();
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const refreshedUserId = useRef<string | null>(null);
   const userMetadata =
     ((user as { metadata?: Record<string, unknown> } | null)?.metadata ?? {}) as Record<
@@ -112,6 +119,32 @@ export function Sidebar({ width = 224 }: SidebarProps) {
     setAvatarFailed(false);
   }, [avatarSrc]);
 
+  // Poll the unread-conversation count for the Conversations badge (P3-19), and
+  // refresh immediately when the inbox marks a thread read (custom event).
+  useEffect(() => {
+    let active = true;
+    async function refreshUnread() {
+      try {
+        const res = await fetch("/api/conversations/unread-count", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        if (active) setUnreadCount(Number(payload.count) || 0);
+      } catch {
+        // Non-fatal: the badge just won't update this tick.
+      }
+    }
+    refreshUnread();
+    const interval = setInterval(refreshUnread, 30_000);
+    window.addEventListener("aligno:unread-refresh", refreshUnread);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener("aligno:unread-refresh", refreshUnread);
+    };
+  }, []);
+
   return (
     <aside
       style={{ width }}
@@ -158,6 +191,11 @@ export function Sidebar({ width = 224 }: SidebarProps) {
                     className={`shrink-0 ${isActive ? "text-[#6c2bd9]" : "text-zinc-500"}`}
                   />
                   <span className="truncate">{item.label}</span>
+                  {item.href === "/conversations" && unreadCount > 0 && (
+                    <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-[#6c2bd9] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

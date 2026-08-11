@@ -1,4 +1,4 @@
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { ActivityLog, CreateActivityLogInput } from "@/types/crm";
 
 export async function getActivityLogs(

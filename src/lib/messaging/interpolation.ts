@@ -1,3 +1,5 @@
+import { escapeHtml } from "@/lib/html";
+
 const VARIABLE_PATTERN = /\{\{(.+?)\}\}/g;
 
 /**
@@ -44,15 +46,31 @@ export interface InterpolationResult {
   warnings: string[];
 }
 
+export interface InterpolationOptions {
+  /**
+   * Output context. "html" HTML-escapes every interpolated value so
+   * contact-controlled merge data (names, notes, lead fields) cannot inject
+   * markup into an email body (REQ-SEC-12). Use "html" for anything rendered
+   * as HTML; "text" (default) for SMS, plain-text, and subject lines.
+   */
+  mode?: "text" | "html";
+}
+
 /**
  * Replaces {{variable}} placeholders in a template with values from context.
  * Missing variables are rendered as empty strings and recorded as warnings.
+ *
+ * IMPORTANT: pass `{ mode: "html" }` whenever the result is used as HTML. The
+ * merge values are frequently contact- or lead-controlled and reach email
+ * bodies; unescaped interpolation is a stored-XSS vector.
  */
 export function interpolateTemplate(
   template: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
+  options: InterpolationOptions = {}
 ): InterpolationResult {
   const warnings: string[] = [];
+  const escape = options.mode === "html" ? escapeHtml : (v: string) => v;
 
   const text = template.replace(VARIABLE_PATTERN, (_, path: string) => {
     const trimmed = path.trim();
@@ -63,7 +81,7 @@ export function interpolateTemplate(
       return "";
     }
 
-    return String(value);
+    return escape(String(value));
   });
 
   return { text, warnings };

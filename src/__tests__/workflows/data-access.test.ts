@@ -22,7 +22,7 @@ const mockFrom = vi.fn((_table?: any) => ({
   delete: mockDelete,
 }));
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (table: string) => mockFrom(table),

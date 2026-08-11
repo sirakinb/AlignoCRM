@@ -1,5 +1,5 @@
 import { task, wait } from "@trigger.dev/sdk";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   getEnrollment,
   updateEnrollment,

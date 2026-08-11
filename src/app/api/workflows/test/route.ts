@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import { getContact } from "@/lib/data/contacts";
 import { createEnrollment } from "@/lib/data/enrollments";
 import { getWorkflow } from "@/lib/data/workflows";

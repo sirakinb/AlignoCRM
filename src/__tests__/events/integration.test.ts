@@ -35,7 +35,7 @@ mockEq.mockReturnValue(chainable());
 mockOrder.mockReturnValue(chainable());
 mockLimit.mockReturnValue(chainable());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: vi.fn(() => chainable()),
@@ -191,6 +191,11 @@ describe("CRM event integration", () => {
 
     // getDeal call
     mockSingle.mockResolvedValueOnce({ data: existingDeal, error: null });
+    // getStage call (moveDealStage derives deal status from stage.name)
+    mockSingle.mockResolvedValueOnce({
+      data: { id: "stage-2", name: "Negotiation", position: 1 },
+      error: null,
+    });
     // update call
     mockSingle.mockResolvedValueOnce({ data: updatedDeal, error: null });
 

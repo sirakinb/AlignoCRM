@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "crypto";
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import type { AuthenticatedUser } from "@/lib/auth/session";
 
 export const FALLBACK_WORKSPACE_ID = "default";

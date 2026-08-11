@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
+import { requireTenantContext } from "@/lib/auth/tenant";
 import { findActiveApiKey, markApiKeyUsed } from "@/lib/data/api-keys";
 import {
   FALLBACK_WORKSPACE_ID,
@@ -97,6 +98,23 @@ export async function getInternalApiAuthContext(
     userId: record.user_id,
     tenant,
   };
+}
+
+/**
+ * Tenant resolution for routes shared by the dashboard UI (session cookie) and
+ * external integrations like Dropcard (x-api-key). The API-key path only runs
+ * when a key is actually presented, so browser requests in dev never trip the
+ * no-env-key fallback and lose their session workspace.
+ */
+export async function requireTenantContextFromRequest(
+  request: Request
+): Promise<TenantContext> {
+  if (getRequestApiKey(request)) {
+    const authContext = await getInternalApiAuthContext(request);
+    if (authContext.authorized) return authContext.tenant;
+  }
+
+  return requireTenantContext();
 }
 
 export function unauthorizedInternalApiResponse() {

@@ -25,7 +25,7 @@ mockEq.mockReturnValue(chainable());
 mockOrder.mockReturnValue(chainable());
 mockLimit.mockReturnValue(chainable());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: vi.fn(() => chainable()),
@@ -33,7 +33,7 @@ vi.mock("@/lib/insforge/client", () => ({
   },
 }));
 
-import { insforge } from "@/lib/insforge/client";
+import { insforge } from "@/lib/insforge/server";
 import {
   emitEvent,
   getUnprocessedEvents,

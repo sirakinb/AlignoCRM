@@ -19,7 +19,7 @@ mockInsert.mockReturnValue(chainable());
 mockUpdate.mockReturnValue(chainable());
 mockEq.mockReturnValue(chainable());
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: vi.fn(() => chainable()),
@@ -27,7 +27,15 @@ vi.mock("@/lib/insforge/client", () => ({
   },
 }));
 
-import { insforge } from "@/lib/insforge/client";
+// sendEmail now consults the suppression gate first; default to "not suppressed"
+// so the existing send-path tests exercise the send path. The suppression
+// behavior itself is covered by the messaging suppression tests.
+const mockFindSuppression = vi.fn().mockResolvedValue(null);
+vi.mock("@/lib/messaging/suppressions", () => ({
+  findSuppression: (...args: unknown[]) => mockFindSuppression(...args),
+}));
+
+import { insforge } from "@/lib/insforge/server";
 import {
   sendEmail,
   setEmailProvider,

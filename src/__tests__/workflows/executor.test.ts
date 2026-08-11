@@ -37,7 +37,7 @@ vi.mock("@/lib/data/deals", () => ({
   moveDealStage: (...args: unknown[]) => mockMoveDealStage(...args),
 }));
 
-vi.mock("@/lib/insforge/client", () => ({
+vi.mock("@/lib/insforge/server", () => ({
   insforge: {
     database: {
       from: (...args: unknown[]) => mockInsforgeFrom(...args),
