@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
+import { tenantErrorResponse } from "@/lib/auth/tenant";
+import { requireTenantContextFromRequest } from "@/lib/api/internal-auth";
 import { markConversationRead } from "@/lib/data/conversations";
 
 /**
@@ -9,11 +10,11 @@ import { markConversationRead } from "@/lib/data/conversations";
  * idempotent (P3-08/P3-09).
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tenant = await requireTenantContext();
+    const tenant = await requireTenantContextFromRequest(request);
     const { id } = await params;
 
     const found = await markConversationRead(tenant.workspaceId, id);

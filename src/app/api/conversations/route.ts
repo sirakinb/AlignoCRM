@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
+import { tenantErrorResponse } from "@/lib/auth/tenant";
+import { requireTenantContextFromRequest } from "@/lib/api/internal-auth";
 import { listConversations } from "@/lib/data/conversations";
 import type { MessageChannel } from "@/types/messaging";
 
 export async function GET(request: Request) {
   try {
-    const tenant = await requireTenantContext();
+    const tenant = await requireTenantContextFromRequest(request);
     const url = new URL(request.url);
 
     const channelParam = url.searchParams.get("channel");

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
+import { tenantErrorResponse } from "@/lib/auth/tenant";
+import { requireTenantContextFromRequest } from "@/lib/api/internal-auth";
 import { getConversationContactId } from "@/lib/data/conversations";
 import { performSend, sendOutcomeToResponse } from "@/lib/messaging/send-request";
 
@@ -14,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tenant = await requireTenantContext();
+    const tenant = await requireTenantContextFromRequest(request);
     const { id } = await params;
 
     const contactId = await getConversationContactId(tenant.workspaceId, id);

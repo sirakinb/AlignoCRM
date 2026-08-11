@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireTenantContext, tenantErrorResponse } from "@/lib/auth/tenant";
+import { tenantErrorResponse } from "@/lib/auth/tenant";
+import { requireTenantContextFromRequest } from "@/lib/api/internal-auth";
 import { countUnreadConversations } from "@/lib/data/conversations";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const tenant = await requireTenantContext();
+    const tenant = await requireTenantContextFromRequest(request);
     const count = await countUnreadConversations(tenant.workspaceId);
     return NextResponse.json({ count });
   } catch (error) {

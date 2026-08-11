@@ -93,7 +93,7 @@ describe("conversations API — auth + tenant scoping", () => {
 
   it("GET /api/conversations/unread-count returns the count for the workspace", async () => {
     h.countUnreadConversations.mockResolvedValue(2);
-    const res = await getUnread();
+    const res = await getUnread(req());
     expect(await res.json()).toEqual({ count: 2 });
     expect(h.countUnreadConversations).toHaveBeenCalledWith("ws-a");
   });
