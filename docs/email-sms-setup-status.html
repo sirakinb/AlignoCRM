@@ -148,22 +148,26 @@
     </p>
 
     <div class="callout">
-      <p><strong>Direction change (2026-08-07): Resend-first, OAuth connections shelved</strong></p>
+      <p><strong>Live now (2026-08-11): SMS approved + Resend email</strong></p>
       <p>
-        Native Gmail/Outlook OAuth is <strong>shelved</strong> — Google's restricted-scope
-        verification (CASA, ~$0.5–4.5k/yr + weeks) isn't worth it at this stage, and if native
-        mailbox sync is ever needed the plan is <strong>Nylas</strong> (or similar) rather than
-        our own Google app. All email now flows through Resend on
-        <code>contact.alignocrm.com</code> with <strong>pretty reply aliases</strong>
-        (<code>&lt;workspace&gt;@contact.alignocrm.com</code> instead of <code>r+&lt;token&gt;@</code>).
-        The OAuth/sync backend code is kept dormant (tested, hidden in the UI, no scheduler).
+        Pentridge workspace SMS sends/receives on approved toll-free
+        <code>+1 855-747-8576</code> (inbound/status webhooks on Aligno; Messaging Service
+        <code>Aligno CRM</code>). Rejected <code>+1 877-838-8671</code> remains in the account
+        but is <strong>not</strong> the default.
+      </p>
+      <p>
+        Email stays <strong>Resend-first</strong> (From on <code>send.alignocrm.com</code>,
+        Reply-To / inbound on <code>contact.alignocrm.com</code>). Native Gmail/Outlook OAuth
+        is shelved; if clients need their own mailbox later, prefer <strong>custom Resend
+        domains</strong> (brand) and/or <strong>Nylas</strong> (real inbox) — not finishing
+        our own Google app. OAuth/sync code stays dormant (no UI, no scheduler).
       </p>
     </div>
 
     <div class="stats">
       <div class="stat"><b>Resend</b><span>Sole email path (live)</span></div>
-      <div class="stat"><b>2</b><span>Milestones built &amp; shelved</span></div>
-      <div class="stat"><b>Ops</b><span>Live Twilio dry-run left</span></div>
+      <div class="stat"><b>SMS</b><span>Live on approved TFN</span></div>
+      <div class="stat"><b>Next</b><span>Domain polish + UX</span></div>
     </div>
 
     <h2>Milestones</h2>
@@ -206,7 +210,7 @@
     <article class="milestone">
       <div class="milestone-head">
         <h3>3 — SMS setup (numbers + compliance)</h3>
-        <span class="badge done">Done (code)</span>
+        <span class="badge done">Done — live</span>
       </div>
       <ul>
         <li class="done">Phone search / buy / release / set default APIs</li>
@@ -216,9 +220,11 @@
         <li class="done">A2P 10DLC TrustHub submit + status refresh + TrustHub webhook</li>
         <li class="done">Toll-free verification submit / refresh / UI</li>
         <li class="done">EIN not stored; only SIDs + non-sensitive business fields</li>
-        <li class="done">Live dry-run (2026-08-07): toll-free <code>+1 877-838-8671</code> registered as workspace default in <code>workspace_phone_numbers</code>; Messaging Service inbound already points at production</li>
-        <li class="done">Toll-free verification submitted (Pentridge Media LLC) — Twilio status <code>IN_REVIEW</code>, tracked as <code>PENDING_REVIEW</code> in <code>workspace_tollfree_verifications</code></li>
-        <li class="note">Outbound SMS to US numbers stays blocked by carriers until the TFV is approved (typically a few business days) — refresh status from Settings → SMS setup</li>
+        <li class="done">Switched default (2026-08-11) to approved TFN <code>+1 855-747-8576</code> (<code>PN90e587…</code>, TFV <code>HHa75e94…</code> <code>TWILIO_APPROVED</code>)</li>
+        <li class="done">Moved number off DropCard Messaging Service → Aligno CRM; inbound/status → <code>https://www.alignocrm.com/api/webhooks/twilio/…</code> (n8n unused)</li>
+        <li class="done">Workspace channel SMS config + <code>workspace_phone_numbers.is_default</code> point at 855; rejected 877 kept non-default</li>
+        <li class="done">Live SMS send/receive confirmed working in production</li>
+        <li class="note">Product polish still open: guided “get your own number” UX for new workspaces (buy → default → TFV/10DLC without Twilio jargon)</li>
       </ul>
     </article>
 
@@ -236,22 +242,24 @@
       </ul>
     </article>
 
-    <h2>Acceptance criteria still open</h2>
+    <h2>Follow-ups (not blockers for current live use)</h2>
     <article class="milestone">
       <div class="milestone-head">
-        <h3>QA / ops (not blocked on more product code)</h3>
-        <span class="badge todo">Ops</span>
+        <h3>Product / polish</h3>
+        <span class="badge todo">Backlog</span>
       </div>
       <ul>
-        <li class="todo">Configure OAuth client IDs/secrets + <code>OAUTH_TOKEN_ENCRYPTION_KEY</code></li>
-        <li class="todo">Auditor “try to break it” checklist + videos from the plan</li>
-        <li class="todo">Codex security scan on the branch (per plan)</li>
-        <li class="todo">Composer “From” selector when multiple accounts/numbers exist (plan: out of scope for v1)</li>
+        <li class="todo">Resend custom domains per workspace (self-serve DNS in Aligno) so clients aren’t stuck on Aligno From domains</li>
+        <li class="todo">Optional later: Nylas (or similar) for “send as my Gmail/Outlook”</li>
+        <li class="todo">SMS number onboarding UX polish for new workspaces</li>
+        <li class="todo">User manual: replace screenshot placeholders</li>
+        <li class="todo">Composer “From” selector when multiple accounts/numbers exist (out of scope for v1)</li>
+        <li class="note">OAuth client secrets / mailbox sync cron — only if OAuth path is revived (not current plan)</li>
       </ul>
     </article>
 
     <footer>
-      Plan source: GoHighLevel-style Email Services + SMS Setup (Option A). Status as of Aug 6, 2026.
+      Plan source: GoHighLevel-style Email Services + SMS Setup (Option A). Status as of Aug 11, 2026.
       Open this file locally: <code>docs/email-sms-setup-status.html</code>
     </footer>
   </main>
